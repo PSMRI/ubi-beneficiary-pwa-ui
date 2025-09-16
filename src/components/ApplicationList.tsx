@@ -215,6 +215,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 													mt={hasRemark ? 2 : 0}
 													_hover={{ bg: '#3c5fdd' }}
 													onClick={(e) => {
+														e.preventDefault();
 														e.stopPropagation();
 														navigate(
 															`/benefits/${app.benefit_id}`

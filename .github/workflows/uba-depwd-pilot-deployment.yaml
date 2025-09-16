@@ -1,10 +1,10 @@
-name: Deploy to DEV
+name: Deploy to UBA-DePWD-Pilot
 on:
   push:
     branches:
-      - depwd-pilot
+      - main
 jobs:
-  build_and_test:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,8 +22,8 @@ jobs:
           fi
           echo '${{ secrets.ENV }}' > .env
           ls -ltra
-          npm install --legacy-peer-deps
-          npm run build
+          yarn install
+          yarn build
           ls -ltra
       - name: Show PWD
         run: |
@@ -63,5 +63,14 @@ jobs:
               aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
       - name: Post job cleanup
         run: |
-    # Cleanup commands
+        # Cleanup commands
         continue-on-error: true
+
+      ## Notify on Slack
+      - name: Notify on Slack channel
+        uses: iRoachie/slack-github-actions@v2.3.2
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
+        if: ${{ always() }}
