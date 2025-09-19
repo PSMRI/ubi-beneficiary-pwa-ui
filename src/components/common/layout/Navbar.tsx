@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 // import {ChangeEvent} from 'react'
 import {
 	Box,
@@ -16,36 +16,34 @@ import {
 	useToast,
 } from '@chakra-ui/react';
 import { HamburgerIcon } from '@chakra-ui/icons';
-/* Language selection is disabled for now
-import CustomSelect from '../input/Select'; */
+import CustomSelect from '../input/Select'; 
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { logoutUser } from '../../../services/auth/auth';
-/* Language selection is disabled for now
  import { changeLanguage } from 'i18next'; 
  import { useAuth } from '../../../utils/context/checkToken';
- */
 
-/* Language selection is disabled for now
+
+
 const options = [
 	{ label: 'EN', value: 'en' },
 	{ label: 'HI', value: 'hi' },
 	{ label: 'MR', value: 'mr' },
-]; */
+]; 
 const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 	const [success] = useState<string>('');
 	const navigate = useNavigate();
 	const { t } = useTranslation();
 
 	const toast = useToast();
-	/* Language selection is disabled for now
+	 
 	 const { language, selectLanguage } = useAuth(); 
 	 const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
 		const { value } = e.target;
 		selectLanguage(e.target.value);
 		changeLanguage(value);
-	}; */
+	}; 
 	const handleLogout = async () => {
 		try {
 			const response = await logoutUser();
@@ -120,11 +118,11 @@ const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 					)}
 				</Box>
 
-				{/* <CustomSelect
+				 <CustomSelect
 					options={options}
 					value={language.name}
 					onChange={handleChange}
-				/> */}
+				/> 
 			</Flex>
 		</Stack>
 	);
