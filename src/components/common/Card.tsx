@@ -19,6 +19,7 @@ interface BenefitCardProps {
 		item_id: number;
 		title: string;
 		provider_name: string;
+		provider_id: string;
 		description: string;
 		item: {
 			price?: { value?: number; currency?: string };
@@ -88,6 +89,9 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 				<Heading size="md" mt={2}>
 					{item?.title}
 				</Heading>
+				<Text mt={2} fontSize="sm" color="black.500">
+					{item?.provider_id}
+				</Text>
 				{item?.item?.price?.value && (
 					<HStack
 						align="center"
