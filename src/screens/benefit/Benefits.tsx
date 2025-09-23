@@ -41,6 +41,8 @@ interface Benefit {
 	title: string;
 	provider_name: string;
 	provider_id: string;
+	bpp_id: string;
+	bpp_uri: string;
 	description: string;
 	item: {
 		price?: {
