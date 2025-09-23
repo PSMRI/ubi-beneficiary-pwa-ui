@@ -4,7 +4,7 @@ FROM node:20.17.0
 # Set working directory
 WORKDIR /app
 
-# Copy package files first (for better caching)
+# Copying everything for now (this could be optimized to only copy relavent files)
 COPY . ./
 
 RUN yarn install
@@ -12,12 +12,6 @@ RUN yarn install
 RUN yarn prepare
 # Install dependencies
 RUN npm run build
-
-# Copy everything else
-COPY . .
-
-# Install Vite globally (optional, but helpful for CLI)
-# RUN npm install -g vite
 
 # Expose Vite default dev port
 EXPOSE 5173
