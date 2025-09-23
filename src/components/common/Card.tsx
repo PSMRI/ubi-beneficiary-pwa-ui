@@ -20,6 +20,8 @@ interface BenefitCardProps {
 		title: string;
 		provider_name: string;
 		provider_id: string;
+		bpp_id: string;
+		bpp_uri: string;
 		description: string;
 		item: {
 			price?: { value?: number; currency?: string };
@@ -89,7 +91,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 				<Heading size="md" mt={2}>
 					{item?.title}
 				</Heading>
-				<Text mt={2} fontSize="sm" color="black.500">
+				<Text mt={2} fontSize="sm" color="black">
 					{item?.provider_id}
 				</Text>
 				{item?.item?.price?.value && (
@@ -149,6 +151,10 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 					as={RouterLink}
 					to={`/benefits/${id}`}
 					color={'#0037b9'}
+					state={{
+						bpp_id: item?.bpp_id,
+						bpp_uri: item?.bpp_uri,
+					}}
 				>
 					View Details <ArrowForwardIcon />
 				</Link>
