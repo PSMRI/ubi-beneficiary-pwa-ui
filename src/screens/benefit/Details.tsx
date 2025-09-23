@@ -535,7 +535,7 @@ const BenefitsDetails: React.FC = () => {
 					user_id: authUser?.user_id,
 					benefit_id: id,
 					benefit_provider_id: context?.bpp_id,
-					benefit_provider_uri: context?.bap_uri,
+					benefit_provider_uri: context?.bpp_uri,
 					external_application_id: orderId,
 					application_name: item?.descriptor?.name,
 					status: 'application pending',
