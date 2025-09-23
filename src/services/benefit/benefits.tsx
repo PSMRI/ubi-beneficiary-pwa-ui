@@ -3,8 +3,6 @@ import { generateUUID } from '../../utils/jsHelper/helper';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
-const bpp_id = import.meta.env.VITE_BPP_ID;
-const bpp_uri = import.meta.env.VITE_BPP_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
 	throw error.response ? error.response.data : new Error('Network Error');
@@ -70,8 +68,6 @@ export const getOne = async ({ id }: GetOneParams) => {
 			version: '1.1.0',
 			bap_id,
 			bap_uri,
-			bpp_id,
-			bpp_uri,
 			transaction_id: generateUUID(),
 			message_id: generateUUID(),
 			location: {
