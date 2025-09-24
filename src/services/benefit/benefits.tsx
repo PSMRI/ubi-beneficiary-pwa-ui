@@ -58,9 +58,9 @@ export const getAll = async (
 interface GetOneParams {
 	id: string | undefined;
 	bpp_id: string | undefined;
-	bpp_uri: string | undefined;
 }
-export const getOne = async ({ id, bpp_id, bpp_uri }: GetOneParams) => {
+export const getOne = async ({ id, bpp_id }: GetOneParams) => {
+
 	const loginData = {
 		context: {
 			domain: DOMAIN_FINANCIAL_SUPPORT,
@@ -71,7 +71,6 @@ export const getOne = async ({ id, bpp_id, bpp_uri }: GetOneParams) => {
 			bap_id,
 			bap_uri,
 			bpp_id,
-			bpp_uri,
 			transaction_id: generateUUID(),
 			message_id: generateUUID(),
 			location: {
