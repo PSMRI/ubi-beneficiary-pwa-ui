@@ -149,13 +149,12 @@ const BenefitsDetails: React.FC = () => {
 	);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const navigate = useNavigate();
-	const { id } = useParams<{ id: string }>();
+	const { id, bpp_id } = useParams<{ id: string, bpp_id: string }>();
 	const { t } = useTranslation();
 	// const [isEligible, setIsEligible] = useState<any[]>(); // NOSONAR
 	const [userDocuments, setUserDocuments] = useState();
 	const [applicationData, setApplicationData] =
 		useState<ApplicationData | null>(null);
-	const { bpp_id, bpp_uri } = useLocation().state;
 	const handleConfirmation = async () => {
 		setLoading(true);
 		const expiredMessage = getExpiredRequiredDocsMessage(
@@ -468,7 +467,8 @@ const BenefitsDetails: React.FC = () => {
 		let mounted = true;
 		const init = async () => {
 			try {
-				const result = await getOne({ id, bpp_id, bpp_uri });
+				const decodedBppId = decodeURI(bpp_id);
+				const result = await getOne({ id, bpp_id: decodedBppId});
 				const resultItem = extractResultItem(result);
 				const token = localStorage.getItem('authToken');
 				let user;
