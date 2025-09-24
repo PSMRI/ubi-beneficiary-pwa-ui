@@ -77,6 +77,8 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 	const id = item?.item_id;
 	const dateStr = item?.item?.time?.range?.end;
 	const formattedDate = dateStr ? formatDateString(dateStr) : '';
+	const bpp_id = encodeURI(item?.bpp_id);
+	
 	return (
 		<Card
 			maxW="2xl"
@@ -149,12 +151,8 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 				<Link
 					className="text-blue"
 					as={RouterLink}
-					to={`/benefits/${id}`}
+					to={`/benefits/${bpp_id}/${id}`}
 					color={'#0037b9'}
-					state={{
-						bpp_id: item?.bpp_id,
-						bpp_uri: item?.bpp_uri,
-					}}
 				>
 					View Details <ArrowForwardIcon />
 				</Link>
