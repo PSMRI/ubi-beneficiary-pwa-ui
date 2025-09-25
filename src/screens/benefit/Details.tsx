@@ -467,7 +467,7 @@ const BenefitsDetails: React.FC = () => {
 		let mounted = true;
 		const init = async () => {
 			try {
-				const decodedBppId = decodeURI(bpp_id);
+				const decodedBppId = decodeURIComponent(bpp_id);
 				const result = await getOne({ id, bpp_id: decodedBppId});
 				const resultItem = extractResultItem(result);
 				const token = localStorage.getItem('authToken');

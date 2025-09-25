@@ -77,7 +77,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 	const id = item?.item_id;
 	const dateStr = item?.item?.time?.range?.end;
 	const formattedDate = dateStr ? formatDateString(dateStr) : '';
-	const bpp_id = encodeURI(item?.bpp_id);
+	const bpp_id = encodeURIComponent(item?.bpp_id);
 	
 	return (
 		<Card
