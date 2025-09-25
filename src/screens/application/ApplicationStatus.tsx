@@ -30,6 +30,7 @@ type ApplicationType = {
 		| 'application pending'
 		| 'application resubmit';
 	application_data: Record<string, unknown>;
+	benefit_provider_id: string;
 };
 
 const ApplicationStatus: React.FC = () => {

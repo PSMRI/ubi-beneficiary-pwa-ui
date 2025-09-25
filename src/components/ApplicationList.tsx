@@ -19,6 +19,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface Application {
+	benefit_provider_id: string ;
 	benefit_id: string;
 	application_name: string;
 	internal_application_id: string;
@@ -217,7 +218,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 													onClick={(e) => {
 														e.stopPropagation();
 														navigate(
-															`/benefits/${app.benefit_id}`
+															`/benefits/${encodeURIComponent(app.benefit_provider_id)}/${encodeURIComponent(app.benefit_id)}`
 														);
 													}}
 												>
