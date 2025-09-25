@@ -219,7 +219,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 														e.preventDefault();
 														e.stopPropagation();
 														navigate(
-															`/benefits/${encodeURIComponent(app.benefit_provider_id)}/${encodeURIComponent(app.benefit_id)}`
+															`/benefits/${encodeURIComponent(app.benefit_provider_id)}/${app.benefit_id}`
 														);
 													}}
 												>
