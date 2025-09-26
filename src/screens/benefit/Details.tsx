@@ -13,7 +13,7 @@ import {
 	ModalFooter,
 } from '@chakra-ui/react';
 import '../../assets/styles/App.css';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import CommonButton from '../../components/common/button/Button';
 import Layout from '../../components/common/layout/Layout';
 import { getUser, sendConsent } from '../../services/auth/auth';
@@ -151,7 +151,7 @@ const BenefitsDetails: React.FC = () => {
 	);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const navigate = useNavigate();
-	const { id } = useParams<{ id: string }>();
+	const { id, bpp_id } = useParams<{ id: string, bpp_id: string }>();
 	const { t } = useTranslation();
 	// const [isEligible, setIsEligible] = useState<any[]>(); // NOSONAR
 	const [userDocuments, setUserDocuments] = useState();
@@ -495,7 +495,8 @@ const BenefitsDetails: React.FC = () => {
 		let mounted = true;
 		const init = async () => {
 			try {
-				const result = await getOne({ id });
+				const decodedBppId = decodeURIComponent(bpp_id);
+				const result = await getOne({ id, bpp_id: decodedBppId});
 				setSchemaData(result); // Store full select API response
 				const resultItem = extractResultItem(result);
 				const token = localStorage.getItem('authToken');
@@ -564,7 +565,7 @@ const BenefitsDetails: React.FC = () => {
 					user_id: authUser?.user_id,
 					benefit_id: id,
 					benefit_provider_id: context?.bpp_id,
-					benefit_provider_uri: context?.bap_uri,
+					benefit_provider_uri: context?.bpp_uri,
 					external_application_id: orderId,
 					application_name: item?.descriptor?.name,
 					status: 'application pending',

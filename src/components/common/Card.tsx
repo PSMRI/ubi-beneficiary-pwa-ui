@@ -19,6 +19,9 @@ interface BenefitCardProps {
 		item_id: number;
 		title: string;
 		provider_name: string;
+		provider_id: string;
+		bpp_id: string;
+		bpp_uri: string;
 		description: string;
 		item: {
 			price?: { value?: number; currency?: string };
@@ -74,6 +77,8 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 	const id = item?.item_id;
 	const dateStr = item?.item?.time?.range?.end;
 	const formattedDate = dateStr ? formatDateString(dateStr) : '';
+	const bpp_id = encodeURIComponent(item?.bpp_id);
+	
 	return (
 		<Card
 			maxW="2xl"
@@ -88,6 +93,9 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 				<Heading size="md" mt={2}>
 					{item?.title}
 				</Heading>
+				<Text mt={2} fontSize="sm" color="black">
+					{item?.provider_id}
+				</Text>
 				{item?.item?.price?.value && (
 					<HStack
 						align="center"
@@ -143,7 +151,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 				<Link
 					className="text-blue"
 					as={RouterLink}
-					to={`/benefits/${id}`}
+					to={`/benefits/${bpp_id}/${id}`}
 					color={'#0037b9'}
 				>
 					View Details <ArrowForwardIcon />
