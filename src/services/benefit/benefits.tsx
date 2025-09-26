@@ -5,6 +5,7 @@ const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
 const bpp_id = import.meta.env.VITE_BPP_ID;
 const bpp_uri = import.meta.env.VITE_BPP_URL;
+const provider_api_url = import.meta.env.VITE_PROVIDER_API_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
 	throw error.response ? error.response.data : new Error('Network Error');
@@ -172,13 +173,13 @@ export const confirmApplication = async ({
 				},
 			},
 			action: 'confirm',
-			timestamp: rawContext.timestamp,
-			ttl: rawContext.ttl,
-			version: rawContext.version,
-			bap_id: rawContext.bap_id,
-			bap_uri: rawContext.bap_uri,
-			bpp_id: rawContext.bpp_id,
-			bpp_uri: rawContext.bpp_uri,
+			timestamp: new Date().toISOString(),
+			ttl: "PT10M",
+      		version: "1.1.0",
+			bap_id: bap_id,
+			bap_uri: bap_uri,
+			bpp_id: bpp_id,
+			bpp_uri: bpp_uri,
 			message_id: generateUUID(),
 			transaction_id: generateUUID(),
 		},
@@ -324,4 +325,105 @@ export const checkEligibilityOfUser = async (id: string) => {
 	} catch (error: unknown) {
 		handleError(error as AxiosError);
 	}
+};
+
+export const getSchema = async (id: string) => {
+  const payload = {
+    context: {
+      domain: DOMAIN_FINANCIAL_SUPPORT,
+      action: "select",
+      timestamp: new Date().toISOString(),
+      ttl: "PT10M",
+      version: "1.1.0",
+	  bap_id,
+	  bap_uri,
+	  bpp_id,
+	  bpp_uri,
+      transaction_id: generateUUID(),
+      message_id: generateUUID(),
+      location: {
+        country: {
+          name: "India",
+          code: "IND",
+        },
+        city: {
+          name: "Bangalore",
+          code: "std:080",
+        },
+      },
+    },
+    message: {
+      order: {
+        items: [
+          {
+            id: id,
+          },
+        ],
+        provider: {
+          id: 'BX213573733',
+        },
+      },
+    },
+  };
+  try {
+		const response = await axios.post(`${apiBaseUrl}/select`, payload, {
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+		return response || {};
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+export const submitForm = async (applicationData: any) => {
+console.log('submitForm payload', applicationData);
+const payload = {
+	context: {
+		domain: DOMAIN_FINANCIAL_SUPPORT,
+		action: "init",
+		timestamp: new Date().toISOString(),
+		ttl: "PT10M",
+		version: "1.1.0",
+		bap_id,
+		bap_uri,
+		bpp_id,
+		bpp_uri,
+		transaction_id: generateUUID(),
+		message_id: generateUUID(),
+		location: {
+			country: {
+			name: "India",
+			code: "IND",
+			},
+			city: {
+			name: "Bangalore",
+			code: "std:080",
+			},
+		},
+	},
+	message: {
+		order: {
+			items: [
+				{
+					id: applicationData.benefitId,
+				},
+			],
+			provider: {
+				id: 'BX213573733',
+			},
+			tags: {
+				applicationData
+			}
+      },
+    },
+}
+  try {
+    const response = await axios.post(`${provider_api_url}/benefits/dsep/init2`, payload)
+    console.log('submitForm response', response?.data?.message.order.items[0].applicationId);
+	return response?.data;
+  } catch (error) {
+    console.log(error);
+  }
 };

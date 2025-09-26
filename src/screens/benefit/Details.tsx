@@ -133,7 +133,9 @@ const BenefitsDetails: React.FC = () => {
 		null
 	);
 	const [item, setItem] = useState<BenefitItem | null>(null);
+	const [schemaData, setSchemaData] = useState<any>(null);
 	const [loading, setLoading] = useState<boolean>(true);
+	const [validationLoading, setValidationLoading] = useState<boolean>(false);
 	const [applicationStatus, setApplicationStatus] = useState<string | null>(
 		null
 	);
@@ -155,102 +157,82 @@ const BenefitsDetails: React.FC = () => {
 	const [userDocuments, setUserDocuments] = useState();
 	const [applicationData, setApplicationData] =
 		useState<ApplicationData | null>(null);
-	const handleConfirmation = async () => {
-		setLoading(true);
-		const expiredMessage = getExpiredRequiredDocsMessage(
-			userDocuments,
-			item?.document ?? []
-		);
-		if (expiredMessage) {
-			setError(expiredMessage);
-			setLoading(false);
-			return;
-		}
 
-		// Validate required documents are uploaded
-		const documentValidationResult = validateRequiredDocuments(
-			item?.document ?? [],
-			userDocuments ?? []
-		);
-		if (!documentValidationResult.isValid) {
-			setError(
-				documentValidationResult.errorMessage ||
-					'Required documents are missing'
-			);
-			setLoading(false);
-			return;
-		}
+	// Common validation function for both iframe and direct form approaches
+	const validateApplicationRequirements = async (): Promise<{ isValid: boolean; formData?: any }> => {
+		console.log('validateApplicationRequirements called');
+		setValidationLoading(true);
 
-		// Validate benefit end date
-		const benefitEndDateValidation = validateBenefitEndDate(
-			item?.time?.range?.end
-		);
-		if (!benefitEndDateValidation.isValid) {
-			setError(
-				benefitEndDateValidation.errorMessage ||
-					'Benefit validation failed'
-			);
-			setLoading(false);
-			return;
-		}
-		// Step 1: Try eligibility API
-		let eligibilityResponse;
 		try {
+			// Check expired documents
+			const expiredMessage = getExpiredRequiredDocsMessage(
+				userDocuments,
+				item?.document ?? []
+			);
+			if (expiredMessage) {
+				setError(expiredMessage);
+				setValidationLoading(false);
+				return { isValid: false };
+			}
+
+			// Validate required documents are uploaded
+			const documentValidationResult = validateRequiredDocuments(
+				item?.document ?? [],
+				userDocuments ?? []
+			);
+			if (!documentValidationResult.isValid) {
+				setError(
+					documentValidationResult.errorMessage ||
+						'Required documents are missing'
+				);
+				setValidationLoading(false);
+				return { isValid: false };
+			}
+
+			// Validate benefit end date
+			const benefitEndDateValidation = validateBenefitEndDate(
+				item?.time?.range?.end
+			);
+			if (!benefitEndDateValidation.isValid) {
+				setError(
+					benefitEndDateValidation.errorMessage ||
+						'Benefit validation failed'
+				);
+				setValidationLoading(false);
+				return { isValid: false };
+			}
+
+			// Check eligibility
 			if (!id) {
 				setError(t('DETAILS_BENEFIT_IDENTIFIER_ERROR'));
-				setLoading(false);
-				return;
+				setValidationLoading(false);
+				return { isValid: false };
 			}
-			eligibilityResponse = await checkEligibilityOfUser(id);
-		} catch (err) {
-			console.error('Error in checking eligibility', err);
-			setError(t('DETAILS_ELIGIBILITY_CHECK_ERROR'));
-			setLoading(false);
-			return;
-		}
 
-		// Step 2: Process eligibility reasons
-		const reasons =
-			eligibilityResponse?.ineligible?.[0]?.details?.reasons ?? [];
+			const eligibilityResponse = await checkEligibilityOfUser(id);
+			const reasons = eligibilityResponse?.ineligible?.[0]?.details?.reasons ?? [];
+			const reasonMessages = reasons.map((r: any) => {
+				if (
+					r.requiredValue &&
+					Array.isArray(r.requiredValue) &&
+					r.requiredValue.length > 0
+				) {
+					return `${r.reason} ${r.requiredValue.join(', ')} ${r?.field}`;
+				}
+				return r.reason;
+			});
 
-		const reasonMessages = reasons.map((r: any) => {
-			if (
-				r.requiredValue &&
-				Array.isArray(r.requiredValue) &&
-				r.requiredValue.length > 0
-			) {
-				return `${r.reason} ${r.requiredValue.join(', ')} ${r?.field}`;
+			if (reasonMessages.length > 0) {
+				setError(
+					`${t('DETAILS_ELIGIBILITY_ERROR_PREFIX')}\n${reasonMessages.join(
+						'\n'
+					)}`
+				);
+				setValidationLoading(false);
+				return { isValid: false };
 			}
-			return r.reason;
-		});
 
-		if (reasonMessages.length > 0) {
-			setError(
-				`${t('DETAILS_ELIGIBILITY_ERROR_PREFIX')}\n${reasonMessages.join(
-					'\n'
-				)}`
-			);
-			setLoading(false);
-			return;
-		}
-
-		// Step 3: Apply application
-		try {
-			if (!context) {
-				setError(t('DETAILS_CONTEXT_UNAVAILABLE_ERROR'));
-				setLoading(false);
-				return;
-			}
-			const result = await applyApplication({ id, context });
-
-			const url = (result as { data: { responses: Array<any> } }).data
-				?.responses?.[0]?.message?.order?.items?.[0]?.xinput?.form?.url;
-
-			// If the application is resubmit, merge `authUser` and `applicationData`
-			// Priority is given to keys from `applicationData`, but any extra keys
-			// from `authUser` that are not present in `applicationData` will be included.
-			// Otherwise, use `authUser` as the formData.
-
+			// Prepare form data
 			const isEditableStatus = [
 				'application resubmit',
 				'application pending',
@@ -287,20 +269,66 @@ const BenefitsDetails: React.FC = () => {
 				};
 			}
 
-			if (url) {
-				setWebFormProp({
-					url,
-					formData,
-				});
-			} else {
-				setError(t('DETAILS_URL_NOT_FOUND_ERROR'));
-			}
+			setValidationLoading(false);
+			return { isValid: true, formData };
+
 		} catch (error) {
-			console.error('Error during confirmation:', error);
+			console.error('Error during validation:', error);
 			setError(t('DETAILS_GENERAL_ERROR'));
+			setValidationLoading(false);
+			return { isValid: false };
+		}
+	};
+
+	const handleConfirmation = async (): Promise<boolean> => {
+		console.log('handleConfirmation called - iframe approach');
+		
+		// Use common validation function
+		const validationResult = await validateApplicationRequirements();
+		if (!validationResult.isValid) {
+			return false; // Validation failed, error already set in validateApplicationRequirements
 		}
 
-		setLoading(false);
+		// If using iframe approach (VITE_USE_IFRAME_APPLICATION_FORM is true)
+		const useIframe = import.meta.env.VITE_USE_IFRAME_APPLICATION_FORM === 'true';
+		
+		if (useIframe) {
+			try {
+				setValidationLoading(true);
+				
+				if (!context) {
+					setError(t('DETAILS_CONTEXT_UNAVAILABLE_ERROR'));
+					setValidationLoading(false);
+					return false;
+				}
+
+				// Apply application to get iframe URL
+				const result = await applyApplication({ id, context });
+				const url = (result as { data: { responses: Array<any> } }).data
+					?.responses?.[0]?.message?.order?.items?.[0]?.xinput?.form?.url;
+
+				if (url) {
+					setWebFormProp({
+						url,
+						formData: validationResult.formData,
+					});
+					setValidationLoading(false);
+					return true;
+				} else {
+					setError(t('DETAILS_URL_NOT_FOUND_ERROR'));
+					setValidationLoading(false);
+					return false;
+				}
+			} catch (error) {
+				console.error('Error during iframe confirmation:', error);
+				setError(t('DETAILS_GENERAL_ERROR'));
+				setValidationLoading(false);
+				return false;
+			}
+		}
+
+		// For direct form approach, validation passed
+		return true;
 	};
 	useEffect(() => {
 		// Access localStorage only on client
@@ -468,6 +496,7 @@ const BenefitsDetails: React.FC = () => {
 		const init = async () => {
 			try {
 				const result = await getOne({ id });
+				setSchemaData(result); // Store full select API response
 				const resultItem = extractResultItem(result);
 				const token = localStorage.getItem('authToken');
 				let user;
@@ -558,7 +587,10 @@ const BenefitsDetails: React.FC = () => {
 		setLoading(false);
 	};
 
+	console.log('Render state - loading:', loading, 'validationLoading:', validationLoading, 'error:', error, 'isAuthenticated:', isAuthenticated);
+
 	if (loading) {
+		console.log('Component is in loading state, returning Loader');
 		return <Loader />;
 	}
 
@@ -763,21 +795,60 @@ const BenefitsDetails: React.FC = () => {
 					</UnorderedList>
 
 					{isAuthenticated ? (
-						<CommonButton
-							mt={6}
-							onClick={handleConfirmation}
-							label={getActionLabel(applicationStatus, t)}
-							isDisabled={
-								!!applicationStatus &&
-								![
-									'application pending',
-									'submitted',
-									'application resubmit',
-								].includes(
-									(applicationStatus || '').toLowerCase()
-								)
-							}
-						/>
+									<CommonButton
+										mt={6}
+										onClick={async () => {
+											console.log('Button clicked - checking approach');
+											
+											const useIframe = import.meta.env.VITE_USE_IFRAME_APPLICATION_FORM === 'true';
+											console.log('useIframe:', useIframe);
+											
+											if (useIframe) {
+												// Use iframe approach
+												console.log('Using iframe approach');
+												const validationPassed = await handleConfirmation();
+												console.log('Iframe validation result:', validationPassed);
+												// handleConfirmation will handle iframe URL setting
+											} else {
+												// Use direct form approach - validate and navigate
+												console.log('Using direct form approach');
+												const validationResult = await validateApplicationRequirements();
+												console.log('Direct form validation result:', validationResult);
+												
+												if (validationResult.isValid) {
+													console.log('Validation passed, navigating to apply page');
+													// Serialize data to avoid DataCloneError
+													const safeSchemaData = schemaData ? JSON.parse(JSON.stringify(schemaData)) : null;
+													const safeFormData = validationResult.formData ? JSON.parse(JSON.stringify(validationResult.formData)) : null;
+													
+													navigate(`/benefits/${id}/apply`, {
+														state: {
+															selectApiResponse: safeSchemaData,
+															userData: safeFormData,
+															benefitId: id
+														},
+													});
+												} else {
+													console.log('Validation failed, not navigating');
+												}
+											}
+										}}
+										label={getActionLabel(applicationStatus, t)}
+										loading={validationLoading}
+										loadingLabel="Validating..."
+										isDisabled={(() => {
+											const isDisabled = validationLoading || (!!applicationStatus &&
+											![
+												'application pending',
+												'submitted',
+												'application resubmit',
+											].includes(
+												(applicationStatus || '').toLowerCase()
+											));
+											console.log('Button isDisabled:', isDisabled, 'applicationStatus:', applicationStatus, 'validationLoading:', validationLoading);
+											return isDisabled;
+										})()}
+									/>
 					) : (
 						<CommonButton
 							mt={6}

@@ -1,0 +1,53 @@
+/* CSS Variables for legend border styling only */
+:root {
+    /* Border Colors for fieldset legends */
+    --form-section-border: #A0AEC0;       /* Strong section borders (fieldsets) */
+    --form-border-radius: 6px;            /* Standard border radius */
+    --form-padding-large: 16px;           /* Large padding (fieldsets) */
+    --form-padding-small: 4px 8px;        /* Small padding (labels, indicators) */
+    --form-text-color: #1A202C;           /* Primary text for legends */
+    --form-bg-color: #FFFFFF;             /* Background for legends */
+  }
+  
+  /* Field Group Styles - Legend Border Styling Only */
+  .field-group {
+    border: 1px solid var(--form-section-border);
+    border-radius: var(--form-border-radius);
+    padding: var(--form-padding-large);
+    margin: 0 !important;
+    background-color: var(--form-bg-color);
+    position: relative; 
+    display: block;
+    box-sizing: border-box;
+  }
+  
+  .field-group-legend {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: var(--form-text-color);
+    background-color: var(--form-bg-color);
+    margin-bottom: var(--form-padding-large);
+    padding: var(--form-padding-small);
+  }
+  
+  /* Field Group Content Spacing - minimal styling for fieldset content */
+  .field-group .chakra-form__group,
+  .field-group .form-group,
+  .field-group .field,
+  .field-group div[data-field] {
+    margin-top: 0px;
+    margin-bottom: 8px;
+  }
+  
+  .field-group .chakra-form__group:last-child,
+  .field-group .form-group:last-child,
+  .field-group .field:last-child,
+  .field-group div[data-field]:last-child {
+    margin-bottom: 0px;
+  }
+  
+  /* Empty Div Hiding - Conservative approach to hide truly empty divs */
+  .form-accessibility-container div.css-0:empty,
+  .form-accessibility-container div[class="css-0"]:empty:not([role]):not([class*="react-select"]):not([data-react-select]) {
+    display: none;
+  } 

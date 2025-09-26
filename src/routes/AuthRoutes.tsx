@@ -4,6 +4,7 @@ import { AuthContext } from '../utils/context/checkToken';
 
 const ExploreBenefits = lazy(() => import('../screens/benefit/Benefits'));
 const BenefitsDetails = lazy(() => import('../screens/benefit/Details'));
+const BenefitFormScreenWrapper = lazy(() => import('../screens/benefit/BenefitFormScreenWrapper'));
 const Preview = lazy(() => import('../screens/application/Preview'));
 const MyApplications = lazy(
 	() => import('../screens/application/ApplicationStatus')
@@ -40,6 +41,10 @@ const routes = [
 	{
 		path: '/benefits/:id',
 		component: BenefitsDetails,
+	},
+	{
+		path: '/benefits/:id/apply',
+		component: BenefitFormScreenWrapper,
 	},
 	{
 		path: '/previewapplication/:id',
