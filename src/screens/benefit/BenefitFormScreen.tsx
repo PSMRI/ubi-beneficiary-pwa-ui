@@ -6,10 +6,12 @@ import validator from "@rjsf/validator-ajv8";
 import { JSONSchema7 } from "json-schema";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import  CommonButton from "../../components/common/button/SubmitButton";
 import Button from "../../components/common/button/Button";
 import Loading from "../../components/common/Loading";
 import FormAccessibilityProvider from "../../components/common/form/FormAccessibilityProvider";
+import CommonDialogue from "../../components/common/Dialogue";
 import { submitForm, confirmApplication, createApplication } from "../../services/benefit/benefits";
 import {
   convertApplicationFormFields,
@@ -108,6 +110,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
   const [context, setContext] = useState<any>(null);
   const [item, setItem] = useState<any>(null);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   // Helper function to group form fields by fieldsGroupName
   const groupFieldsByGroup = (benefit: any) => {
@@ -672,29 +675,18 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         </Modal>
       )}
       
-      {/* Submit Success Dialog - can be customized as needed */}
-      {submitDialouge && (
-        <Modal isOpen={true} onClose={() => setSubmitDialouge(false)}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Application Submitted</ModalHeader>
-            <ModalBody>
-              <Text>
-                Your application has been submitted successfully. 
-                {typeof submitDialouge === 'object' && (submitDialouge as any).orderId && 
-                  ` Order ID: ${(submitDialouge as any).orderId}`
-                }
-              </Text>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                onClick={() => setSubmitDialouge(false)}
-                label="Close"
-              />
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      {/* Submit Success Dialog */}
+      <CommonDialogue
+        isOpen={submitDialouge}
+        onClose={() => {
+          setSubmitDialouge(false);
+          navigate('/explorebenefits');
+        }}
+        handleDialog={() => {
+          setSubmitDialouge(false);
+          navigate('/explorebenefits');
+        }}
+      />
     </Box>
   );
 };
