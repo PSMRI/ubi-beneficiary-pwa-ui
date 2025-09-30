@@ -289,45 +289,7 @@ const BenefitsDetails: React.FC = () => {
 			return false; // Validation failed, error already set in validateApplicationRequirements
 		}
 
-		// If using iframe approach (VITE_USE_IFRAME_APPLICATION_FORM is true)
-		const useIframe = import.meta.env.VITE_USE_IFRAME_APPLICATION_FORM === 'true';
-		
-		if (useIframe) {
-			try {
-				setValidationLoading(true);
-				
-				if (!context) {
-					setError(t('DETAILS_CONTEXT_UNAVAILABLE_ERROR'));
-					setValidationLoading(false);
-					return false;
-				}
-
-				// Apply application to get iframe URL
-				const result = await applyApplication({ id, context });
-				const url = (result as { data: { responses: Array<any> } }).data
-					?.responses?.[0]?.message?.order?.items?.[0]?.xinput?.form?.url;
-
-				if (url) {
-					setWebFormProp({
-						url,
-						formData: validationResult.formData,
-					});
-					setValidationLoading(false);
-					return true;
-				} else {
-					setError(t('DETAILS_URL_NOT_FOUND_ERROR'));
-					setValidationLoading(false);
-					return false;
-				}
-			} catch (error) {
-				console.error('Error during iframe confirmation:', error);
-				setError(t('DETAILS_GENERAL_ERROR'));
-				setValidationLoading(false);
-				return false;
-			}
-		}
-
-		// For direct form approach, validation passed
+		// Always use direct form approach (iframe is disabled)
 		return true;
 	};
 	useEffect(() => {
@@ -801,37 +763,26 @@ const BenefitsDetails: React.FC = () => {
 										onClick={async () => {
 											console.log('Button clicked - checking approach');
 											
-											const useIframe = import.meta.env.VITE_USE_IFRAME_APPLICATION_FORM === 'true';
-											console.log('useIframe:', useIframe);
-											
-											if (useIframe) {
-												// Use iframe approach
-												console.log('Using iframe approach');
-												const validationPassed = await handleConfirmation();
-												console.log('Iframe validation result:', validationPassed);
-												// handleConfirmation will handle iframe URL setting
+											// Always use direct form approach (iframe is disabled)
+											const validationResult = await validateApplicationRequirements();
+                                            
+											if (validationResult.isValid) {
+												console.log('Validation passed, navigating to apply page');
+												// Serialize data to avoid DataCloneError
+												const safeSchemaData = schemaData ? JSON.parse(JSON.stringify(schemaData)) : null;
+												const safeFormData = validationResult.formData ? JSON.parse(JSON.stringify(validationResult.formData)) : null;
+                                                
+												navigate(`/benefits/${bpp_id}/${id}/apply`, {
+													state: {
+														selectApiResponse: safeSchemaData,
+														userData: safeFormData,
+														benefitId: id,
+														bppId: bpp_id,
+														context: context
+													},
+												});
 											} else {
-												// Use direct form approach - validate and navigate
-												console.log('Using direct form approach');
-												const validationResult = await validateApplicationRequirements();
-												console.log('Direct form validation result:', validationResult);
-												
-												if (validationResult.isValid) {
-													console.log('Validation passed, navigating to apply page');
-													// Serialize data to avoid DataCloneError
-													const safeSchemaData = schemaData ? JSON.parse(JSON.stringify(schemaData)) : null;
-													const safeFormData = validationResult.formData ? JSON.parse(JSON.stringify(validationResult.formData)) : null;
-													
-													navigate(`/benefits/${id}/apply`, {
-														state: {
-															selectApiResponse: safeSchemaData,
-															userData: safeFormData,
-															benefitId: id
-														},
-													});
-												} else {
-													console.log('Validation failed, not navigating');
-												}
+												console.log('Validation failed, not navigating');
 											}
 										}}
 										label={getActionLabel(applicationStatus, t)}

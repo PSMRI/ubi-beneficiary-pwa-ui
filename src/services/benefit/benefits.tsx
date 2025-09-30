@@ -3,8 +3,6 @@ import { generateUUID } from '../../utils/jsHelper/helper';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
-const bpp_id = import.meta.env.VITE_BPP_ID;
-const bpp_uri = import.meta.env.VITE_BPP_URL;
 const provider_api_url = import.meta.env.VITE_PROVIDER_API_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
@@ -91,7 +89,7 @@ export const getOne = async ({ id, bpp_id }: GetOneParams) => {
 			order: {
 				items: [
 					{
-						id,
+						id: id,
 					},
 				],
 				provider: {
@@ -174,13 +172,13 @@ export const confirmApplication = async ({
 				},
 			},
 			action: 'confirm',
-			timestamp: new Date().toISOString(),
-			ttl: "PT10M",
-      		version: "1.1.0",
-			bap_id: bap_id,
-			bap_uri: bap_uri,
-			bpp_id: bpp_id,
-			bpp_uri: bpp_uri,
+			timestamp: rawContext.timestamp,
+			ttl: rawContext.ttl,
+			version: rawContext.version,
+			bap_id: rawContext.bap_id,
+			bap_uri: rawContext.bap_uri,
+			bpp_id: rawContext.bpp_id,
+			bpp_uri: rawContext.bpp_uri,
 			message_id: generateUUID(),
 			transaction_id: generateUUID(),
 		},
@@ -328,103 +326,54 @@ export const checkEligibilityOfUser = async (id: string) => {
 	}
 };
 
-export const getSchema = async (id: string) => {
-  const payload = {
-    context: {
-      domain: DOMAIN_FINANCIAL_SUPPORT,
-      action: "select",
-      timestamp: new Date().toISOString(),
-      ttl: "PT10M",
-      version: "1.1.0",
-	  bap_id,
-	  bap_uri,
-	  bpp_id,
-	  bpp_uri,
-      transaction_id: generateUUID(),
-      message_id: generateUUID(),
-      location: {
-        country: {
-          name: "India",
-          code: "IND",
-        },
-        city: {
-          name: "Bangalore",
-          code: "std:080",
-        },
-      },
-    },
-    message: {
-      order: {
-        items: [
-          {
-            id: id,
-          },
-        ],
-        provider: {
-          id: 'BX213573733',
-        },
-      },
-    },
-  };
-  try {
-		const response = await axios.post(`${apiBaseUrl}/select`, payload, {
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		});
-		return response || {};
-	} catch (error) {
-		handleError(error);
-	}
-};
 
-export const submitForm = async (applicationData: any) => {
-console.log('submitForm payload', applicationData);
-const payload = {
-	context: {
-		domain: DOMAIN_FINANCIAL_SUPPORT,
-		action: "init",
-		timestamp: new Date().toISOString(),
-		ttl: "PT10M",
-		version: "1.1.0",
-		bap_id,
-		bap_uri,
-		bpp_id,
-		bpp_uri,
-		transaction_id: generateUUID(),
-		message_id: generateUUID(),
-		location: {
-			country: {
-			name: "India",
-			code: "IND",
-			},
-			city: {
-			name: "Bangalore",
-			code: "std:080",
+export const submitForm = async (applicationData: any, context: any) => {
+	// Remove bppId from applicationData if present
+	const { bppId, ...cleanedApplicationData } = applicationData || {};
+	const payload = {
+		context: {
+			domain: DOMAIN_FINANCIAL_SUPPORT,
+			action: "init",
+			timestamp: new Date().toISOString(),
+			ttl: "PT10M",
+			version: "1.1.0",
+			bap_id: context?.bap_id || bap_id,
+			bap_uri: context?.bap_uri || bap_uri,
+			bpp_id: context?.bpp_id,
+			bpp_uri: context?.bpp_uri,
+			transaction_id: context?.transaction_id || generateUUID(),
+			message_id: context?.message_id || generateUUID(),
+			location: context?.location || {
+				country: {
+					name: "India",
+					code: "IND",
+				},
+				city: {
+					name: "Bangalore",
+					code: "std:080",
+				},
 			},
 		},
-	},
-	message: {
-		order: {
-			items: [
-				{
-					id: applicationData.benefitId,
-				},
-			],
-			provider: {
-				id: 'BX213573733',
+		message: {
+			order: {
+				items: [
+					{
+						id: cleanedApplicationData.benefitId,
+					},
+				],
+				fulfillments: [
+					{
+						customer: { applicationData: cleanedApplicationData }
+					}
+				]
 			},
-			tags: {
-				applicationData
-			}
-      },
-    },
-}
-  try {
-    const response = await axios.post(`${provider_api_url}/benefits/dsep/init2`, payload)
-    console.log('submitForm response', response?.data?.message.order.items[0].applicationId);
-	return response?.data;
-  } catch (error) {
-    console.log(error);
-  }
+		},
+	};
+	try {
+		const response = await axios.post(`${provider_api_url}/benefits/dsep/init`, payload)
+		console.log('submitForm response', response?.data?.message?.order?.items?.[0]?.applicationId);
+		return response?.data;
+	} catch (error) {
+		console.log(error);
+	}
 };

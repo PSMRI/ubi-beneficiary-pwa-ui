@@ -20,10 +20,6 @@ const routes = [
 		component: BenefitsDetails,
 	},
 	{
-		path: '/benefits/:id/apply',
-		component: BenefitFormScreenWrapper,
-	},
-	{
 		path: '/signin',
 		component: SignIn,
 	},

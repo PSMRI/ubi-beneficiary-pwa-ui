@@ -26,7 +26,6 @@
     font-size: 1.2em;
     color: var(--form-text-color);
     background-color: var(--form-bg-color);
-    margin-bottom: var(--form-padding-large);
     padding: var(--form-padding-small);
   }
   

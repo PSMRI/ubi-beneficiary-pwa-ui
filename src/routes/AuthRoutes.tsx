@@ -43,7 +43,7 @@ const routes = [
 		component: BenefitsDetails,
 	},
 	{
-		path: '/benefits/:id/apply',
+		path: '/benefits/:bpp_id/:id/apply',
 		component: BenefitFormScreenWrapper,
 	},
 	{

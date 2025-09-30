@@ -4,7 +4,7 @@ import BenefitFormScreen from "./BenefitFormScreen";
 import Loading from "../../components/common/Loading";
 
 const BenefitFormScreenWrapper: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, bpp_id } = useParams<{ id: string; bpp_id: string }>();
   const location = useLocation();
   const state = location.state || {};
 
@@ -18,6 +18,8 @@ const BenefitFormScreenWrapper: React.FC = () => {
       selectApiResponse={state.selectApiResponse || state.schemaData}
       userData={state.userData}
       benefitId={id}
+      bppId={state.bppId || bpp_id}
+      context={state.context}
     />
   );
 };

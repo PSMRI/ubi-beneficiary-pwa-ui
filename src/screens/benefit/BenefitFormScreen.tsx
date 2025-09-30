@@ -1,4 +1,5 @@
 import { Box, Text, Modal, ModalOverlay, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@chakra-ui/react";
+import Layout from '../../components/common/layout/Layout';
 import { Theme as ChakraTheme } from "@rjsf/chakra-ui";
 import { withTheme } from "@rjsf/core";
 import { SubmitButtonProps, getSubmitButtonOptions } from "@rjsf/utils";
@@ -91,9 +92,11 @@ interface BenefitApplicationFormProps {
   selectApiResponse: any;
   userData: any;
   benefitId: string;
+  bppId: string;
+  context: any;
 }
 
-const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId }) => {
+const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context }) => {
   // State variables for form schema, data, refs, etc.
   const [formSchema, setFormSchema] = useState<any>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -107,7 +110,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
   const [docsArray, setDocsArray] = useState<DocumentMetadata[]>([]);
   const [error, setError] = useState<string>('');
   const [submitDialouge, setSubmitDialouge] = useState<boolean | object>(false);
-  const [context, setContext] = useState<any>(null);
   const [item, setItem] = useState<any>(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -143,7 +145,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     if (!itemData) return;
 
     // Store context and item for later use
-    setContext(contextData);
+    // setContext(contextData);
     setItem(itemData);
 
     const schemaTag = itemData.tags?.find((tag: any) => tag?.descriptor?.code === "applicationForm");
@@ -434,7 +436,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     setDisableSubmit(true);
 
     try {
-  const formDataNew: FormSubmissionData = { benefitId };
+      const formDataNew: FormSubmissionData = { benefitId, bppId };
       const allFieldNames = Object.keys(formData);
       const systemFields = ["benefitId", "docs", "orderId"];
 
@@ -497,9 +499,9 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       }
      
       // Submit the form
-      const response = await submitForm(formDataNew as any);
+      const response = await submitForm(formDataNew as any, context);
       if (response) {
-        // Create confirmation payload - extract applicationId from init2 response structure
+        // Create confirmation payload - extract applicationId from init response structure
         const applicationId = response?.message?.order?.items?.[0]?.applicationId || 
                              response?.data?.message?.order?.items?.[0]?.applicationId ||
                              response?.application?.id || 
@@ -570,124 +572,129 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     return reviewerComment?.trim() ? "25%" : "0";
   };
 
-  // Render the form
+  // Render the form with common header and layout
+  // Get benefit name for header
+  const benefitName = item?.descriptor?.name || t('DETAILS_APPLICATION_FORM_TITLE');
+
   return (
-    <Box p={4} mt={getMarginTop()}>
-      <div>Rajnish</div>
-      {reviewerComment?.trim() && (
-        <>
-          {/* Backdrop to hide background content */}
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            bgColor="rgba(255, 255, 255, 0.6)" // semi-transparent white
-            backdropFilter="blur(10px)" // apply blur to what's behind
-            zIndex={9}
-            height={"18%"}
-            mb={"10%"}
-          />
+    <Layout
+      _heading={{ heading: benefitName }}
+      isMenu={Boolean(localStorage.getItem('authToken'))}
+    >
+      <Box p={4} mt={getMarginTop()}>
+        {reviewerComment?.trim() && (
+          <>
+            {/* Backdrop to hide background content */}
+            <Box
+              position="fixed"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              bgColor="rgba(255, 255, 255, 0.6)" // semi-transparent white
+              backdropFilter="blur(10px)" // apply blur to what's behind
+              zIndex={9}
+              height={"18%"}
+              mb={"10%"}
+            />
 
-          {/* Fixed Reviewer Comment Box */}
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            zIndex={10}
-            bg="orange.50"
-            border="1px"
-            borderColor="orange.300"
-            p={4}
-            borderRadius="md"
-            mx={4}
-            mt={4}
-          >
-            <Text as="p" fontWeight="bold" color="orange.800">
-              Reviewer Comment:
-            </Text>
-            <Text as="p" mt={2} color="orange.700">
-              {reviewerComment}
-            </Text>
-          </Box>
-        </>
-      )}
+            {/* Fixed Reviewer Comment Box */}
+            <Box
+              position="fixed"
+              top={0}
+              left={0}
+              right={0}
+              zIndex={10}
+              bg="orange.50"
+              border="1px"
+              borderColor="orange.300"
+              p={4}
+              borderRadius="md"
+              mx={4}
+              mt={4}
+            >
+              <Text as="p" fontWeight="bold" color="orange.800">
+                Reviewer Comment:
+              </Text>
+              <Text as="p" mt={2} color="orange.700">
+                {reviewerComment}
+              </Text>
+            </Box>
+          </>
+        )}
 
-      <FormAccessibilityProvider
-        formRef={formRef}
-        uiSchema={uiSchema}
-        formSchema={formSchema}
-      >
-        <Form
-          ref={formRef}
-          showErrorList={false}
-          focusOnFirstError
-          noHtml5Validate
-          schema={formSchema as JSONSchema7}
-          validator={validator}
-          formData={formData}
-          onChange={handleChange}
-          onSubmit={handleFormSubmit}
-          templates={{ ButtonTemplates: { SubmitButton } }}
-          extraErrors={extraErrors}
+        <FormAccessibilityProvider
+          formRef={formRef}
           uiSchema={uiSchema}
-        />
-      </FormAccessibilityProvider>
-      <CommonButton
-        label="Submit Form"
-        isDisabled={disableSubmit}
-        onClick={() => {
-          const error: any = {};
-          Object.keys(docSchema?.properties ?? {}).forEach((e: any) => {
-            const field = docSchema?.properties[e];
-            if (field?.enum && field.enum.length === 0) {
-              error[e] = {
-                __errors: [`${e} does not have a document`],
-              };
+          formSchema={formSchema}
+        >
+          <Form
+            ref={formRef}
+            showErrorList={false}
+            focusOnFirstError
+            noHtml5Validate
+            schema={formSchema as JSONSchema7}
+            validator={validator}
+            formData={formData}
+            onChange={handleChange}
+            onSubmit={handleFormSubmit}
+            templates={{ ButtonTemplates: { SubmitButton } }}
+            extraErrors={extraErrors}
+            uiSchema={uiSchema}
+          />
+        </FormAccessibilityProvider>
+        <CommonButton
+          label="Submit Form"
+          isDisabled={disableSubmit}
+          onClick={() => {
+            const error: any = {};
+            Object.keys(docSchema?.properties ?? {}).forEach((e: any) => {
+              const field = docSchema?.properties[e];
+              if (field?.enum && field.enum.length === 0) {
+                error[e] = {
+                  __errors: [`${e} does not have a document`],
+                };
+              }
+            });
+            if (Object.keys(error).length > 0) {
+              setExtraErrors(error);
+            } else if (formRef.current?.validateForm()) {
+              formRef?.current?.submit();
             }
-          });
-          if (Object.keys(error).length > 0) {
-            setExtraErrors(error);
-          } else if (formRef.current?.validateForm()) {
-            formRef?.current?.submit();
-          }
-        }}
-      />
-      
-      {/* Error Modal */}
-      {error && (
-        <Modal isOpen={true} onClose={() => setError('')}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>{t('DETAILS_ERROR_MODAL_TITLE')}</ModalHeader>
-            <ModalBody>
-              <Text>{error}</Text>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                onClick={() => setError('')}
-                label={t('DETAILS_CLOSE_BUTTON')}
-              />
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
-      
-      {/* Submit Success Dialog */}
-      <CommonDialogue
-        isOpen={submitDialouge}
-        onClose={() => {
-          setSubmitDialouge(false);
-          navigate('/explorebenefits');
-        }}
-        handleDialog={() => {
-          setSubmitDialouge(false);
-          navigate('/explorebenefits');
-        }}
-      />
-    </Box>
+          }}
+        />
+        {/* Error Modal */}
+        {error && (
+          <Modal isOpen={true} onClose={() => setError('')}>
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>{t('DETAILS_ERROR_MODAL_TITLE')}</ModalHeader>
+              <ModalBody>
+                <Text>{error}</Text>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  onClick={() => setError('')}
+                  label={t('DETAILS_CLOSE_BUTTON')}
+                />
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+        )}
+        {/* Submit Success Dialog */}
+        <CommonDialogue
+          isOpen={submitDialouge}
+          onClose={() => {
+            setSubmitDialouge(false);
+            navigate('/explorebenefits');
+          }}
+          handleDialog={() => {
+            setSubmitDialouge(false);
+            navigate('/explorebenefits');
+          }}
+        />
+      </Box>
+    </Layout>
   );
 };
 
