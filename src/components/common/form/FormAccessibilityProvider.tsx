@@ -178,7 +178,7 @@ const FormAccessibilityProvider: React.FC<FormAccessibilityProviderProps> = ({
 
     // Create legend
     const legend = document.createElement("legend");
-    legend.textContent = group.label;
+    legend.textContent = group.label ?? groupName ?? "";
     legend.className = "field-group-legend";
 
     fieldset.appendChild(legend);

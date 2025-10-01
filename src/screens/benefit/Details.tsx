@@ -13,12 +13,11 @@ import {
 	ModalFooter,
 } from '@chakra-ui/react';
 import '../../assets/styles/App.css';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import CommonButton from '../../components/common/button/Button';
 import Layout from '../../components/common/layout/Layout';
 import { getUser, sendConsent } from '../../services/auth/auth';
 import {
-	applyApplication,
 	checkEligibilityOfUser,
 	confirmApplication,
 	createApplication,
@@ -160,7 +159,6 @@ const BenefitsDetails: React.FC = () => {
 
 	// Common validation function for both iframe and direct form approaches
 	const validateApplicationRequirements = async (): Promise<{ isValid: boolean; formData?: any }> => {
-		console.log('validateApplicationRequirements called');
 		setValidationLoading(true);
 
 		try {
@@ -281,8 +279,6 @@ const BenefitsDetails: React.FC = () => {
 	};
 
 	const handleConfirmation = async (): Promise<boolean> => {
-		console.log('handleConfirmation called - iframe approach');
-		
 		// Use common validation function
 		const validationResult = await validateApplicationRequirements();
 		if (!validationResult.isValid) {
@@ -761,13 +757,11 @@ const BenefitsDetails: React.FC = () => {
 									<CommonButton
 										mt={6}
 										onClick={async () => {
-											console.log('Button clicked - checking approach');
 											
 											// Always use direct form approach (iframe is disabled)
 											const validationResult = await validateApplicationRequirements();
                                             
 											if (validationResult.isValid) {
-												console.log('Validation passed, navigating to apply page');
 												// Serialize data to avoid DataCloneError
 												const safeSchemaData = schemaData ? JSON.parse(JSON.stringify(schemaData)) : null;
 												const safeFormData = validationResult.formData ? JSON.parse(JSON.stringify(validationResult.formData)) : null;
@@ -781,8 +775,6 @@ const BenefitsDetails: React.FC = () => {
 														context: context
 													},
 												});
-											} else {
-												console.log('Validation failed, not navigating');
 											}
 										}}
 										label={getActionLabel(applicationStatus, t)}
@@ -797,7 +789,6 @@ const BenefitsDetails: React.FC = () => {
 											].includes(
 												(applicationStatus || '').toLowerCase()
 											));
-											console.log('Button isDisabled:', isDisabled, 'applicationStatus:', applicationStatus, 'validationLoading:', validationLoading);
 											return isDisabled;
 										})()}
 									/>

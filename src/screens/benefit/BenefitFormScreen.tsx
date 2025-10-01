@@ -140,12 +140,9 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     if (!selectApiResponse) return;
 
     // Extract context and item from the select API response
-    const contextData = selectApiResponse?.data?.responses?.[0]?.context;
     const itemData = selectApiResponse?.data?.responses?.[0]?.message?.catalog?.providers?.[0]?.items?.[0];
     if (!itemData) return;
 
-    // Store context and item for later use
-    // setContext(contextData);
     setItem(itemData);
 
     const schemaTag = itemData.tags?.find((tag: any) => tag?.descriptor?.code === "applicationForm");
@@ -502,11 +499,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       const response = await submitForm(formDataNew as any, context);
       if (response) {
         // Create confirmation payload - extract applicationId from init response structure
-        const applicationId = response?.message?.order?.items?.[0]?.applicationId || 
-                             response?.data?.message?.order?.items?.[0]?.applicationId ||
-                             response?.application?.id || 
-                             response?.data?.application?.id || 
-                             response?.id;
+        const applicationId = response?.responses?.[0]?.message?.order?.items?.[0]?.applicationId;
         
         if (!applicationId) {
           console.error('Application ID not found in response:', response);
@@ -559,6 +552,8 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       } else {
         setError(t('DETAILS_GENERAL_ERROR'));
       }
+      setDisableSubmit(false);
+    } finally {
       setDisableSubmit(false);
     }
   };

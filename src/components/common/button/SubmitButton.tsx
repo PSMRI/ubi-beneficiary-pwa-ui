@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@chakra-ui/react";
 
 interface CustomButton {
-  onClick?: (event: React.FormEvent<HTMLFormElement>) => void;
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   mt?: number;
   width?: string;
   label?: string;
@@ -23,9 +23,7 @@ const SubmitButton: React.FC<CustomButton> = ({
       type="submit"
       mt={mt}
       width={width}
-      onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
-        onClick?.(event as unknown as React.FormEvent<HTMLFormElement>)
-      }
+      onClick={(event) => onClick?.(event)}
       isDisabled={isDisabled}
     >
       {label}

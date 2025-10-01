@@ -9,8 +9,14 @@ const BenefitFormScreenWrapper: React.FC = () => {
   const state = location.state || {};
 
   // Fallback loading if data is missing
-  if (!state.selectApiResponse && !state.schemaData) return <Loading />;
-  if (!state.userData) return <Loading />;
+  if (!state.selectApiResponse && !state.schemaData) {
+    // Fetch schema or user payload here
+    return <Loading />;
+  }
+  if (!state.userData) {
+    // Fetch user data here
+    return <Loading />;
+  }
 
   // Use either selectApiResponse or schemaData as per your data structure
   return (

@@ -327,12 +327,15 @@ export const checkEligibilityOfUser = async (id: string) => {
 };
 
 
-export const submitForm = async (applicationData: any, context: any) => {
-	// Remove bppId from applicationData if present
-	const { bppId, ...cleanedApplicationData } = applicationData || {};
+export const submitForm = async (
+	applicationData: { benefitId: string; providerId: string; [key: string]: any },
+	context: any
+) => {
+	const { benefitId, providerId, ...rest } = applicationData;
 	const payload = {
 		context: {
-			domain: DOMAIN_FINANCIAL_SUPPORT,
+			// Use the provided context
+			...context,
 			action: "init",
 			timestamp: new Date().toISOString(),
 			ttl: "PT10M",
@@ -358,20 +361,19 @@ export const submitForm = async (applicationData: any, context: any) => {
 			order: {
 				items: [
 					{
-						id: cleanedApplicationData.benefitId,
+						id: benefitId,
 					},
 				],
 				fulfillments: [
 					{
-						customer: { applicationData: cleanedApplicationData }
+						customer: { applicationData: rest }
 					}
 				]
 			},
 		},
 	};
 	try {
-		const response = await axios.post(`${provider_api_url}/benefits/dsep/init`, payload)
-		console.log('submitForm response', response?.data?.message?.order?.items?.[0]?.applicationId);
+		const response = await axios.post(`${provider_api_url}/benefits/dsep/init`, payload);
 		return response?.data;
 	} catch (error) {
 		console.log(error);
