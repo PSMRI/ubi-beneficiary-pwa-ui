@@ -38,7 +38,7 @@ const routes = [
 		component: DocumentScannerRoute,
 	},
 	{
-		path: '/benefits/:id',
+		path: '/benefits/:bpp_id/:id',
 		component: BenefitsDetails,
 	},
 	{
