@@ -52,6 +52,7 @@ interface FormSubmissionData {
   files?: FileUpload[];
   vc_documents?: VCDocument[];
   benefitId: string;
+  providerId?: string;
 }
 interface DocumentMetadata {
   doc_data: string;
@@ -198,9 +199,9 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     applicationFormSchema: any
   ) => {
     // Parse eligibility and document schema arrays
-    const eligSchemaStatic = eligibilityTag.list.map((item: EligibilityItem) =>
+    const eligSchemaStatic = eligibilityTag?.list?.map((item: EligibilityItem) =>
       JSON.parse(item.value)
-    );
+    ) ?? []
     const docSchemaStatic =
       documentTag?.list
         ?.filter(
@@ -433,7 +434,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     setDisableSubmit(true);
 
     try {
-      const formDataNew: FormSubmissionData = { benefitId, bppId };
+      const formDataNew: FormSubmissionData = { benefitId, providerId: bppId };
       const allFieldNames = Object.keys(formData);
       const systemFields = ["benefitId", "docs", "orderId"];
 
@@ -516,25 +517,20 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         // Call confirmApplication
         const result = await confirmApplication(confirmPayload);
 
-        console.log('confirmApplication result:', result);
         const orderId = (result as any)?.message?.order?.id || 
                        (result as any)?.data?.message?.order?.id;
-
-        console.log('orderId:', orderId);
 
         if (orderId) {
           const payloadCreateApp = {
             user_id: userData?.user_id,
             benefit_id: benefitId,
             benefit_provider_id: context?.bpp_id,
-            benefit_provider_uri: context?.bap_uri,
+            benefit_provider_uri: context?.bpp_uri,
             external_application_id: orderId,
             application_name: item?.descriptor?.name,
             status: 'application pending',
             application_data: formDataNew,
           };
-
-          console.log('createApplication payload', payloadCreateApp);
 
           await createApplication(payloadCreateApp);
           setSubmitDialouge({ orderId, name: item?.descriptor?.name });
@@ -681,11 +677,11 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
           isOpen={submitDialouge}
           onClose={() => {
             setSubmitDialouge(false);
-            navigate('/explorebenefits');
+            navigate('/applicationstatus');
           }}
           handleDialog={() => {
             setSubmitDialouge(false);
-            navigate('/explorebenefits');
+            navigate('/applicationstatus');
           }}
         />
       </Box>
@@ -697,9 +693,14 @@ export default BenefitApplicationForm;
 
 function encodeToBase64(str: string) {
   try {
-    return `base64,${btoa(encodeURIComponent(str))}`;
+      const utf8 = new TextEncoder().encode(str);
+      let binary = "";
+      utf8.forEach((byte) => {
+      binary = String.fromCharCode(byte);
+      });
+      return `base64,${btoa(binary)}`;
   } catch (error) {
-    console.error("Failed to encode string to base64:", error);
-    throw new Error("Failed to encode string to base64");
+      console.error("Failed to encode string to base64:", error);
+      throw new Error("Failed to encode string to base64");
   }
 }

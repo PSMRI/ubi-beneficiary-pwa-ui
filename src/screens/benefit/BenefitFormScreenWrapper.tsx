@@ -1,20 +1,23 @@
 import React from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 import BenefitFormScreen from "./BenefitFormScreen";
 import Loading from "../../components/common/Loading";
 
 const BenefitFormScreenWrapper: React.FC = () => {
   const { id, bpp_id } = useParams<{ id: string; bpp_id: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const state = location.state || {};
 
   // Fallback loading if data is missing
   if (!state.selectApiResponse && !state.schemaData) {
-    // Fetch schema or user payload here
+    // Redirect to benefits list for cold loads
+    navigate("/explorebenefits");
     return <Loading />;
   }
   if (!state.userData) {
-    // Fetch user data here
+    // Redirect to benefits list for cold loads
+    navigate("/explorebenefits");
     return <Loading />;
   }
 
