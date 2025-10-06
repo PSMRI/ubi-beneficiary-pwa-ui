@@ -179,7 +179,7 @@ export const confirmApplication = async ({
 			bpp_id: rawContext.bpp_id,
 			bpp_uri: rawContext.bpp_uri,
 			message_id: generateUUID(),
-			transaction_id: generateUUID(),
+			transaction_id: rawContext.transaction_id,
 		},
 		message: {
 			order: {
