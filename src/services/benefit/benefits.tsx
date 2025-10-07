@@ -3,7 +3,6 @@ import { generateUUID } from '../../utils/jsHelper/helper';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
-const provider_api_url = import.meta.env.VITE_PROVIDER_API_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
 	throw error.response ? error.response.data : new Error('Network Error');
@@ -399,13 +398,13 @@ export const submitForm = async (
 		},
 	};
 	try {
-		if (!provider_api_url) {
-			throw new Error('VITE_PROVIDER_API_URL is not configured');
-		}
-		const response = await axios.post(
-			`${provider_api_url}/benefits/dsep/init`,
-			payload
-		);
+		const token = localStorage.getItem('authToken');
+		const response = await axios.post(`${apiBaseUrl}/init`, payload, {
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		});
 		return response?.data;
 	} catch (error) {
 		handleError(error as AxiosError);

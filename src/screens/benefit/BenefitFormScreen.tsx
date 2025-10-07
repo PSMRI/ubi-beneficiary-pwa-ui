@@ -503,7 +503,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         const applicationId = response?.responses?.[0]?.message?.order?.items?.[0]?.applicationId;
         
         if (!applicationId) {
-          console.error('Application ID not found in response:', response);
+          console.error('Application ID not found in response. Status:', response?.status || 'unknown');
           setError('Application ID not found in response');
           setDisableSubmit(false);
           return;

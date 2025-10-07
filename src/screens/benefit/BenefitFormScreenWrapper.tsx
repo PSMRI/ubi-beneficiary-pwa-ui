@@ -14,6 +14,10 @@ const BenefitFormScreenWrapper: React.FC = () => {
   const [data, setData] = useState(state);
 
   useEffect(() => {
+    // Guard: redirect if required params are missing
+    if (!id || !bpp_id) {
+      navigate("/explorebenefits");
+      return;}
     const fetchData = async () => {
       if (!data.selectApiResponse && !data.schemaData && id) {
         try {
@@ -24,7 +28,7 @@ const BenefitFormScreenWrapper: React.FC = () => {
           setData({
             selectApiResponse: selectResponse,
             userData: userResponse,
-            context: state.context || { bpp_id, bpp_uri: import.meta.env.VITE_BAP_URL }
+            context: state.context || { bpp_id, bpp_uri: import.meta.env.VITE_BPP_URL }
           });
         } catch (error) {
           console.error('Error fetching data:', error);
@@ -34,7 +38,7 @@ const BenefitFormScreenWrapper: React.FC = () => {
     };
 
     fetchData();
-  }, [id, bpp_id, navigate]);
+  }, [id, bpp_id, navigate, data.selectApiResponse, data.schemaData, state.context]);
 
   if (!data.selectApiResponse && !data.schemaData) return <Loading />;
   if (!data.userData) return <Loading />;
