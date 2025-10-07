@@ -59,6 +59,7 @@ const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
 				(decodedText: string) => {
 					if (!hasScanned.current) {
 						hasScanned.current = true;
+						//NOSONAR_BEGIN
 						/* toast({
 							title: 'Scan Success',
 							description: decodedText,
@@ -66,7 +67,7 @@ const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
 							duration: 2000,
 							isClosable: true,
 						});
- 						*/	// NOSONAR
+ 						*/	//NOSONAR_END
 						if (onScanResult) onScanResult(decodedText.trim());
 						stopCamera();
 					}
