@@ -542,8 +542,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         setDisableSubmit(false);
       }
     } catch (error) {
-      console.error("Form submission error:", error);
-      if (error instanceof Error) {
+      console.error("Form submission error:", error instanceof Error ? error.message : 'Unknown error');      if (error instanceof Error) {
         setError(`${t('DETAILS_ERROR_MODAL_TITLE')}: ${error.message}`);
       } else {
         setError(t('DETAILS_GENERAL_ERROR'));
@@ -696,7 +695,7 @@ function encodeToBase64(str: string) {
       const utf8 = new TextEncoder().encode(str);
       let binary = "";
       utf8.forEach((byte) => {
-      binary = String.fromCharCode(byte);
+      binary += String.fromCharCode(byte);
       });
       return `base64,${btoa(binary)}`;
   } catch (error) {

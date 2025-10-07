@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import BenefitFormScreen from "./BenefitFormScreen";
 import Loading from "../../components/common/Loading";
+import { getUser } from "../../services/auth/auth";
+import { getOne } from "../../services/benefit/benefits";
 
 const BenefitFormScreenWrapper: React.FC = () => {
   const { id, bpp_id } = useParams<{ id: string; bpp_id: string }>();
@@ -9,26 +11,41 @@ const BenefitFormScreenWrapper: React.FC = () => {
   const navigate = useNavigate();
   const state = location.state || {};
 
-  // Fallback loading if data is missing
-  if (!state.selectApiResponse && !state.schemaData) {
-    // Redirect to benefits list for cold loads
-    navigate("/explorebenefits");
-    return <Loading />;
-  }
-  if (!state.userData) {
-    // Redirect to benefits list for cold loads
-    navigate("/explorebenefits");
-    return <Loading />;
-  }
+  const [data, setData] = useState(state);
 
-  // Use either selectApiResponse or schemaData as per your data structure
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!data.selectApiResponse && !data.schemaData && id) {
+        try {
+          const [selectResponse, userResponse] = await Promise.all([
+            getOne({ id, bpp_id }),
+            getUser()
+          ]);
+          setData({
+            selectApiResponse: selectResponse,
+            userData: userResponse,
+            context: state.context || { bpp_id, bpp_uri: import.meta.env.VITE_BAP_URL }
+          });
+        } catch (error) {
+          console.error('Error fetching data:', error);
+          navigate("/explorebenefits");
+        }
+      }
+    };
+
+    fetchData();
+  }, [id, bpp_id, navigate]);
+
+  if (!data.selectApiResponse && !data.schemaData) return <Loading />;
+  if (!data.userData) return <Loading />;
+
   return (
     <BenefitFormScreen
-      selectApiResponse={state.selectApiResponse || state.schemaData}
-      userData={state.userData}
+      selectApiResponse={data.selectApiResponse || data.schemaData}
+      userData={data.userData}
       benefitId={id}
       bppId={state.bppId || bpp_id}
-      context={state.context}
+      context={data.context}
     />
   );
 };
