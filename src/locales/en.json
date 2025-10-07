@@ -91,6 +91,7 @@
   "DIALOGUE_DOCUMENT_IMAGE_PREVIEW_TITLE": "Document Image Preview",
   "DIALOGUE_PREVIEW_DOCUMENT_TITLE": "Preview Document",
   "DIALOGUE_T&C": "Terms and Conditions",
+  "DIALOGUE_USER_INFO_COLLECTION": "I acknowledge that personal information may be collected as required for applying to the benefits. I understand that this information will be used solely for the purpose of benefit application, evaluation, and administration in accordance with applicable data protection laws. The following information may be collected:",
   "DOCUMENT_ACTIONS_DELETE_ARIA": "Delete",
   "DOCUMENT_ACTIONS_DELETE_ERROR": "Error deleting document",
   "DOCUMENT_ACTIONS_DELETE_SUCCESS": "Document deleted successfully",

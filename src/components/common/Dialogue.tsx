@@ -16,8 +16,9 @@ import {
 	Code,
 } from '@chakra-ui/react';
 import CommonButton from './button/Button';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getUserFields } from '../../services/user/User';
 
 interface Term {
 	title?: string;
@@ -49,9 +50,27 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 	docImageList,
 }) => {
 	const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+	const [userFields, setUserFields] = useState([]);
+	
 	const handleAccordionChange = (expandedIndex) => {
 		setIsAccordionOpen(expandedIndex.length > 0);
 	};
+
+	// Fetch user fields when component mounts
+	useEffect(() => {
+		const fetchUserFields = async () => {
+			if (termsAndConditions && termsAndConditions.length > 0) {
+				try {
+					const fields = await getUserFields();
+					setUserFields(fields);
+				} catch (error) {
+					console.error('Failed to fetch user fields:', error);
+				}
+			}
+		};
+
+		fetchUserFields();
+	}, [termsAndConditions]);
 
 	const { t } = useTranslation();
 	if (previewDocument) {
@@ -243,6 +262,31 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 														{item.description}
 													</Text>
 												)
+											)}
+											
+											{/* New terms and conditions item for user information collection */}
+											{userFields.length > 0 && (
+												<>
+													<Text
+														color={'#4D4639'}
+														size="16px"
+														mt={3}
+													>
+														{termsAndConditions?.length + 1}. {t('DIALOGUE_USER_INFO_COLLECTION')}
+													</Text>
+													<Box ml={4} mt={2}>
+														{userFields.map((field, index) => (
+															<Text
+																color={'#4D4639'}
+																size="14px"
+																key={`field-${field.name}`}
+																mb={1}
+															>
+																• {field.label}
+															</Text>
+														))}
+													</Box>
+												</>
 											)}
 										</div>
 									</AccordionPanel>
