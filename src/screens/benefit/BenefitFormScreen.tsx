@@ -499,7 +499,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         if (!applicationId) {
           console.error('Application ID not found in response. Status:', response?.status || 'unknown');
           setError('Application ID not found in response');
-          setDisableSubmit(false);
           return;
         }
         
@@ -530,10 +529,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
           setSubmitDialouge({ orderId, name: item?.descriptor?.name });
         } else {
           setError(t('DETAILS_APPLICATION_CREATE_ERROR'));
-          setDisableSubmit(false);
         }
-      } else {
-        setDisableSubmit(false);
       }
     } catch (error) {
       console.error("Form submission error:", error instanceof Error ? error.message : 'Unknown error');
@@ -542,7 +538,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       } else {
         setError(t('DETAILS_GENERAL_ERROR'));
       }
-      setDisableSubmit(false);
     } finally {
       setDisableSubmit(false);
     }
