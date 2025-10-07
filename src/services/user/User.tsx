@@ -79,3 +79,33 @@ export const deleteDocument = async (id) => {
 		throw error;
 	}
 };
+
+/**
+ * Fetches fields from the API based on context and filter criteria.
+ * @param {string} context - The context type for filtering fields (e.g., 'USERS').
+ * @param {string} filterDataFields - Comma-separated list of fields to include in response (e.g., 'name,label').
+ * @returns {Promise<Array>} - Promise representing the API response with filtered fields.
+ */
+export const getUserFields = async (context = 'USERS', filterDataFields = 'name,label') => {
+	const token = localStorage.getItem('authToken');
+
+	try {
+		const response = await axios.get(
+			`${apiBaseUrl}/fields?context=${context}&filterDataFields=${filterDataFields}`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			}
+		);
+
+		return response.data;
+	} catch (error) {
+		console.error(
+			'Error fetching user fields:',
+			error.response?.data || error.message
+		);
+		throw error;
+	}
+};
