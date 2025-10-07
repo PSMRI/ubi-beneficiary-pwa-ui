@@ -542,7 +542,8 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         setDisableSubmit(false);
       }
     } catch (error) {
-      console.error("Form submission error:", error instanceof Error ? error.message : 'Unknown error');      if (error instanceof Error) {
+      console.error("Form submission error:", error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error) {
         setError(`${t('DETAILS_ERROR_MODAL_TITLE')}: ${error.message}`);
       } else {
         setError(t('DETAILS_GENERAL_ERROR'));
