@@ -42,13 +42,7 @@ interface FileUpload {
 
 // Interface for form submission data structure
 interface FormSubmissionData {
-  [key: string]:
-    | string
-    | number
-    | boolean
-    | FileUpload[]
-    | VCDocument[]
-    | undefined;
+  [key: string]: unknown;
   files?: FileUpload[];
   vc_documents?: VCDocument[];
   benefitId: string;
@@ -497,7 +491,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       }
      
       // Submit the form
-      const response = await submitForm(formDataNew as any, context);
+      const response = await submitForm(formDataNew, context);
       if (response) {
         // Create confirmation payload - extract applicationId from init response structure
         const applicationId = response?.responses?.[0]?.message?.order?.items?.[0]?.applicationId;
