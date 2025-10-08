@@ -12,38 +12,35 @@ import {
 	Stack,
 	Alert,
 	AlertIcon,
-	Image,
+	Icon,
 	useToast,
 } from '@chakra-ui/react';
 import { HamburgerIcon } from '@chakra-ui/icons';
-import CustomSelect from '../input/Select'; 
+import CustomSelect from '../input/Select';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-
+import { FiUser, FiLogOut } from 'react-icons/fi';
 import { logoutUser } from '../../../services/auth/auth';
- import { changeLanguage } from 'i18next'; 
- import { useAuth } from '../../../utils/context/checkToken';
-
-
+import { changeLanguage } from 'i18next';
+import { useAuth } from '../../../utils/context/checkToken';
 
 const options = [
 	{ label: 'EN', value: 'en' },
 	{ label: 'HI', value: 'hi' },
 	{ label: 'MR', value: 'mr' },
-]; 
+];
 const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 	const [success] = useState<string>('');
 	const navigate = useNavigate();
 	const { t } = useTranslation();
 
 	const toast = useToast();
-	 
-	 const { language, selectLanguage } = useAuth(); 
-	 const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
+	const { language, selectLanguage } = useAuth();
+	const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
 		const { value } = e.target;
 		selectLanguage(e.target.value);
 		changeLanguage(value);
-	}; 
+	};
 	const handleLogout = async () => {
 		try {
 			const response = await logoutUser();
@@ -89,7 +86,7 @@ const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 										navigate('/userprofile');
 									}}
 								>
-									<Image src="../assets/images/profile.png" />
+									<Icon as={FiUser} boxSize={5} />
 									<Text ml={4}>{t('NAVBAR_PROFILE')}</Text>
 								</MenuItem>
 								<MenuItem
@@ -97,11 +94,7 @@ const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 									onClick={handleLogout}
 									p={4}
 								>
-									<Image
-										ml={1}
-										src="../assets/images/logout.png"
-									/>
-
+									<Icon as={FiLogOut} boxSize={5} />
 									<Text ml={4}>{t('NAVBAR_LOGOUT')}</Text>
 								</MenuItem>
 							</MenuList>
@@ -118,11 +111,11 @@ const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 					)}
 				</Box>
 
-				 <CustomSelect
+				<CustomSelect
 					options={options}
 					value={language.name}
 					onChange={handleChange}
-				/> 
+				/>
 			</Flex>
 		</Stack>
 	);
