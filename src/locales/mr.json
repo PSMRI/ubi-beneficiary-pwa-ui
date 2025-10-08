@@ -340,6 +340,7 @@
     "WALLET_INTERFACE": "माझे वॉलेट",
     "WEBVIEW_COMPLETE_APPLICATION_TITLE": "अर्ज पूर्ण करा",
     "WEBVIEW_FORM_UI_TITLE": "फॉर्म UI",
-    "DETAILS_APPLICATION_FORM_TITLE": "अर्ज फॉर्म"
+    "DETAILS_APPLICATION_FORM_TITLE": "अर्ज फॉर्म",
+    "DETAILS_APPLICATION_ID_NOT_FOUND": "अर्ज आयडी आढळला नाही. कृपया नंतर पुन्हा प्रयत्न करा."
   }
   
