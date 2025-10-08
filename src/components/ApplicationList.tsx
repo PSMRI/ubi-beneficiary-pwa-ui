@@ -19,7 +19,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface Application {
-	benefit_provider_id: string ;
+	benefit_provider_id: string;
 	benefit_id: string;
 	application_name: string;
 	internal_application_id: string;
@@ -188,6 +188,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 											<Text
 												fontSize="14px"
 												color={COLORS.text}
+												mb={2}
 											>
 												{app.application_name}
 											</Text>
