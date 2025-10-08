@@ -78,7 +78,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 	const dateStr = item?.item?.time?.range?.end;
 	const formattedDate = dateStr ? formatDateString(dateStr) : '';
 	const bpp_id = encodeURIComponent(item?.bpp_id);
-	
+
 	return (
 		<Card
 			maxW="2xl"
@@ -90,7 +90,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 				<Box className="badge-box" width={'auto'}>
 					{formattedDate}
 				</Box>
-				<Heading size="md" mt={2}>
+				<Heading size="md" mt={4}>
 					{item?.title}
 				</Heading>
 				<Text mt={2} fontSize="sm" color="black">

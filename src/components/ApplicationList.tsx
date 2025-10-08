@@ -187,6 +187,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 											<Text
 												fontSize="14px"
 												color={COLORS.text}
+												mb={2}
 											>
 												{app.application_name}
 											</Text>
@@ -212,7 +213,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 													color="white"
 													bottom="12px"
 													right="16px"
-													mt={hasRemark ? 2 : 0}
+													mt={hasRemark ? 2 : 2}
 													_hover={{ bg: '#3c5fdd' }}
 													onClick={(e) => {
 														e.preventDefault();
