@@ -509,9 +509,13 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
 
         // Call confirmApplication
         const result = await confirmApplication(confirmPayload);
-
-        const orderId = (result as any)?.message?.order?.id || 
-                       (result as any)?.data?.message?.order?.id;
+        const orderId = (
+          result as {
+            data: {
+              responses: { message: { order: { id: string } } }[];
+            };
+          }
+        )?.data?.responses?.[0]?.message?.order?.id;
 
         if (orderId) {
           const payloadCreateApp = {
