@@ -89,6 +89,7 @@ export const getOne = async ({ id, bpp_id }: GetOneParams) => {
 				items: [
 					{
 						id: id,
+						id: id,
 					},
 				],
 				provider: {

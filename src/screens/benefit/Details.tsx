@@ -14,6 +14,7 @@ import {
 } from '@chakra-ui/react';
 import '../../assets/styles/App.css';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import CommonButton from '../../components/common/button/Button';
 import Layout from '../../components/common/layout/Layout';
 import { getUser, sendConsent } from '../../services/auth/auth';
