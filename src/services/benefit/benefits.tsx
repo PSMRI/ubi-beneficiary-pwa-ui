@@ -88,8 +88,7 @@ export const getOne = async ({ id, bpp_id }: GetOneParams) => {
 			order: {
 				items: [
 					{
-						id: id,
-						id: id,
+						id: id
 					},
 				],
 				provider: {

@@ -341,13 +341,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     // Remove duplicates from uiOrder
     const uniqueUiOrder = Array.from(new Set(uiOrder));
 
-    if (uiOrder.length !== uniqueUiOrder.length) {
-      console.warn(
-        "Removed duplicate fields from uiOrder:",
-        uiOrder.filter((field, index) => uiOrder.indexOf(field) !== index)
-      );
-    }
-
     // Build the uiSchema with proper fieldset configuration
     const uiSchema: any = {
       "ui:order": uniqueUiOrder,
@@ -526,7 +519,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         
         if (!applicationId) {
           console.error('Application ID not found in response. Status:', response?.status || 'unknown');
-          setError('Application ID not found in response');
+          setError(t('DETAILS_APPLICATION_ID_NOT_FOUND'));
           return;
         }
         
