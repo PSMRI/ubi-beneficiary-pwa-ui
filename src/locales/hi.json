@@ -339,5 +339,7 @@
   "USER_PROFILE_UPLOAD_MISSING_DOCUMENTS": "लापता दस्तावेज़ अपलोड करें",
   "WALLET_INTERFACE": "मेरा वॉलेट",
   "WEBVIEW_COMPLETE_APPLICATION_TITLE": "आवेदन पूरा करें",
-  "WEBVIEW_FORM_UI_TITLE": "फॉर्म UI"
+  "WEBVIEW_FORM_UI_TITLE": "फॉर्म UI",
+  "DETAILS_APPLICATION_FORM_TITLE": "आवेदन फॉर्म",
+  "DETAILS_APPLICATION_ID_NOT_FOUND": "आवेदन आईडी नहीं मिली। कृपया बाद में पुनः प्रयास करें।"
 }

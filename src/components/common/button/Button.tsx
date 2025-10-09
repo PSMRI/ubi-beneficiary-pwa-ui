@@ -3,7 +3,7 @@ import { Button, Text, Spinner, Flex } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 
 interface CustomButton {
-	onClick?: (event: React.FormEvent<HTMLFormElement>) => void;
+	onClick?: (event?: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>) => void | Promise<void>;
 	mt?: number;
 	width?: string;
 	label?: string;
@@ -38,9 +38,7 @@ const CommonButton: React.FC<CustomButton> = ({
 				mt={mt}
 				width={width}
 				onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
-					onClick?.(
-						event as unknown as React.FormEvent<HTMLFormElement>
-					)
+					onClick?.(event)
 				}
 				isDisabled={isDisabled || loading} // Disable button when loading
 				sx={{

@@ -88,7 +88,7 @@ export const getOne = async ({ id, bpp_id }: GetOneParams) => {
 			order: {
 				items: [
 					{
-						id,
+						id: id,
 					},
 				],
 				provider: {
@@ -322,5 +322,92 @@ export const checkEligibilityOfUser = async (id: string) => {
 		return response.data;
 	} catch (error: unknown) {
 		handleError(error as AxiosError);
+	}
+};
+
+
+type SubmitContext = {
+	bap_id?: string;
+	bap_uri?: string;
+	bpp_id?: string;
+	bpp_uri?: string;
+	transaction_id?: string;
+	message_id?: string;
+	location?: unknown;
+	[key: string]: unknown;
+};
+
+type SubmitFormData = {
+	benefitId: string;
+	providerId?: string;
+	[key: string]: unknown;
+};
+
+export const submitForm = async (
+	applicationData: SubmitFormData,
+	context: SubmitContext
+) => {
+	const { benefitId, providerId, ...rest } = applicationData as {
+		benefitId: string;
+		providerId?: string;
+		[key: string]: unknown;
+	};
+	const resolvedProviderId = providerId ?? context?.bpp_id;
+	if (!resolvedProviderId) {
+		throw new Error('Missing providerId (pass applicationData.providerId or context.bpp_id)');
+	}
+	const payload = {
+		context: {
+			// Use the provided context
+			...context,
+			action: 'init',
+			timestamp: new Date().toISOString(),
+			ttl: 'PT10M',
+			version: '1.1.0',
+			bap_id: context?.bap_id || bap_id,
+			bap_uri: context?.bap_uri || bap_uri,
+			bpp_id: context?.bpp_id,
+			bpp_uri: context?.bpp_uri,
+			transaction_id: context?.transaction_id || generateUUID(),
+			message_id: context?.message_id || generateUUID(),
+			location: context?.location || {
+				country: {
+					name: 'India',
+					code: 'IND',
+				},
+				city: {
+					name: 'Bangalore',
+					code: 'std:080',
+				},
+			},
+		},
+		message: {
+			order: {
+				provider: { id: resolvedProviderId },
+				items: [
+					{
+						id: benefitId,
+					},
+				],
+				fulfillments: [
+					{
+						customer: { applicationData: rest },
+					}
+				]
+			},
+		},
+	};
+	try {
+		const token = localStorage.getItem('authToken');
+		const response = await axios.post(`${apiBaseUrl}/init`, payload, {
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${token}`,
+			},
+		});
+		return response?.data;
+	} catch (error) {
+		handleError(error as AxiosError);
+		throw error; // Re-throw to maintain error handling in calling code
 	}
 };
