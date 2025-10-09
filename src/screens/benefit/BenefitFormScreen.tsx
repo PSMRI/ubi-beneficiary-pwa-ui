@@ -86,12 +86,21 @@ interface EligibilityItem {
 interface BenefitApplicationFormProps {
   selectApiResponse: any;
   userData: any;
-  benefitId: string;
-  bppId: string;
+  benefitId: string | undefined;
+  bppId: string | undefined;
   context: any;
+  isResubmit?: boolean;
+  applicationId?: string;
 }
 
-const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context }) => {
+const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context, isResubmit = false, applicationId }) => {
+  console.log('BenefitApplicationForm props:', {
+    isResubmit,
+    applicationId,
+    benefitId,
+    bppId
+  });
+  
   // State variables for form schema, data, refs, etc.
   const [formSchema, setFormSchema] = useState<any>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -490,10 +499,29 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         formDataNew.orderId = formData.orderId;
       }
      
+      // Set resubmit flag and applicationId in form data
+      if (isResubmit) {
+        formDataNew.isResubmission = true;
+        if (applicationId) {
+          formDataNew.applicationId = applicationId;
+        }
+        console.log('Setting resubmit data:', {
+          isResubmission: true,
+          applicationId,
+          formDataNew
+        });
+      }
+
+      console.log('About to call submitForm with:', {
+        isResubmit,
+        formDataKeys: Object.keys(formDataNew),
+        hasApplicationId: !!formDataNew.applicationId
+      });
+
       // Submit the form
       const response = await submitForm(formDataNew, context);
       if (response) {
-        // Create confirmation payload - extract applicationId from init response structure
+        // Create confirmation payload - extract applicationId from init and update response structure
         const applicationId = response?.responses?.[0]?.message?.order?.items?.[0]?.applicationId;
         
         if (!applicationId) {
@@ -518,19 +546,33 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         )?.data?.responses?.[0]?.message?.order?.id;
 
         if (orderId) {
-          const payloadCreateApp = {
-            user_id: userData?.user_id,
-            benefit_id: benefitId,
-            benefit_provider_id: context?.bpp_id,
-            benefit_provider_uri: context?.bpp_uri,
-            external_application_id: orderId,
-            application_name: item?.descriptor?.name,
-            status: 'application pending',
-            application_data: formDataNew,
-          };
+          if (isResubmit) {
+            // For resubmissions, log the update
+            console.log('Application resubmitted successfully', {
+              orderId,
+              isResubmit: true
+            });
+          } else {
+            // For new applications, create the application record
+            const payloadCreateApp = {
+              user_id: userData?.user_id,
+              benefit_id: benefitId,
+              benefit_provider_id: context?.bpp_id,
+              benefit_provider_uri: context?.bpp_uri,
+              external_application_id: orderId,
+              application_name: item?.descriptor?.name,
+              status: 'application pending',
+              application_data: formDataNew,
+            };
 
-          await createApplication(payloadCreateApp);
-          setSubmitDialouge({ orderId, name: item?.descriptor?.name });
+            await createApplication(payloadCreateApp);
+          }
+          
+          setSubmitDialouge({ 
+            orderId, 
+            name: item?.descriptor?.name,
+            isResubmit 
+          });
         } else {
           setError(t('DETAILS_APPLICATION_CREATE_ERROR'));
         }

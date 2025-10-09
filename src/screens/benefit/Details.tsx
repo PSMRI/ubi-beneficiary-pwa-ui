@@ -121,6 +121,7 @@ export interface DocumentItem {
 	label?: string;
 }
 interface ApplicationData {
+	id?: string;
 	status: string;
 	application_data?: Record<string, any>;
 	external_application_id?: string;
@@ -762,6 +763,12 @@ const BenefitsDetails: React.FC = () => {
 											const validationResult = await validateApplicationRequirements();
                                             
 											if (validationResult.isValid) {
+												const isResubmit = [
+													'application resubmit',
+													'application pending',
+													'submitted',
+												].includes(applicationStatus?.toLowerCase() || '');
+
 												// Serialize data to avoid DataCloneError
 												const safeSchemaData = schemaData ? JSON.parse(JSON.stringify(schemaData)) : null;
 												const safeFormData = validationResult.formData ? JSON.parse(JSON.stringify(validationResult.formData)) : null;
@@ -772,7 +779,10 @@ const BenefitsDetails: React.FC = () => {
 														userData: safeFormData,
 														benefitId: id,
 														bppId: bpp_id,
-														context: context
+														context: context,
+														isResubmit,
+														applicationStatus,
+														applicationId: isResubmit ? applicationData?.id : undefined
 													},
 												});
 											}

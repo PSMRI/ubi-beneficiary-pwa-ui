@@ -340,27 +340,60 @@ type SubmitContext = {
 type SubmitFormData = {
 	benefitId: string;
 	providerId?: string;
+	isResubmission?: boolean;
+	applicationId?: string;
 	[key: string]: unknown;
+};
+
+type OrderItem = {
+	id: string;
+	applicationId?: string;
 };
 
 export const submitForm = async (
 	applicationData: SubmitFormData,
 	context: SubmitContext
 ) => {
-	const { benefitId, providerId, ...rest } = applicationData as {
+	const { benefitId, providerId, isResubmission, applicationId, ...rest } = applicationData as {
 		benefitId: string;
 		providerId?: string;
+		isResubmission?: boolean;
+		applicationId?: string;
 		[key: string]: unknown;
 	};
+	
+	console.log('submitForm called with:', {
+		isResubmission,
+		applicationId,
+		benefitId,
+		providerId
+	});
+	
 	const resolvedProviderId = providerId ?? context?.bpp_id;
 	if (!resolvedProviderId) {
 		throw new Error('Missing providerId (pass applicationData.providerId or context.bpp_id)');
 	}
+
+
+	// Use update API for resubmission, init API for new
+
+	let action = 'init';
+	let endpoint = 'init';
+	let items: any[] = [{ id: benefitId }];
+
+	// If resubmission, use update API but do NOT add external_application_id to items
+	if (isResubmission) {
+		action = 'update';
+		endpoint = 'update';
+		// items remains [{ id: benefitId }]
+	}
+
+	console.log(`Using ${action} API (${endpoint} endpoint)`);
+
 	const payload = {
 		context: {
-			// Use the provided context
 			...context,
-			action: 'init',
+			action,
 			timestamp: new Date().toISOString(),
 			ttl: 'PT10M',
 			version: '1.1.0',
@@ -384,11 +417,7 @@ export const submitForm = async (
 		message: {
 			order: {
 				provider: { id: resolvedProviderId },
-				items: [
-					{
-						id: benefitId,
-					},
-				],
+				items,
 				fulfillments: [
 					{
 						customer: { applicationData: rest },
@@ -397,9 +426,12 @@ export const submitForm = async (
 			},
 		},
 	};
+
+	console.log('Payload for API call:', JSON.stringify(payload, null, 2));
+
 	try {
 		const token = localStorage.getItem('authToken');
-		const response = await axios.post(`${apiBaseUrl}/init`, payload, {
+		const response = await axios.post(`${apiBaseUrl}/${endpoint}`, payload, {
 			headers: {
 				'Content-Type': 'application/json',
 				Authorization: `Bearer ${token}`,
@@ -407,7 +439,8 @@ export const submitForm = async (
 		});
 		return response?.data;
 	} catch (error) {
+		console.error(`Error in ${action}:`, error);
 		handleError(error as AxiosError);
-		throw error; // Re-throw to maintain error handling in calling code
+		throw error;
 	}
 };
