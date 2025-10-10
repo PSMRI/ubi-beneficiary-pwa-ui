@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/common/button/SubmitButton';
 import Button from '../../components/common/button/Button';
 import Loading from '../../components/common/Loading';
+import Loader from '../../components/common/Loader';
 import FormAccessibilityProvider from '../../components/common/form/FormAccessibilityProvider';
 import CommonDialogue from '../../components/common/Dialogue';
 import {
@@ -99,9 +100,11 @@ interface EligibilityItem {
 interface BenefitApplicationFormProps {
 	selectApiResponse: any;
 	userData: any;
-	benefitId: string;
-	bppId: string;
+	benefitId: string | undefined;
+	bppId: string | undefined;
 	context: any;
+	isResubmit?: boolean;
+	applicationId?: string;
 }
 
 const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
@@ -110,6 +113,8 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	benefitId,
 	bppId,
 	context,
+	isResubmit = false,
+	applicationId,
 }) => {
 	// State variables for form schema, data, refs, etc.
 	const [formSchema, setFormSchema] = useState<any>(null);
@@ -118,6 +123,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	const [docSchema, setDocSchema] = useState<any>(null);
 	const [extraErrors, setExtraErrors] = useState<any>(null);
 	const [disableSubmit, setDisableSubmit] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [uiSchema, setUiSchema] = useState({});
 	const [reviewerComment, setReviewerComment] = useState<string | null>(null);
 	const [documentFieldNames, setDocumentFieldNames] = useState<string[]>([]);
@@ -129,6 +135,11 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	const [item, setItem] = useState<any>(null);
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+
+	// Handle back navigation
+	const handleBack = () => {
+		navigate(-1);
+	};
 
 	// Helper function to group form fields by fieldsGroupName
 	const groupFieldsByGroup = (benefit: any) => {
@@ -482,9 +493,19 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	// Enhanced form submit handler with structured output
 	const handleFormSubmit = async () => {
 		setDisableSubmit(true);
+		setIsSubmitting(true);
 
 		try {
-			const formDataNew: FormSubmissionData = { benefitId, bppId };
+			// Validate benefitId before proceeding
+			if (!benefitId) {
+				setError(t('DETAILS_BENEFIT_IDENTIFIER_ERROR'));
+				return;
+			}
+
+			const formDataNew: FormSubmissionData = {
+				benefitId,
+				providerId: bppId,
+			};
 			const allFieldNames = Object.keys(formData);
 			const systemFields = ['benefitId', 'docs', 'orderId'];
 
@@ -543,12 +564,33 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 			if (vcDocuments.length > 0) {
 				formDataNew.vc_documents = vcDocuments;
 			}
-			if (formData?.orderId) {
+
+			// For resubmissions, include existing orderId and transaction_id
+			if (isResubmit) {
+				formDataNew.isResubmission = true;
+				if (applicationId && typeof applicationId === 'string') {
+					formDataNew.applicationId = applicationId;
+				}
+				// Include existing orderId for resubmissions
+				if (userData?.order_id) {
+					formDataNew.orderId = userData.order_id;
+				}
+			} else if (formData?.orderId) {
+				// For new applications, check if orderId is in formData
 				formDataNew.orderId = formData.orderId;
 			}
 
 			// --- Step 1: Submit Order ---
-			const response = await submitForm(formDataNew as any, context);
+			// For resubmissions, use existing transaction_id if available
+			const submitContext =
+				isResubmit && userData?.transaction_id
+					? { ...context, transaction_id: userData.transaction_id }
+					: context;
+
+			const response = await submitForm(
+				formDataNew as any,
+				submitContext
+			);
 			let orderId;
 
 			if (
@@ -576,12 +618,21 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				application_name: item?.descriptor?.name,
 				status: 'application initiated',
 				application_data: formDataNew,
-				transaction_id: response?.context?.transaction_id,
+				transaction_id:
+					isResubmit && userData?.transaction_id
+						? userData.transaction_id
+						: submitContext?.transaction_id ||
+							response?.responses?.[0]?.context?.transaction_id ||
+							response?.context?.transaction_id,
 			};
+			// console.log('Payload for createApplication:', payloadInitial);
 			await createApplication(payloadInitial);
 
 			// --- Step 3: Confirm Order ---
-			const confirmPayload = { item_id: orderId, rawContext: context };
+			const confirmPayload = {
+				item_id: orderId,
+				rawContext: submitContext,
+			};
 			const confirmResult = await confirmApplication(confirmPayload);
 
 			let external_application_id;
@@ -619,14 +670,19 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		} catch (error) {
 			console.error('Form submission error:', error);
 			if (error instanceof Error) {
+				const errorMessage =
+					typeof error.message === 'string'
+						? error.message
+						: 'Unknown error';
 				setError(
-					`${t('BENEFIT_FORM_APPLICATION_CREATE_ERROR')}: ${error.message}`
+					`${t('BENEFIT_FORM_APPLICATION_CREATE_ERROR')}: ${errorMessage}`
 				);
 			} else {
 				setError(t('BENEFIT_FORM_APPLICATION_CREATE_ERROR'));
 			}
 		} finally {
 			setDisableSubmit(false);
+			setIsSubmitting(false);
 		}
 	};
 
@@ -635,9 +691,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		return <Loading />;
 	}
 
-	const getMarginTop = () => {
-		return reviewerComment?.trim() ? '25%' : '0';
-	};
+	// Show loader during form submission
+	if (isSubmitting) {
+		return <Loader />;
+	}
 
 	// Render the form with common header and layout
 	// Get benefit name for header
@@ -646,49 +703,35 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 
 	return (
 		<Layout
-			_heading={{ heading: benefitName }}
+			_heading={{
+				heading: benefitName,
+				handleBack: handleBack,
+			}}
 			isMenu={Boolean(localStorage.getItem('authToken'))}
 		>
-			<Box p={4} mt={getMarginTop()}>
+			<Box p={4}>
 				{reviewerComment?.trim() && (
-					<>
-						{/* Backdrop to hide background content */}
-						<Box
-							position="fixed"
-							top={0}
-							left={0}
-							right={0}
-							bottom={0}
-							bgColor="rgba(255, 255, 255, 0.6)" // semi-transparent white
-							backdropFilter="blur(10px)" // apply blur to what's behind
-							zIndex={9}
-							height={'18%'}
-							mb={'10%'}
-						/>
-
-						{/* Fixed Reviewer Comment Box */}
-						<Box
-							position="fixed"
-							top={0}
-							left={0}
-							right={0}
-							zIndex={10}
-							bg="orange.50"
-							border="1px"
-							borderColor="orange.300"
-							p={4}
-							borderRadius="md"
-							mx={4}
-							mt={4}
+					<Box
+						bg="orange.50"
+						border="1px"
+						borderColor="orange.300"
+						p={4}
+						borderRadius="md"
+						mb={4}
+						boxShadow="0px 2px 4px rgba(0, 0, 0, 0.1)"
+					>
+						<Text
+							as="p"
+							fontWeight="bold"
+							color="orange.800"
+							fontSize="sm"
 						>
-							<Text as="p" fontWeight="bold" color="orange.800">
-								Reviewer Comment:
-							</Text>
-							<Text as="p" mt={2} color="orange.700">
-								{reviewerComment}
-							</Text>
-						</Box>
-					</>
+							Reviewer Comment:
+						</Text>
+						<Text as="p" mt={2} color="orange.700" fontSize="sm">
+							{reviewerComment}
+						</Text>
+					</Box>
 				)}
 
 				<FormAccessibilityProvider

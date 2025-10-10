@@ -121,9 +121,12 @@ export interface DocumentItem {
 	label?: string;
 }
 interface ApplicationData {
+	id?: string;
 	status: string;
 	application_data?: Record<string, any>;
 	external_application_id?: string;
+	order_id?: string;
+	transaction_id?: string;
 	remark?: string;
 	docs?: any[];
 }
@@ -246,6 +249,8 @@ const BenefitsDetails: React.FC = () => {
 						...(applicationData?.application_data || {}),
 						external_application_id:
 							applicationData?.external_application_id,
+						order_id: applicationData?.order_id,
+						transaction_id: applicationData?.transaction_id,
 						remark: applicationData?.remark,
 					}
 				: (authUser ?? undefined);
@@ -410,12 +415,13 @@ const BenefitsDetails: React.FC = () => {
 		});
 		const extractedContext = extractContext(result);
 		if (appResult?.data?.applications?.length > 0) {
-			const status = appResult.data.applications[0].status;
-			setApplicationData(appResult.data.applications[0]);
+			const applicationData = appResult.data.applications[0];
+			const status = applicationData.status;
+			setApplicationData(applicationData);
 			setApplicationStatus(status); // Can be 'submitted', 'resubmit', etc.
 			const updatedContext = {
 				...extractedContext, // original context
-				transaction_id: appResult.data.applications[0].transaction_id, // updated transaction_id from DB
+				transaction_id: applicationData.transaction_id, // updated transaction_id from DB
 			};
 			setContext(updatedContext);
 			return updatedContext;
@@ -783,6 +789,18 @@ const BenefitsDetails: React.FC = () => {
 												)
 											: null;
 
+									// Determine if this is a resubmit scenario
+									const isResubmit = !!(
+										applicationStatus &&
+										[
+											'application pending',
+											'submitted',
+											'application resubmit',
+										].includes(
+											applicationStatus.toLowerCase()
+										)
+									);
+
 									navigate(
 										`/benefits/${bpp_id}/${id}/apply`,
 										{
@@ -793,6 +811,9 @@ const BenefitsDetails: React.FC = () => {
 												benefitId: id,
 												bppId: bpp_id,
 												context: context,
+												isResubmit: isResubmit,
+												applicationId:
+													applicationData?.id || null,
 											},
 										}
 									);

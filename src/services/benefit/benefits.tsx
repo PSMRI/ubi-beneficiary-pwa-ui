@@ -5,7 +5,7 @@ const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
-	throw error.response ? error.response.data : new Error('Network Error');
+	throw error.response?.data || error || new Error('Network Error');
 }
 export const getAll = async (
 	userData: {
@@ -230,18 +230,22 @@ export const confirmApplication = async ({
 	}
 };
 interface CreateApplicationParams {
-	user_id: string | undefined;
-	benefit_id: string | undefined;
-	benefit_provider_id: string | undefined;
-	benefit_provider_uri: string | undefined;
-	external_application_id?: string | undefined;
-	application_name: string | undefined;
+	user_id?: string;
+	benefit_id?: string;
+	benefit_provider_id?: string;
+	benefit_provider_uri?: string;
+	external_application_id?: string;
+	application_name?: string;
 	status: string;
 	application_data: unknown;
+	order_id?: string;
+	transaction_id?: string;
 }
 export const createApplication = async (data: CreateApplicationParams) => {
 	try {
 		const token = localStorage.getItem('authToken');
+
+		console.log('CreateApplication API call with data:', data);
 
 		const response = await axios.post(
 			`${apiBaseUrl}/users/user_application`,
@@ -253,6 +257,7 @@ export const createApplication = async (data: CreateApplicationParams) => {
 				},
 			}
 		);
+		console.log('CreateApplication API response:', response.data);
 		return response.data;
 	} catch (error) {
 		handleError(error);
@@ -338,29 +343,56 @@ type SubmitContext = {
 type SubmitFormData = {
 	benefitId: string;
 	providerId?: string;
+	isResubmission?: boolean;
+	applicationId?: string;
 	[key: string]: unknown;
+};
+
+type OrderItem = {
+	id: string;
+	applicationId?: string;
 };
 
 export const submitForm = async (
 	applicationData: SubmitFormData,
 	context: SubmitContext
 ) => {
-	const { benefitId, providerId, ...rest } = applicationData as {
-		benefitId: string;
-		providerId?: string;
-		[key: string]: unknown;
-	};
+	const { benefitId, providerId, isResubmission, applicationId, ...rest } =
+		applicationData as {
+			benefitId: string;
+			providerId?: string;
+			isResubmission?: boolean;
+			applicationId?: string;
+			[key: string]: unknown;
+		};
+
+	// Determine whether to use create or update API based on resubmission flag
 	const resolvedProviderId = providerId ?? context?.bpp_id;
 	if (!resolvedProviderId) {
 		throw new Error(
 			'Missing providerId (pass applicationData.providerId or context.bpp_id)'
 		);
 	}
+
+	// Use update API for resubmission, init API for new
+
+	let action = 'init';
+	let endpoint = 'init';
+	let items: OrderItem[] = [{ id: benefitId }];
+
+	// If resubmission, use update API and include applicationId if available
+	if (isResubmission) {
+		action = 'update';
+		endpoint = 'update';
+		if (applicationId) {
+			items = [{ id: benefitId, applicationId }];
+		}
+	}
+
 	const payload = {
 		context: {
-			// Use the provided context
 			...context,
-			action: 'init',
+			action,
 			timestamp: new Date().toISOString(),
 			ttl: 'PT10M',
 			version: '1.1.0',
@@ -384,11 +416,7 @@ export const submitForm = async (
 		message: {
 			order: {
 				provider: { id: resolvedProviderId },
-				items: [
-					{
-						id: benefitId,
-					},
-				],
+				items,
 				fulfillments: [
 					{
 						customer: { applicationData: rest },
@@ -397,17 +425,23 @@ export const submitForm = async (
 			},
 		},
 	};
+
 	try {
 		const token = localStorage.getItem('authToken');
-		const response = await axios.post(`${apiBaseUrl}/init`, payload, {
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`,
-			},
-		});
+		const response = await axios.post(
+			`${apiBaseUrl}/${endpoint}`,
+			payload,
+			{
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		);
 		return response?.data;
 	} catch (error) {
+		console.error(`Error in ${action}:`, error);
 		handleError(error as AxiosError);
-		throw error; // Re-throw to maintain error handling in calling code
+		throw error;
 	}
 };
