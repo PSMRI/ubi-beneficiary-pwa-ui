@@ -60,7 +60,6 @@ interface GetOneParams {
 	bpp_id: string | undefined;
 }
 export const getOne = async ({ id, bpp_id }: GetOneParams) => {
-
 	const loginData = {
 		context: {
 			domain: DOMAIN_FINANCIAL_SUPPORT,
@@ -235,7 +234,7 @@ interface CreateApplicationParams {
 	benefit_id: string | undefined;
 	benefit_provider_id: string | undefined;
 	benefit_provider_uri: string | undefined;
-	external_application_id: string | undefined;
+	external_application_id?: string | undefined;
 	application_name: string | undefined;
 	status: string;
 	application_data: unknown;
@@ -325,7 +324,6 @@ export const checkEligibilityOfUser = async (id: string) => {
 	}
 };
 
-
 type SubmitContext = {
 	bap_id?: string;
 	bap_uri?: string;
@@ -354,7 +352,9 @@ export const submitForm = async (
 	};
 	const resolvedProviderId = providerId ?? context?.bpp_id;
 	if (!resolvedProviderId) {
-		throw new Error('Missing providerId (pass applicationData.providerId or context.bpp_id)');
+		throw new Error(
+			'Missing providerId (pass applicationData.providerId or context.bpp_id)'
+		);
 	}
 	const payload = {
 		context: {
@@ -392,8 +392,8 @@ export const submitForm = async (
 				fulfillments: [
 					{
 						customer: { applicationData: rest },
-					}
-				]
+					},
+				],
 			},
 		},
 	};
