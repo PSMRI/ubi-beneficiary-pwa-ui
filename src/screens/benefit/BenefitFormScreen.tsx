@@ -166,10 +166,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		// Process selectApiResponse and userData from props
 		if (!selectApiResponse) return;
 
-		console.log('BenefitFormScreen received userData:', userData);
-		console.log('isResubmit:', isResubmit);
-		console.log('applicationId:', applicationId);
-
 		// Extract context and item from the select API response
 		const itemData =
 			selectApiResponse?.data?.responses?.[0]?.message?.catalog
@@ -595,8 +591,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				formDataNew as any,
 				submitContext
 			);
-			console.log('Submit Form Response:', response);
-			console.log('Submit Context:', submitContext);
 			let orderId;
 
 			if (

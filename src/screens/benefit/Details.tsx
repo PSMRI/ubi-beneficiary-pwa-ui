@@ -255,12 +255,6 @@ const BenefitsDetails: React.FC = () => {
 					}
 				: (authUser ?? undefined);
 
-			console.log('Base form data for resubmit:', baseFormData);
-			console.log(
-				'Application data transaction_id:',
-				applicationData?.transaction_id
-			);
-
 			// Calculate age from dob if present
 			let formData = baseFormData?.dob
 				? {
@@ -422,7 +416,6 @@ const BenefitsDetails: React.FC = () => {
 		const extractedContext = extractContext(result);
 		if (appResult?.data?.applications?.length > 0) {
 			const applicationData = appResult.data.applications[0];
-			console.log('Application data from DB:', applicationData);
 			const status = applicationData.status;
 			setApplicationData(applicationData);
 			setApplicationStatus(status); // Can be 'submitted', 'resubmit', etc.
