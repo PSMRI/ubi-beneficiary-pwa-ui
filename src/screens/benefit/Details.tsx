@@ -156,7 +156,6 @@ const BenefitsDetails: React.FC = () => {
 	const [userDocuments, setUserDocuments] = useState();
 	const [applicationData, setApplicationData] =
 		useState<ApplicationData | null>(null);
-
 	// Common validation function for both iframe and direct form approaches
 	const validateApplicationRequirements = async (): Promise<{
 		isValid: boolean;
@@ -384,7 +383,12 @@ const BenefitsDetails: React.FC = () => {
 			?.responses?.[0]?.context as FinancialSupportRequest;
 	};
 
-	const handleAuthenticatedFlow = async (resultItem, id, user) => {
+	const handleAuthenticatedFlow = async (
+		resultItem,
+		id,
+		user,
+		newContext
+	) => {
 		if (user?.data?.dob) {
 			const age = calculateAge(user.data.dob);
 			user.data.age = `${age}`;
@@ -414,10 +418,11 @@ const BenefitsDetails: React.FC = () => {
 			const status = appResult.data.applications[0].status;
 			setApplicationData(appResult.data.applications[0]);
 			setApplicationStatus(status); // Can be 'submitted', 'resubmit', etc.
-			setContext((prev) => ({
-				...prev,
-				transaction_id: appResult.data.applications[0].transaction_id,
-			}));
+			const updatedContext = {
+				...newContext, // original context
+				transaction_id: appResult.data.applications[0].transaction_id, // updated transaction_id from DB
+			};
+			setContext(updatedContext);
 		}
 	};
 
@@ -477,14 +482,17 @@ const BenefitsDetails: React.FC = () => {
 				}
 
 				const docs = extractRequiredDocs(resultItem);
-
-				setContext(extractContext(result));
-
+				const newContext = extractContext(result);
 				if (mounted) {
 					setItem({ ...resultItem, document: docs });
 
 					if (token) {
-						await handleAuthenticatedFlow(resultItem, id, user);
+						await handleAuthenticatedFlow(
+							resultItem,
+							id,
+							user,
+							newContext
+						);
 					}
 
 					setLoading(false);
