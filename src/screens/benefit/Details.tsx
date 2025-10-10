@@ -781,8 +781,7 @@ const BenefitsDetails: React.FC = () => {
 														bppId: bpp_id,
 														context: context,
 														isResubmit,
-														applicationStatus,
-														applicationId: isResubmit ? applicationData?.id : undefined
+														applicationStatus
 													},
 												});
 											}

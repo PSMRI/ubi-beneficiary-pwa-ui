@@ -5,7 +5,7 @@ const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
-	throw error.response ? error.response.data : new Error('Network Error');
+	throw error.response?.data || new Error('Network Error');
 }
 export const getAll = async (
 	userData: {
@@ -362,13 +362,7 @@ export const submitForm = async (
 		[key: string]: unknown;
 	};
 	
-	console.log('submitForm called with:', {
-		isResubmission,
-		applicationId,
-		benefitId,
-		providerId
-	});
-	
+	// Determine whether to use create or update API based on resubmission flag
 	const resolvedProviderId = providerId ?? context?.bpp_id;
 	if (!resolvedProviderId) {
 		throw new Error('Missing providerId (pass applicationData.providerId or context.bpp_id)');
@@ -387,8 +381,6 @@ export const submitForm = async (
 		endpoint = 'update';
 		// items remains [{ id: benefitId }]
 	}
-
-	console.log(`Using ${action} API (${endpoint} endpoint)`);
 
 	const payload = {
 		context: {
@@ -426,8 +418,6 @@ export const submitForm = async (
 			},
 		},
 	};
-
-	console.log('Payload for API call:', JSON.stringify(payload, null, 2));
 
 	try {
 		const token = localStorage.getItem('authToken');

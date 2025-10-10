@@ -90,17 +90,9 @@ interface BenefitApplicationFormProps {
   bppId: string | undefined;
   context: any;
   isResubmit?: boolean;
-  applicationId?: string;
 }
 
-const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context, isResubmit = false, applicationId }) => {
-  console.log('BenefitApplicationForm props:', {
-    isResubmit,
-    applicationId,
-    benefitId,
-    bppId
-  });
-  
+const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context, isResubmit = false }) => {
   // State variables for form schema, data, refs, etc.
   const [formSchema, setFormSchema] = useState<any>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -492,24 +484,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
         formDataNew.orderId = formData.orderId;
       }
      
-      // Set resubmit flag and applicationId in form data
+      // Mark form data as resubmission for existing applications
       if (isResubmit) {
         formDataNew.isResubmission = true;
-        if (applicationId) {
-          formDataNew.applicationId = applicationId;
-        }
-        console.log('Setting resubmit data:', {
-          isResubmission: true,
-          applicationId,
-          formDataNew
-        });
       }
-
-      console.log('About to call submitForm with:', {
-        isResubmit,
-        formDataKeys: Object.keys(formDataNew),
-        hasApplicationId: !!formDataNew.applicationId
-      });
 
       // Submit the form
       const response = await submitForm(formDataNew, context);
@@ -540,11 +518,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
 
         if (orderId) {
           if (isResubmit) {
-            // For resubmissions, log the update
-            console.log('Application resubmitted successfully', {
-              orderId,
-              isResubmit: true
-            });
+            // Resubmission completed successfully, no additional action needed
           } else {
             // For new applications, create the application record
             const payloadCreateApp = {
