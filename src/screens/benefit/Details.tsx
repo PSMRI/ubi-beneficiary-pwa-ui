@@ -125,6 +125,8 @@ interface ApplicationData {
 	status: string;
 	application_data?: Record<string, any>;
 	external_application_id?: string;
+	order_id?: string;
+	transaction_id?: string;
 	remark?: string;
 	docs?: any[];
 }
@@ -151,15 +153,17 @@ const BenefitsDetails: React.FC = () => {
 	);
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const navigate = useNavigate();
-	const { id, bpp_id } = useParams<{ id: string, bpp_id: string }>();
+	const { id, bpp_id } = useParams<{ id: string; bpp_id: string }>();
 	const { t } = useTranslation();
 	// const [isEligible, setIsEligible] = useState<any[]>(); // NOSONAR
 	const [userDocuments, setUserDocuments] = useState();
 	const [applicationData, setApplicationData] =
 		useState<ApplicationData | null>(null);
-
 	// Common validation function for both iframe and direct form approaches
-	const validateApplicationRequirements = async (): Promise<{ isValid: boolean; formData?: any }> => {
+	const validateApplicationRequirements = async (): Promise<{
+		isValid: boolean;
+		formData?: any;
+	}> => {
 		setValidationLoading(true);
 
 		try {
@@ -209,7 +213,8 @@ const BenefitsDetails: React.FC = () => {
 			}
 
 			const eligibilityResponse = await checkEligibilityOfUser(id);
-			const reasons = eligibilityResponse?.ineligible?.[0]?.details?.reasons ?? [];
+			const reasons =
+				eligibilityResponse?.ineligible?.[0]?.details?.reasons ?? [];
 			const reasonMessages = reasons.map((r: any) => {
 				if (
 					r.requiredValue &&
@@ -244,16 +249,24 @@ const BenefitsDetails: React.FC = () => {
 						...(applicationData?.application_data || {}),
 						external_application_id:
 							applicationData?.external_application_id,
+						order_id: applicationData?.order_id,
+						transaction_id: applicationData?.transaction_id,
 						remark: applicationData?.remark,
 					}
 				: (authUser ?? undefined);
+
+			console.log('Base form data for resubmit:', baseFormData);
+			console.log(
+				'Application data transaction_id:',
+				applicationData?.transaction_id
+			);
 
 			// Calculate age from dob if present
 			let formData = baseFormData?.dob
 				? {
 						...baseFormData,
 						age: calculateAge(baseFormData.dob) || baseFormData.age,
-				}
+					}
 				: baseFormData;
 
 			// Filter out expired documents from form data if user has documents
@@ -270,7 +283,6 @@ const BenefitsDetails: React.FC = () => {
 
 			setValidationLoading(false);
 			return { isValid: true, formData };
-
 		} catch (error) {
 			console.error('Error during validation:', error);
 			setError(t('DETAILS_GENERAL_ERROR'));
@@ -382,7 +394,7 @@ const BenefitsDetails: React.FC = () => {
 			?.responses?.[0]?.context as FinancialSupportRequest;
 	};
 
-	const handleAuthenticatedFlow = async (resultItem, id, user) => {
+	const handleAuthenticatedFlow = async (id, user, result) => {
 		if (user?.data?.dob) {
 			const age = calculateAge(user.data.dob);
 			user.data.age = `${age}`;
@@ -407,12 +419,21 @@ const BenefitsDetails: React.FC = () => {
 			user_id: user?.data?.user_id,
 			benefit_id: id,
 		});
-
+		const extractedContext = extractContext(result);
 		if (appResult?.data?.applications?.length > 0) {
-			const status = appResult.data.applications[0].status;
-			setApplicationData(appResult.data.applications[0]);
+			const applicationData = appResult.data.applications[0];
+			console.log('Application data from DB:', applicationData);
+			const status = applicationData.status;
+			setApplicationData(applicationData);
 			setApplicationStatus(status); // Can be 'submitted', 'resubmit', etc.
+			const updatedContext = {
+				...extractedContext, // original context
+				transaction_id: applicationData.transaction_id, // updated transaction_id from DB
+			};
+			setContext(updatedContext);
+			return updatedContext;
 		}
+		return extractedContext;
 	};
 
 	/* 	const checkEligibility = (resultItem, user) => {
@@ -455,7 +476,7 @@ const BenefitsDetails: React.FC = () => {
 		const init = async () => {
 			try {
 				const decodedBppId = decodeURIComponent(bpp_id);
-				const result = await getOne({ id, bpp_id: decodedBppId});
+				const result = await getOne({ id, bpp_id: decodedBppId });
 				setSchemaData(result); // Store full select API response
 				const resultItem = extractResultItem(result);
 				const token = localStorage.getItem('authToken');
@@ -471,14 +492,16 @@ const BenefitsDetails: React.FC = () => {
 				}
 
 				const docs = extractRequiredDocs(resultItem);
-
-				setContext(extractContext(result));
-
 				if (mounted) {
 					setItem({ ...resultItem, document: docs });
 
 					if (token) {
-						await handleAuthenticatedFlow(resultItem, id, user);
+						const newContext = await handleAuthenticatedFlow(
+							id,
+							user,
+							result
+						);
+						setContext(newContext);
 					}
 
 					setLoading(false);
@@ -547,10 +570,7 @@ const BenefitsDetails: React.FC = () => {
 		setLoading(false);
 	};
 
-	console.log('Render state - loading:', loading, 'validationLoading:', validationLoading, 'error:', error, 'isAuthenticated:', isAuthenticated);
-
 	if (loading) {
-		console.log('Component is in loading state, returning Loader');
 		return <Loader />;
 	}
 
@@ -755,53 +775,76 @@ const BenefitsDetails: React.FC = () => {
 					</UnorderedList>
 
 					{isAuthenticated ? (
-									<CommonButton
-										mt={6}
-										onClick={async () => {
-											
-											// Always use direct form approach (iframe is disabled)
-											const validationResult = await validateApplicationRequirements();
-                                            
-											if (validationResult.isValid) {
-												const isResubmit = [
-													'application resubmit',
-													'application pending',
-													'submitted',
-												].includes(applicationStatus?.toLowerCase() || '');
+						<CommonButton
+							mt={6}
+							onClick={async () => {
+								// Always use direct form approach (iframe is disabled)
+								const validationResult =
+									await validateApplicationRequirements();
 
-												// Serialize data to avoid DataCloneError
-												const safeSchemaData = schemaData ? JSON.parse(JSON.stringify(schemaData)) : null;
-												const safeFormData = validationResult.formData ? JSON.parse(JSON.stringify(validationResult.formData)) : null;
-                                                
-												navigate(`/benefits/${bpp_id}/${id}/apply`, {
-													state: {
-														selectApiResponse: safeSchemaData,
-														userData: safeFormData,
-														benefitId: id,
-														bppId: bpp_id,
-														context: context,
-														isResubmit,
-														applicationStatus,
-														applicationId: isResubmit ? applicationData?.external_application_id : undefined
-													},
-												});
-											}
-										}}
-										label={getActionLabel(applicationStatus, t)}
-										loading={validationLoading}
-										loadingLabel="Validating..."
-										isDisabled={(() => {
-											const isDisabled = validationLoading || (!!applicationStatus &&
-											![
-												'application pending',
-												'submitted',
-												'application resubmit',
-											].includes(
-												(applicationStatus || '').toLowerCase()
-											));
-											return isDisabled;
-										})()}
-									/>
+								if (validationResult.isValid) {
+									// Serialize data to avoid DataCloneError
+									const safeSchemaData = schemaData
+										? JSON.parse(JSON.stringify(schemaData))
+										: null;
+									const safeFormData =
+										validationResult.formData
+											? JSON.parse(
+													JSON.stringify(
+														validationResult.formData
+													)
+												)
+											: null;
+
+									// Determine if this is a resubmit scenario
+									const isResubmit = !!(
+										applicationStatus &&
+										[
+											'application pending',
+											'submitted',
+											'application resubmit',
+										].includes(
+											applicationStatus.toLowerCase()
+										)
+									);
+
+									navigate(
+										`/benefits/${bpp_id}/${id}/apply`,
+										{
+											state: {
+												selectApiResponse:
+													safeSchemaData,
+												userData: safeFormData,
+												benefitId: id,
+												bppId: bpp_id,
+												context: context,
+												isResubmit: isResubmit,
+												applicationId:
+													applicationData?.id || null,
+											},
+										}
+									);
+								}
+							}}
+							label={getActionLabel(applicationStatus, t)}
+							loading={validationLoading}
+							loadingLabel="Validating..."
+							isDisabled={(() => {
+								const isDisabled =
+									validationLoading ||
+									(!!applicationStatus &&
+										![
+											'application pending',
+											'submitted',
+											'application resubmit',
+										].includes(
+											(
+												applicationStatus || ''
+											).toLowerCase()
+										));
+								return isDisabled;
+							})()}
+						/>
 					) : (
 						<CommonButton
 							mt={6}

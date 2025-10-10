@@ -166,6 +166,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		// Process selectApiResponse and userData from props
 		if (!selectApiResponse) return;
 
+		console.log('BenefitFormScreen received userData:', userData);
+		console.log('isResubmit:', isResubmit);
+		console.log('applicationId:', applicationId);
+
 		// Extract context and item from the select API response
 		const itemData =
 			selectApiResponse?.data?.responses?.[0]?.message?.catalog
@@ -564,92 +568,123 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 			if (vcDocuments.length > 0) {
 				formDataNew.vc_documents = vcDocuments;
 			}
-			if (formData?.orderId) {
+
+			// For resubmissions, include existing orderId and transaction_id
+			if (isResubmit) {
+				formDataNew.isResubmission = true;
+				if (applicationId && typeof applicationId === 'string') {
+					formDataNew.applicationId = applicationId;
+				}
+				// Include existing orderId for resubmissions
+				if (userData?.order_id) {
+					formDataNew.orderId = userData.order_id;
+				}
+			} else if (formData?.orderId) {
+				// For new applications, check if orderId is in formData
 				formDataNew.orderId = formData.orderId;
 			}
 
-			// Mark form data as resubmission for existing applications
-			if (isResubmit) {
-				formDataNew.isResubmission = true;
-				if (applicationId) {
-					formDataNew.applicationId = applicationId;
-				}
-			}
+			// --- Step 1: Submit Order ---
+			// For resubmissions, use existing transaction_id if available
+			const submitContext =
+				isResubmit && userData?.transaction_id
+					? { ...context, transaction_id: userData.transaction_id }
+					: context;
 
-			// Submit the form
-			const response = await submitForm(formDataNew, context);
-			if (response) {
-				// Create confirmation payload - extract applicationId from init and update response structure
-				const applicationId =
-					response?.responses?.[0]?.message?.order?.items?.[0]
-						?.applicationId;
-
-				if (!applicationId) {
-					console.error(
-						'Application ID not found in response. Status:',
-						response?.status || 'unknown'
-					);
-					setError(t('DETAILS_APPLICATION_ID_NOT_FOUND'));
-					return;
-				}
-
-				const confirmPayload = {
-					item_id: applicationId,
-					rawContext: context,
-				};
-
-				// Call confirmApplication
-				const result = await confirmApplication(confirmPayload);
-				const orderId = (
-					result as {
-						data: {
-							responses: { message: { order: { id: string } } }[];
-						};
-					}
-				)?.data?.responses?.[0]?.message?.order?.id;
-
-				if (orderId) {
-					if (isResubmit) {
-						// Resubmission completed successfully, no additional action needed
-					} else {
-						// For new applications, create the application record
-						const payloadCreateApp = {
-							user_id: userData?.user_id,
-							benefit_id: benefitId,
-							benefit_provider_id: context?.bpp_id,
-							benefit_provider_uri: context?.bpp_uri,
-							external_application_id: orderId,
-							application_name: item?.descriptor?.name,
-							status: 'application pending',
-							application_data: formDataNew,
-						};
-
-						const createResult =
-							await createApplication(payloadCreateApp);
-						if (!createResult) {
-							setError(t('DETAILS_APPLICATION_CREATE_ERROR'));
-							return;
-						}
-					}
-
-					setSubmitDialouge({
-						orderId,
-						name: item?.descriptor?.name,
-						isResubmit,
-					});
-				} else {
-					setError(t('DETAILS_APPLICATION_CREATE_ERROR'));
-				}
-			}
-		} catch (error) {
-			console.error(
-				'Form submission error:',
-				error instanceof Error ? error.message : 'Unknown error'
+			const response = await submitForm(
+				formDataNew as any,
+				submitContext
 			);
+			console.log('Submit Form Response:', response);
+			console.log('Submit Context:', submitContext);
+			let orderId;
+
+			if (
+				response?.responses[0]?.message?.order?.items?.[0]
+					?.applicationId
+			) {
+				orderId =
+					response?.responses[0]?.message?.order?.items?.[0]
+						?.applicationId;
+			}
+
+			if (!orderId) {
+				console.error('Order ID not found in response:', response);
+				setError(t('BENEFIT_FORM_SUBMIT_ERROR'));
+				return;
+			}
+
+			// --- Step 2: Create Initial Application ---
+			const payloadInitial = {
+				user_id: userData?.user_id,
+				benefit_id: benefitId,
+				benefit_provider_id: context?.bpp_id,
+				benefit_provider_uri: context?.bap_uri,
+				order_id: orderId,
+				application_name: item?.descriptor?.name,
+				status: 'application initiated',
+				application_data: formDataNew,
+				transaction_id:
+					isResubmit && userData?.transaction_id
+						? userData.transaction_id
+						: submitContext?.transaction_id ||
+							response?.responses?.[0]?.context?.transaction_id ||
+							response?.context?.transaction_id,
+			};
+			// console.log('Payload for createApplication:', payloadInitial);
+			await createApplication(payloadInitial);
+
+			// --- Step 3: Confirm Order ---
+			const confirmPayload = {
+				item_id: orderId,
+				rawContext: submitContext,
+			};
+			const confirmResult = await confirmApplication(confirmPayload);
+
+			let external_application_id;
+
+			if (
+				(confirmResult as any)?.data?.responses?.length > 0 &&
+				(confirmResult as any)?.data?.responses?.[0]?.message?.order?.id
+			) {
+				external_application_id = (confirmResult as any).data
+					.responses[0].message.order.id;
+			}
+
+			if (!external_application_id) {
+				console.error(
+					'External application ID not found in confirm response:',
+					confirmResult
+				);
+				setError(t('BENEFIT_FORM_CONFIRM_APPLICATION_ERROR'));
+				return;
+			}
+
+			// --- Step 4: Update Application with application id ---
+			const payloadFinal = {
+				...payloadInitial,
+				external_application_id,
+				status: 'application pending',
+			};
+
+			await createApplication(payloadFinal); // throws if fails
+			// ✅ Success
+			setSubmitDialouge({
+				orderId: external_application_id,
+				name: item?.descriptor?.name,
+			});
+		} catch (error) {
+			console.error('Form submission error:', error);
 			if (error instanceof Error) {
-				setError(`${t('DETAILS_ERROR_MODAL_TITLE')}: ${error.message}`);
+				const errorMessage =
+					typeof error.message === 'string'
+						? error.message
+						: 'Unknown error';
+				setError(
+					`${t('BENEFIT_FORM_APPLICATION_CREATE_ERROR')}: ${errorMessage}`
+				);
 			} else {
-				setError(t('DETAILS_GENERAL_ERROR'));
+				setError(t('BENEFIT_FORM_APPLICATION_CREATE_ERROR'));
 			}
 		} finally {
 			setDisableSubmit(false);
@@ -762,7 +797,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 							</ModalBody>
 							<ModalFooter>
 								<Button
-									onClick={() => setError('')}
+									onClick={() => {
+										setError('');
+										navigate(-1);
+									}}
 									label={t('DETAILS_CLOSE_BUTTON')}
 								/>
 							</ModalFooter>

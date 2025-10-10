@@ -60,7 +60,6 @@ interface GetOneParams {
 	bpp_id: string | undefined;
 }
 export const getOne = async ({ id, bpp_id }: GetOneParams) => {
-
 	const loginData = {
 		context: {
 			domain: DOMAIN_FINANCIAL_SUPPORT,
@@ -231,18 +230,22 @@ export const confirmApplication = async ({
 	}
 };
 interface CreateApplicationParams {
-	user_id: string | undefined;
-	benefit_id: string | undefined;
-	benefit_provider_id: string | undefined;
-	benefit_provider_uri: string | undefined;
-	external_application_id: string | undefined;
-	application_name: string | undefined;
+	user_id?: string;
+	benefit_id?: string;
+	benefit_provider_id?: string;
+	benefit_provider_uri?: string;
+	external_application_id?: string;
+	application_name?: string;
 	status: string;
 	application_data: unknown;
+	order_id?: string;
+	transaction_id?: string;
 }
 export const createApplication = async (data: CreateApplicationParams) => {
 	try {
 		const token = localStorage.getItem('authToken');
+
+		console.log('CreateApplication API call with data:', data);
 
 		const response = await axios.post(
 			`${apiBaseUrl}/users/user_application`,
@@ -254,6 +257,7 @@ export const createApplication = async (data: CreateApplicationParams) => {
 				},
 			}
 		);
+		console.log('CreateApplication API response:', response.data);
 		return response.data;
 	} catch (error) {
 		handleError(error);
@@ -325,7 +329,6 @@ export const checkEligibilityOfUser = async (id: string) => {
 	}
 };
 
-
 type SubmitContext = {
 	bap_id?: string;
 	bap_uri?: string;
@@ -354,20 +357,22 @@ export const submitForm = async (
 	applicationData: SubmitFormData,
 	context: SubmitContext
 ) => {
-	const { benefitId, providerId, isResubmission, applicationId, ...rest } = applicationData as {
-		benefitId: string;
-		providerId?: string;
-		isResubmission?: boolean;
-		applicationId?: string;
-		[key: string]: unknown;
-	};
-	
+	const { benefitId, providerId, isResubmission, applicationId, ...rest } =
+		applicationData as {
+			benefitId: string;
+			providerId?: string;
+			isResubmission?: boolean;
+			applicationId?: string;
+			[key: string]: unknown;
+		};
+
 	// Determine whether to use create or update API based on resubmission flag
 	const resolvedProviderId = providerId ?? context?.bpp_id;
 	if (!resolvedProviderId) {
-		throw new Error('Missing providerId (pass applicationData.providerId or context.bpp_id)');
+		throw new Error(
+			'Missing providerId (pass applicationData.providerId or context.bpp_id)'
+		);
 	}
-
 
 	// Use update API for resubmission, init API for new
 
@@ -415,20 +420,24 @@ export const submitForm = async (
 				fulfillments: [
 					{
 						customer: { applicationData: rest },
-					}
-				]
+					},
+				],
 			},
 		},
 	};
 
 	try {
 		const token = localStorage.getItem('authToken');
-		const response = await axios.post(`${apiBaseUrl}/${endpoint}`, payload, {
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`,
-			},
-		});
+		const response = await axios.post(
+			`${apiBaseUrl}/${endpoint}`,
+			payload,
+			{
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		);
 		return response?.data;
 	} catch (error) {
 		console.error(`Error in ${action}:`, error);
