@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import  CommonButton from "../../components/common/button/SubmitButton";
 import Button from "../../components/common/button/Button";
 import Loading from "../../components/common/Loading";
+import Loader from "../../components/common/Loader";
 import FormAccessibilityProvider from "../../components/common/form/FormAccessibilityProvider";
 import CommonDialogue from "../../components/common/Dialogue";
 import { submitForm, confirmApplication, createApplication } from "../../services/benefit/benefits";
@@ -101,6 +102,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
   const [docSchema, setDocSchema] = useState<any>(null);
   const [extraErrors, setExtraErrors] = useState<any>(null);
   const [disableSubmit, setDisableSubmit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [uiSchema, setUiSchema] = useState({});
   const [reviewerComment, setReviewerComment] = useState<string | null>(null);
   const [documentFieldNames, setDocumentFieldNames] = useState<string[]>([]);
@@ -110,6 +112,11 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
   const [item, setItem] = useState<any>(null);
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Handle back navigation
+  const handleBack = () => {
+    navigate(-1);
+  };
 
   // Helper function to group form fields by fieldsGroupName
   const groupFieldsByGroup = (benefit: any) => {
@@ -421,6 +428,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
   // Enhanced form submit handler with structured output
   const handleFormSubmit = async () => {
     setDisableSubmit(true);
+    setIsSubmitting(true);
 
     try {
       const formDataNew: FormSubmissionData = { benefitId, providerId: bppId };
@@ -557,12 +565,18 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       }
     } finally {
       setDisableSubmit(false);
+      setIsSubmitting(false);
     }
   };
 
   // Show loading spinner if schema is not ready
   if (!formSchema) {
     return <Loading />;
+  }
+
+  // Show loader during form submission
+  if (isSubmitting) {
+    return <Loader />;
   }
 
 
@@ -572,7 +586,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
 
   return (
     <Layout
-      _heading={{ heading: benefitName }}
+      _heading={{ 
+        heading: benefitName,
+        handleBack: handleBack
+      }}
       isMenu={Boolean(localStorage.getItem('authToken'))}
     >
       <Box p={4}>
