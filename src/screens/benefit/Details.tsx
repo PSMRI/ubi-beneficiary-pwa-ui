@@ -408,19 +408,19 @@ const BenefitsDetails: React.FC = () => {
 			user_id: user?.data?.user_id,
 			benefit_id: id,
 		});
-
+		const extractedContext = extractContext(result);
 		if (appResult?.data?.applications?.length > 0) {
 			const status = appResult.data.applications[0].status;
 			setApplicationData(appResult.data.applications[0]);
 			setApplicationStatus(status); // Can be 'submitted', 'resubmit', etc.
 			const updatedContext = {
-				...extractContext(result), // original context
+				...extractedContext, // original context
 				transaction_id: appResult.data.applications[0].transaction_id, // updated transaction_id from DB
 			};
 			setContext(updatedContext);
 			return updatedContext;
 		}
-		return extractContext(result);
+		return extractedContext;
 	};
 
 	/* 	const checkEligibility = (resultItem, user) => {
@@ -479,12 +479,11 @@ const BenefitsDetails: React.FC = () => {
 				}
 
 				const docs = extractRequiredDocs(resultItem);
-				let newContext;
 				if (mounted) {
 					setItem({ ...resultItem, document: docs });
 
 					if (token) {
-						newContext = await handleAuthenticatedFlow(
+						const newContext = await handleAuthenticatedFlow(
 							id,
 							user,
 							result
