@@ -611,9 +611,11 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 			};
 
 			await createApplication(payloadFinal); // throws if fails
-
 			// ✅ Success
-			setSubmitDialouge({ orderId, name: item?.descriptor?.name });
+			setSubmitDialouge({
+				orderId: external_application_id,
+				name: item?.descriptor?.name,
+			});
 		} catch (error) {
 			console.error('Form submission error:', error);
 			if (error instanceof Error) {
