@@ -619,7 +619,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				user_id: userData?.user_id,
 				benefit_id: benefitId,
 				benefit_provider_id: context?.bpp_id,
-				benefit_provider_uri: context?.bap_uri,
+				benefit_provider_uri: context?.bpp_uri,
 				order_id: orderId,
 				application_name: item?.descriptor?.name,
 				status: 'application initiated',
