@@ -5,7 +5,7 @@ const bap_id = import.meta.env.VITE_API_BASE_ID;
 const bap_uri = import.meta.env.VITE_BAP_URL;
 const DOMAIN_FINANCIAL_SUPPORT = 'ubi:financial-support';
 function handleError(error: any) {
-	throw error.response?.data || new Error('Network Error');
+	throw error.response?.data || error || new Error('Network Error');
 }
 export const getAll = async (
 	userData: {
@@ -88,7 +88,7 @@ export const getOne = async ({ id, bpp_id }: GetOneParams) => {
 			order: {
 				items: [
 					{
-						id: id
+						id: id,
 					},
 				],
 				provider: {
@@ -375,11 +375,13 @@ export const submitForm = async (
 	let endpoint = 'init';
 	let items: any[] = [{ id: benefitId }];
 
-	// If resubmission, use update API but do NOT add external_application_id to items
+	// If resubmission, use update API and include applicationId if available
 	if (isResubmission) {
 		action = 'update';
 		endpoint = 'update';
-		// items remains [{ id: benefitId }]
+		if (applicationId) {
+			items = [{ id: benefitId, applicationId }];
+		}
 	}
 
 	const payload = {
