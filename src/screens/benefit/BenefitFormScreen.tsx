@@ -431,6 +431,12 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     setIsSubmitting(true);
 
     try {
+      // Validate benefitId before proceeding
+      if (!benefitId) {
+        setError(t('DETAILS_BENEFIT_IDENTIFIER_ERROR'));
+        return;
+      }
+
       const formDataNew: FormSubmissionData = { benefitId, providerId: bppId };
       const allFieldNames = Object.keys(formData);
       const systemFields = ["benefitId", "docs", "orderId"];
@@ -544,7 +550,11 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
               application_data: formDataNew,
             };
 
-            await createApplication(payloadCreateApp);
+            const createResult = await createApplication(payloadCreateApp);
+            if (!createResult) {
+              setError(t('DETAILS_APPLICATION_CREATE_ERROR'));
+              return;
+            }
           }
           
           setSubmitDialouge({ 
