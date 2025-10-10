@@ -383,12 +383,7 @@ const BenefitsDetails: React.FC = () => {
 			?.responses?.[0]?.context as FinancialSupportRequest;
 	};
 
-	const handleAuthenticatedFlow = async (
-		resultItem,
-		id,
-		user,
-		newContext
-	) => {
+	const handleAuthenticatedFlow = async (id, user, result) => {
 		if (user?.data?.dob) {
 			const age = calculateAge(user.data.dob);
 			user.data.age = `${age}`;
@@ -413,17 +408,19 @@ const BenefitsDetails: React.FC = () => {
 			user_id: user?.data?.user_id,
 			benefit_id: id,
 		});
-
+		const extractedContext = extractContext(result);
 		if (appResult?.data?.applications?.length > 0) {
 			const status = appResult.data.applications[0].status;
 			setApplicationData(appResult.data.applications[0]);
 			setApplicationStatus(status); // Can be 'submitted', 'resubmit', etc.
 			const updatedContext = {
-				...newContext, // original context
+				...extractedContext, // original context
 				transaction_id: appResult.data.applications[0].transaction_id, // updated transaction_id from DB
 			};
 			setContext(updatedContext);
+			return updatedContext;
 		}
+		return extractedContext;
 	};
 
 	/* 	const checkEligibility = (resultItem, user) => {
@@ -482,17 +479,16 @@ const BenefitsDetails: React.FC = () => {
 				}
 
 				const docs = extractRequiredDocs(resultItem);
-				const newContext = extractContext(result);
 				if (mounted) {
 					setItem({ ...resultItem, document: docs });
 
 					if (token) {
-						await handleAuthenticatedFlow(
-							resultItem,
+						const newContext = await handleAuthenticatedFlow(
 							id,
 							user,
-							newContext
+							result
 						);
+						setContext(newContext);
 					}
 
 					setLoading(false);
