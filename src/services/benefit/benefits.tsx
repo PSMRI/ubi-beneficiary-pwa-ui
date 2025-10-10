@@ -373,7 +373,7 @@ export const submitForm = async (
 
 	let action = 'init';
 	let endpoint = 'init';
-	let items: any[] = [{ id: benefitId }];
+	let items: OrderItem[] = [{ id: benefitId }];
 
 	// If resubmission, use update API and include applicationId if available
 	if (isResubmission) {

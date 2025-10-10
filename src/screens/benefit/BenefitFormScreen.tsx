@@ -90,9 +90,10 @@ interface BenefitApplicationFormProps {
   bppId: string | undefined;
   context: any;
   isResubmit?: boolean;
+  applicationId?: string;
 }
 
-const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context, isResubmit = false }) => {
+const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectApiResponse, userData, benefitId, bppId, context, isResubmit = false, applicationId }) => {
   // State variables for form schema, data, refs, etc.
   const [formSchema, setFormSchema] = useState<any>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -487,6 +488,9 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       // Mark form data as resubmission for existing applications
       if (isResubmit) {
         formDataNew.isResubmission = true;
+        if (applicationId) {
+          formDataNew.applicationId = applicationId;
+        }
       }
 
       // Submit the form
@@ -561,9 +565,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
     return <Loading />;
   }
 
-  const getMarginTop = () => {
-    return reviewerComment?.trim() ? "25%" : "0";
-  };
 
   // Render the form with common header and layout
   // Get benefit name for header
@@ -574,46 +575,24 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({ selectA
       _heading={{ heading: benefitName }}
       isMenu={Boolean(localStorage.getItem('authToken'))}
     >
-      <Box p={4} mt={getMarginTop()}>
+      <Box p={4}>
         {reviewerComment?.trim() && (
-          <>
-            {/* Backdrop to hide background content */}
-            <Box
-              position="fixed"
-              top={0}
-              left={0}
-              right={0}
-              bottom={0}
-              bgColor="rgba(255, 255, 255, 0.6)" // semi-transparent white
-              backdropFilter="blur(10px)" // apply blur to what's behind
-              zIndex={9}
-              height={"18%"}
-              mb={"10%"}
-            />
-
-            {/* Fixed Reviewer Comment Box */}
-            <Box
-              position="fixed"
-              top={0}
-              left={0}
-              right={0}
-              zIndex={10}
-              bg="orange.50"
-              border="1px"
-              borderColor="orange.300"
-              p={4}
-              borderRadius="md"
-              mx={4}
-              mt={4}
-            >
-              <Text as="p" fontWeight="bold" color="orange.800">
-                Reviewer Comment:
-              </Text>
-              <Text as="p" mt={2} color="orange.700">
-                {reviewerComment}
-              </Text>
-            </Box>
-          </>
+          <Box
+            bg="orange.50"
+            border="1px"
+            borderColor="orange.300"
+            p={4}
+            borderRadius="md"
+            mb={4}
+            boxShadow="0px 2px 4px rgba(0, 0, 0, 0.1)"
+          >
+            <Text as="p" fontWeight="bold" color="orange.800" fontSize="sm">
+              Reviewer Comment:
+            </Text>
+            <Text as="p" mt={2} color="orange.700" fontSize="sm">
+              {reviewerComment}
+            </Text>
+          </Box>
         )}
 
         <FormAccessibilityProvider

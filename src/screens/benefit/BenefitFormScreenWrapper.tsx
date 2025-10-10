@@ -51,6 +51,7 @@ const BenefitFormScreenWrapper: React.FC = () => {
       bppId={state.bppId || bpp_id}
       context={data.context}
 			isResubmit={state.isResubmit || false}
+			applicationId={state.applicationId}
     />
   );
 };
