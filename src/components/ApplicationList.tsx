@@ -148,6 +148,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 									'application resubmit',
 									'application pending',
 									'submitted',
+									'application initiated',
 								].includes(app.status.toLowerCase());
 
 								let paddingBottom = 'initial';
