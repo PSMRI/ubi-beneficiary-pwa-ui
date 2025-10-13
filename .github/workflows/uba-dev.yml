@@ -1,12 +1,16 @@
 name: Deploy to UBA-DEV
+
 on:
   push:
-    branches:
-      - main      
+    # Trigger only on semantic version tags like v1.0.0 or v1.0.0-rc
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: uba-dev
+    environment: UBA-DEV
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,7 +22,7 @@ jobs:
 
       - name: Install dependencies and build project
         run: |
-          echo '${{ secrets.ENV_UBA_DEV }}' > .env
+          echo '${{ secrets.ENV }}' > .env
           yarn install
           yarn build
 
@@ -33,15 +37,15 @@ jobs:
 
       - name: Configure AWS credentials
         run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID_UBA_DEV }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY_UBA_DEV }}
-          aws configure set default.region ${{ secrets.AWS_S3_BUCKET_REGION_UBA_DEV }}
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_S3_BUCKET_REGION }}
 
       - name: Upload to S3 and invalidate CloudFront
         run: |
           if [ -d dist ]; then
-            aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET_UBA_DEV }}/
-            aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID_UBA_DEV }} --paths "/*"
+            aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET }}/ --delete
+            aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
           else
             echo "dist directory not found!"
             exit 1
@@ -49,14 +53,12 @@ jobs:
 
       - name: Post job cleanup
         if: always()
-        run: |
-          echo "Cleanup complete."
+        run: echo "Cleanup complete."
 
-      ## Notify on Slack
       - name: Notify on Slack channel
         uses: iRoachie/slack-github-actions@v2.3.2
+        if: always()
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         with:
           status: ${{ job.status }}
-        if: ${{ always() }}
