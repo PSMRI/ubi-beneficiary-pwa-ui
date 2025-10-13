@@ -234,7 +234,7 @@ interface CreateApplicationParams {
 	benefit_id?: string;
 	benefit_provider_id?: string;
 	benefit_provider_uri?: string;
-	external_application_id?: string;
+	bpp_application_id?: string;
 	application_name?: string;
 	status: string;
 	application_data: unknown;

@@ -124,7 +124,7 @@ interface ApplicationData {
 	id?: string;
 	status: string;
 	application_data?: Record<string, any>;
-	external_application_id?: string;
+	bpp_application_id?: string;
 	order_id?: string;
 	transaction_id?: string;
 	remark?: string;
@@ -247,8 +247,8 @@ const BenefitsDetails: React.FC = () => {
 				? {
 						...(authUser || {}),
 						...(applicationData?.application_data || {}),
-						external_application_id:
-							applicationData?.external_application_id,
+						bpp_application_id:
+							applicationData?.bpp_application_id,
 						order_id: applicationData?.order_id,
 						transaction_id: applicationData?.transaction_id,
 						remark: applicationData?.remark,
@@ -541,7 +541,7 @@ const BenefitsDetails: React.FC = () => {
 					benefit_id: id,
 					benefit_provider_id: context?.bpp_id,
 					benefit_provider_uri: context?.bpp_uri,
-					external_application_id: orderId,
+					bpp_application_id: orderId,
 					application_name: item?.descriptor?.name,
 					status: 'application pending',
 					application_data: payload?.userData,

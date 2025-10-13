@@ -624,9 +624,9 @@ export const extractUserDataForSchema = (
     }
   }
 
-  // Ensure external_application_id is added if it exists in formData
-  if ("external_application_id" in formData) {
-    result["orderId"] = String(formData["external_application_id"]);
+  // Ensure bpp_application_id is added if it exists in formData
+  if ("bpp_application_id" in formData) {
+    result["orderId"] = String(formData["bpp_application_id"]);
   }
 
   return result;
