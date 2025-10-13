@@ -602,12 +602,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				const responseInitial = await createApplication(payloadInitial);
 				formDataNew.bap_application_id =
 					responseInitial?.data?.internal_application_id;
-				console.log('formDataNew', formDataNew);
-				console.log('responseInitial', responseInitial);
-				console.log(
-					'responseInitial data',
-					responseInitial?.data?.internal_application_id
-				);
 			}
 			// --- Step 2: Submit Order ---
 			const response = await submitForm(
