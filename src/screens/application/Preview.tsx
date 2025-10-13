@@ -93,7 +93,7 @@ const Preview: React.FC = () => {
 				setDocument(filteredDoc);
 			}
 
-			setBenefitName(result?.data?.external_application_id);
+			setBenefitName(result?.data?.bpp_application_id);
 
 			setLoading(false);
 		} catch (error) {

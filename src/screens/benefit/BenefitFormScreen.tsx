@@ -580,13 +580,30 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				formDataNew.orderId = formData.orderId;
 			}
 
-			// --- Step 1: Submit Order ---
 			// For resubmissions, use existing transaction_id if available
 			const submitContext =
 				isResubmit && userData?.transaction_id
 					? { ...context, transaction_id: userData.transaction_id }
 					: context;
 
+			// --- Step 1: Create Application Order ---
+			if (!isResubmit) {
+				const payloadInitial = {
+					user_id: userData?.user_id,
+					benefit_id: benefitId,
+					benefit_provider_id: context?.bpp_id,
+					benefit_provider_uri: context?.bpp_uri,
+					application_name: item?.descriptor?.name,
+					status: 'application initiated',
+					application_data: formDataNew,
+					transaction_id: submitContext?.transaction_id,
+				};
+
+				const responseInitial = await createApplication(payloadInitial);
+				formDataNew.bap_application_id =
+					responseInitial?.data?.internal_application_id;
+			}
+			// --- Step 2: Submit Order ---
 			const response = await submitForm(
 				formDataNew as any,
 				submitContext
@@ -608,44 +625,39 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				return;
 			}
 
-			// --- Step 2: Create Initial Application ---
-			const payloadInitial = {
+			// --- Step 3: Update Application with order id ---
+			const payloadUpdate = {
 				user_id: userData?.user_id,
 				benefit_id: benefitId,
 				benefit_provider_id: context?.bpp_id,
 				benefit_provider_uri: context?.bpp_uri,
-				order_id: orderId,
 				application_name: item?.descriptor?.name,
 				status: 'application initiated',
+				order_id: orderId,
 				application_data: formDataNew,
-				transaction_id:
-					isResubmit && userData?.transaction_id
-						? userData.transaction_id
-						: submitContext?.transaction_id ||
-							response?.responses?.[0]?.context?.transaction_id ||
-							response?.context?.transaction_id,
+				transaction_id: submitContext?.transaction_id,
 			};
 			// console.log('Payload for createApplication:', payloadInitial);
-			await createApplication(payloadInitial);
+			await createApplication(payloadUpdate);
 
-			// --- Step 3: Confirm Order ---
+			// --- Step 4: Confirm Application ---
 			const confirmPayload = {
 				item_id: orderId,
 				rawContext: submitContext,
 			};
 			const confirmResult = await confirmApplication(confirmPayload);
 
-			let external_application_id;
+			let bpp_application_id;
 
 			if (
 				(confirmResult as any)?.data?.responses?.length > 0 &&
 				(confirmResult as any)?.data?.responses?.[0]?.message?.order?.id
 			) {
-				external_application_id = (confirmResult as any).data
-					.responses[0].message.order.id;
+				bpp_application_id = (confirmResult as any).data.responses[0]
+					.message.order.id;
 			}
 
-			if (!external_application_id) {
+			if (!bpp_application_id) {
 				console.error(
 					'External application ID not found in confirm response:',
 					confirmResult
@@ -654,17 +666,17 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				return;
 			}
 
-			// --- Step 4: Update Application with application id ---
+			// --- Step 5: Update Application with external application id ---
 			const payloadFinal = {
-				...payloadInitial,
-				external_application_id,
+				...payloadUpdate,
+				bpp_application_id,
 				status: 'application pending',
 			};
 
 			await createApplication(payloadFinal); // throws if fails
 			// ✅ Success
 			setSubmitDialouge({
-				orderId: external_application_id,
+				orderId: bpp_application_id,
 				name: item?.descriptor?.name,
 			});
 		} catch (error) {
