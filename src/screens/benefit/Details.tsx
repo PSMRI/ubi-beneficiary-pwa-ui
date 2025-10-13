@@ -830,6 +830,8 @@ const BenefitsDetails: React.FC = () => {
 											'application pending',
 											'submitted',
 											'application resubmit',
+											'application initiated',
+											
 										].includes(
 											(
 												applicationStatus || ''
