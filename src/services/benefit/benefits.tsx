@@ -414,6 +414,7 @@ export const submitForm = async (
 			},
 		},
 		message: {
+			...(action === 'update' && { update_target: 'fulfillments' }),
 			order: {
 				provider: { id: resolvedProviderId },
 				items,
@@ -429,6 +430,7 @@ export const submitForm = async (
 	try {
 		const token = localStorage.getItem('authToken');
 		const response = await axios.post(
+			// init or update endpoint based on action
 			`${apiBaseUrl}/${endpoint}`,
 			payload,
 			{
