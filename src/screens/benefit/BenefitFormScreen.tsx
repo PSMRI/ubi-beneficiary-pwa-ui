@@ -136,6 +136,22 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	const { t } = useTranslation();
 	const navigate = useNavigate();
 
+	// Helper to sanitize form data: replace null/undefined with empty string
+	const sanitizeFormData = (data: any): any => {
+		if (typeof data !== 'object' || data === null) return data;
+		const sanitized: any = Array.isArray(data) ? [] : {};
+		for (const key in data) {
+			if (data[key] === null || data[key] === undefined) {
+				sanitized[key] = '';
+			} else if (typeof data[key] === 'object' && !Array.isArray(data[key])) {
+				sanitized[key] = sanitizeFormData(data[key]);
+			} else {
+				sanitized[key] = data[key];
+			}
+		}
+		return sanitized;
+	};
+
 	// Handle back navigation
 	const handleBack = () => {
 		navigate(-1);
@@ -217,8 +233,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 						};
 					}
 				});
+				// Sanitize userData before setting formData
+				const sanitizedUserData = sanitizeFormData(receivedData);
 				const userDataFields = extractUserDataForSchema(
-					receivedData,
+					sanitizedUserData,
 					prop
 				);
 				setFormData(userDataFields);
