@@ -68,7 +68,7 @@ jobs:
       - name: Notify on Slack channel
         uses: iRoachie/slack-github-actions@v2.3.2
         if: always()
-   #     env:
-     #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-   #     with:
-      #    status: ${{ job.status }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
