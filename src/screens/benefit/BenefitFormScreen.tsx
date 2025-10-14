@@ -143,7 +143,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		for (const key in data) {
 			if (data[key] === null || data[key] === undefined) {
 				sanitized[key] = '';
-			} else if (typeof data[key] === 'object' && !Array.isArray(data[key])) {
+			} else if (
+				typeof data[key] === 'object' &&
+				!Array.isArray(data[key])
+			) {
 				sanitized[key] = sanitizeFormData(data[key]);
 			} else {
 				sanitized[key] = data[key];
