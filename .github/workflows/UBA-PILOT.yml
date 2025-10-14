@@ -1,0 +1,95 @@
+name: Deploy to UBA-DePWD-Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to deploy (e.g. v1.0.0 or v1.0.0-rc)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: UBA-DEPWD-PILOT
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate tag format
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          echo "🚀 Deploying tag: $TAG"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            echo "❌ Error: Invalid tag format! Use vX.Y.Z or vX.Y.Z-<suffix>"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.17.0'
+
+      - name: Install dependencies and build project
+        run: |
+          echo '${{ secrets.ENV }}' > .env
+          echo "✅ Environment variables written to .env"
+          yarn install --frozen-lockfile --ignore-engines || yarn install
+          yarn build
+          echo "✅ Build complete."
+
+      - name: Show build output
+        run: |
+          echo "📂 Root directory contents:"
+          ls -lhtr
+          echo "📦 dist/ directory contents:"
+          ls -lhtr dist || echo "❌ dist directory not found!"
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl unzip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip -q awscliv2.zip
+          sudo ./aws/install --update
+          aws --version
+          echo "✅ AWS CLI installed."
+
+      - name: Configure AWS credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_S3_BUCKET_REGION }}
+          echo "✅ AWS credentials configured successfully."
+
+      - name: Upload build to S3 and invalidate CloudFront
+        run: |
+          if [ -d dist ]; then
+            echo "🚀 Uploading build to S3 bucket: ${{ secrets.AWS_S3_BUCKET }}"
+            aws s3 sync dist s3://${{ secrets.AWS_S3_BUCKET }}/ --delete
+            echo "✅ Files uploaded successfully."
+
+            echo "⚡ Invalidating CloudFront cache..."
+            aws cloudfront create-invalidation \
+              --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+              --paths "/*"
+            echo "✅ CloudFront invalidation complete."
+          else
+            echo "❌ dist directory not found! Build may have failed."
+            exit 1
+          fi
+
+      - name: Post job cleanup
+        if: always()
+        run: |
+          echo "🧹 Cleanup complete."
+
+      ## Notify on Slack
+      - name: Notify on Slack channel
+        uses: iRoachie/slack-github-actions@v2.3.2
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          status: ${{ job.status }}
