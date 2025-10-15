@@ -547,15 +547,27 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 
 	// Simple document validation for business logic
 	const validateDocumentFields = () => {
-		const errors: any = {};
+		const errors: Record<string, { __errors: string[] }> = {};
+		const requiredFields = new Set(formSchema?.required ?? []);
+
 		documentFieldNames.forEach((fieldName: string) => {
-			const fieldSchema = formSchema?.properties?.[fieldName];
-			if (fieldSchema?.enum && fieldSchema.enum.length === 0) {
+			if (!requiredFields.has(fieldName)) {
+				return;
+			}
+
+			const value = formData[fieldName];
+			const isEmpty =
+				value === undefined ||
+				value === null ||
+				(typeof value === 'string' && value.trim() === '');
+
+			if (isEmpty || !(formSchema?.properties?.[fieldName]?.enum || []).length) {
 				errors[fieldName] = {
 					__errors: [t('BENEFIT_FORM_DOCUMENT_REQUIRED')],
 				};
 			}
 		});
+
 		return errors;
 	};
 
