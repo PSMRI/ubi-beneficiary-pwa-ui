@@ -561,7 +561,10 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				value === null ||
 				(typeof value === 'string' && value.trim() === '');
 
-			if (isEmpty || !(formSchema?.properties?.[fieldName]?.enum || []).length) {
+			if (
+				isEmpty ||
+				!(formSchema?.properties?.[fieldName]?.enum || []).length
+			) {
 				errors[fieldName] = {
 					__errors: [t('BENEFIT_FORM_DOCUMENT_REQUIRED')],
 				};
