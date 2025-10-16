@@ -7,6 +7,7 @@ import {
 	ModalHeader,
 	ModalBody,
 	ModalFooter,
+	useToast,
 } from '@chakra-ui/react';
 import Layout from '../../components/common/layout/Layout';
 import { Theme as ChakraTheme } from '@rjsf/chakra-ui';
@@ -120,7 +121,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	const [formSchema, setFormSchema] = useState<any>(null);
 	const [formData, setFormData] = useState<Record<string, any>>({});
 	const formRef = useRef<any>(null);
-	const [docSchema, setDocSchema] = useState<any>(null);
 	const [extraErrors, setExtraErrors] = useState<any>(null);
 	const [disableSubmit, setDisableSubmit] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,6 +135,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 	const [item, setItem] = useState<any>(null);
 	const { t } = useTranslation();
 	const navigate = useNavigate();
+	const toast = useToast();
 
 	// Helper to sanitize form data: replace null/undefined with empty string
 	const sanitizeFormData = (data: any): any => {
@@ -289,8 +290,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 			docSchemaArr,
 			formData?.docs
 		);
-
-		setDocSchema(docSchemaData);
 
 		// Merge application and document schemas
 		const properties = {
@@ -504,13 +503,80 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		};
 	};
 
-	// Handle form data change
-	const handleChange = ({ formData }: any) => {
-		setFormData(formData);
+	// Validate all required fields before submission
+	const validateRequiredFields = () => {
+		const validationErrors: any = {};
+		const requiredFields = formSchema?.required || [];
+
+		// Check each required field
+		requiredFields.forEach((fieldName: string) => {
+			const fieldValue = formData[fieldName];
+
+			// Check if field is empty or undefined
+			const isEmpty =
+				fieldValue === undefined ||
+				fieldValue === null ||
+				fieldValue === '' ||
+				(typeof fieldValue === 'string' && fieldValue.trim() === '');
+
+			if (isEmpty) {
+				validationErrors[fieldName] = {
+					__errors: [t('BENEFIT_FORM_FIELD_REQUIRED')],
+				};
+			}
+		});
+
+		// Also validate document fields (keep document check validation)
+		const documentErrors = validateDocumentFields();
+		Object.assign(validationErrors, documentErrors);
+
+		return validationErrors;
 	};
 
-	// Enhanced form submit handler with structured output
-	const handleFormSubmit = async () => {
+	// Handle form data change with simplified logic
+	const handleChange = ({ formData }: any) => {
+		setFormData(formData);
+
+		// Clear validation errors when user starts typing/changing fields
+		if (extraErrors && Object.keys(extraErrors).length > 0) {
+			setExtraErrors(null);
+			// Close any existing toasts when user starts fixing the form
+			toast.closeAll();
+		}
+	};
+
+	// Simple document validation for business logic
+	const validateDocumentFields = () => {
+		const errors: Record<string, { __errors: string[] }> = {};
+		const requiredFields = new Set(formSchema?.required ?? []);
+
+		documentFieldNames.forEach((fieldName: string) => {
+			if (!requiredFields.has(fieldName)) {
+				return;
+			}
+
+			const value = formData[fieldName];
+			const isEmpty =
+				value === undefined ||
+				value === null ||
+				(typeof value === 'string' && value.trim() === '');
+
+			if (
+				isEmpty ||
+				!(formSchema?.properties?.[fieldName]?.enum || []).length
+			) {
+				errors[fieldName] = {
+					__errors: [t('BENEFIT_FORM_DOCUMENT_REQUIRED')],
+				};
+			}
+		});
+
+		return errors;
+	};
+
+	// Enhanced RJSF validation with better UX
+	const handleFormSubmit = async (data: any, event?: any) => {
+		// This function only runs if validation already passed from submit button
 		setDisableSubmit(true);
 		setIsSubmitting(true);
 
@@ -656,7 +722,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				application_data: formDataNew,
 				transaction_id: submitContext?.transaction_id,
 			};
-			// console.log('Payload for createApplication:', payloadInitial);
 			await createApplication(payloadUpdate);
 
 			// --- Step 4: Confirm Application ---
@@ -789,22 +854,20 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 					label="Submit Form"
 					isDisabled={disableSubmit}
 					onClick={() => {
-						const error: any = {};
-						Object.keys(docSchema?.properties ?? {}).forEach(
-							(e: any) => {
-								const field = docSchema?.properties[e];
-								if (field?.enum && field.enum.length === 0) {
-									error[e] = {
-										__errors: [
-											`${e} does not have a document`,
-										],
-									};
-								}
-							}
-						);
-						if (Object.keys(error).length > 0) {
-							setExtraErrors(error);
-						} else if (formRef.current?.validateForm()) {
+						// Validate all fields including documents
+						const validationErrors = validateRequiredFields();
+
+						if (Object.keys(validationErrors).length > 0) {
+							setExtraErrors(validationErrors);
+							toast({
+								title: t('BENEFIT_FORM_VALIDATION_ERROR'),
+								status: 'error',
+								duration: 5000,
+								isClosable: true,
+								position: 'top',
+							});
+						} else {
+							setExtraErrors(null);
 							formRef?.current?.submit();
 						}
 					}}
@@ -824,7 +887,6 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 								<Button
 									onClick={() => {
 										setError('');
-										navigate(-1);
 									}}
 									label={t('DETAILS_CLOSE_BUTTON')}
 								/>
