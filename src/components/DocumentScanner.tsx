@@ -9,16 +9,10 @@ import {
 	List,
 	ListItem,
 	Icon,
-	Modal,
-	ModalOverlay,
-	ModalContent,
-	ModalHeader,
-	ModalBody,
-	ModalCloseButton,
-	useDisclosure,
 	Tooltip,
 } from '@chakra-ui/react';
 import { CheckCircleIcon, AttachmentIcon } from '@chakra-ui/icons';
+import { useNavigate } from 'react-router-dom';
 import Layout from './common/layout/Layout';
 import ScanVC from './ScanVC';
 import { getDocumentsList, getUser } from '../services/auth/auth';
@@ -124,10 +118,11 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 }) => {
 	const { t } = useTranslation();
 	const toast = useToast();
-	const { isOpen, onOpen, onClose } = useDisclosure();
+	const navigate = useNavigate();
 	const [selectedDocument, setSelectedDocument] = useState<Document | null>(
 		null
 	);
+	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const { updateUserData } = useContext(AuthContext)!;
@@ -237,7 +232,8 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 				isClosable: true,
 			});
 
-			onClose(); // Close the modal
+			// Navigate to home page after successful upload
+			navigate('/');
 		} catch (error) {
 			console.error('Error uploading document:', error);
 
@@ -284,18 +280,42 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 	const openUploadModal = (document: Document) => {
 		setSelectedDocument(document);
-		onOpen();
+		setShowScanner(true);
+	};
+
+	const handleBack = () => {
+		if (showScanner) {
+			setShowScanner(false);
+			setSelectedDocument(null);
+		} else {
+			globalThis.history.back();
+		}
 	};
 
 	if (isLoading) {
 		return <Loader />;
 	}
 
+	// Show scanner view
+	if (showScanner && selectedDocument) {
+		return (
+			<Layout
+				_heading={{
+					heading: `${t('SCAN_DOCUMENTS_TITLE')} ${selectedDocument.label}`,
+					handleBack: handleBack,
+				}}
+			>
+				<ScanVC onScanResult={handleScanResult} showHeader={false} />
+			</Layout>
+		);
+	}
+
+	// Show document list view
 	return (
 		<Layout
 			_heading={{
 				heading: t('DOCUMENT_SCANNER_TITLE'),
-				handleBack: () => window.history.back(),
+				handleBack: handleBack,
 			}}
 		>
 			<Box shadow="md" borderWidth="1px" borderRadius="md" p={4}>
@@ -333,8 +353,12 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 											leftIcon={<AttachmentIcon />}
 										>
 											{documentStatus.matchFound
-												? t('DOCUMENT_SCANNER_REUPLOAD_BUTTON')
-												: t('DOCUMENT_SCANNER_UPLOAD_BUTTON')}
+												? t(
+														'DOCUMENT_SCANNER_REUPLOAD_BUTTON'
+													)
+												: t(
+														'DOCUMENT_SCANNER_UPLOAD_BUTTON'
+													)}
 										</Button>
 									</HStack>
 								</ListItem>
@@ -343,17 +367,6 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 					</List>
 				</VStack>
 			</Box>
-
-			<Modal isOpen={isOpen} onClose={onClose} size="xl">
-				<ModalOverlay />
-				<ModalContent>
-					<ModalHeader>{t('SCAN_DOCUMENTS_TITLE')} {selectedDocument?.name}</ModalHeader>
-					<ModalCloseButton />
-					<ModalBody pb={6}>
-						<ScanVC onScanResult={handleScanResult} />
-					</ModalBody>
-				</ModalContent>
-			</Modal>
 		</Layout>
 	);
 };

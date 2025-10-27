@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-	Box,
-	VStack,
-	Text,
-	useTheme,
-	Button,
-	HStack,
-} from '@chakra-ui/react';
+import { Box, VStack, Text, Button } from '@chakra-ui/react';
 import Layout from './common/layout/Layout';
 
 import { Html5Qrcode } from 'html5-qrcode';
@@ -14,12 +7,10 @@ import { useTranslation } from 'react-i18next';
 
 interface ScanVCProps {
 	onScanResult?: (result: string) => void;
-}			
-
-const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
+	showHeader?: boolean;
+}
+const ScanVC: React.FC<ScanVCProps> = ({ onScanResult, showHeader = true }) => {
 	const { t } = useTranslation();
-	const theme = useTheme();
-	/* // const toast = useToast(); */ // NO SONAR
 	const [scanning, setScanning] = useState(false);
 	const [cameraError, setCameraError] = useState<string | null>(null);
 	const [isCameraStarting, setIsCameraStarting] = useState(false);
@@ -66,7 +57,7 @@ const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
 							duration: 2000,
 							isClosable: true,
 						});
- 						*/	// NOSONAR
+ 						*/ // NOSONAR
 						if (onScanResult) onScanResult(decodedText.trim());
 						stopCamera();
 					}
@@ -170,34 +161,23 @@ const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
 		reader.readAsDataURL(file);
 	}; */ // NOSONAR
 
-	return (
-		<Layout
-			_heading={{
-				heading: t('SCAN_DOCUMENTS_TITLE'),
-				handleBack: () => window.history.back(),
-			}}
-		>
-			<Box shadow="md" borderWidth="1px" borderRadius="md" p={4}>
-				<VStack spacing={4} align="stretch">
-					<Text
-						fontSize="lg"
-						fontWeight="medium"
-						color={theme.colors.text}
-					>
-						{t('SCAN_QR_CODE_SCANNER_TITLE')}
-					</Text>
-
-					<HStack spacing={4}>
+	const scannerContent = (
+		<Box px={3} py={1} height="100%">
+			<VStack spacing={2} align="stretch" width="100%" height="100%">
+				{!scanning && (
+					<Box textAlign="center" py={1}>
 						<Button
 							colorScheme="blue"
-							onClick={scanning ? stopCamera : startCamera}
+							size="md"
+							width="full"
+							onClick={startCamera}
 							isLoading={isCameraStarting}
 							loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
 						>
-							{scanning ? t('SCAN_STOP_SCANNING_BUTTON') : t('SCAN_START_CAMERA_BUTTON')}
+							{t('SCAN_START_CAMERA_BUTTON')}
 						</Button>
 
-						{/* <Button as="label" colorScheme="teal">
+						{/* <Button as="label" colorScheme="teal" mt={2}>
 							Upload QR Image
 							<input
 								type="file"
@@ -206,14 +186,52 @@ const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
 								hidden
 							/>
 						</Button> */}
-					</HStack>
+					</Box>
+				)}
 
-					{cameraError && <Text color="red.500">{cameraError}</Text>}
+				{scanning && (
+					<Box textAlign="center" pb={1}>
+						<Button
+							colorScheme="red"
+							size="sm"
+							onClick={stopCamera}
+						>
+							{t('SCAN_STOP_SCANNING_BUTTON')}
+						</Button>
+					</Box>
+				)}
 
-					{/* QR Scanner will mount here */}
-					<Box id={scannerContainerId} width="100%" />
-				</VStack>
-			</Box>
+				{cameraError && (
+					<Box bg="red.50" p={2} borderRadius="md">
+						<Text color="red.600" fontSize="sm">
+							{cameraError}
+						</Text>
+					</Box>
+				)}
+
+				{/* QR Scanner will mount here */}
+				<Box
+					id={scannerContainerId}
+					width="100%"
+					flex="1"
+					minHeight="0"
+				/>
+			</VStack>
+		</Box>
+	);
+
+	if (!showHeader) {
+		return scannerContent;
+	}
+
+	return (
+		<Layout
+			_heading={{
+				heading: t('SCAN_DOCUMENTS_TITLE'),
+				handleBack: () => globalThis.history.back(),
+			}}
+		>
+			{scannerContent}
 		</Layout>
 	);
 };
