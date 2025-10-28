@@ -129,6 +129,7 @@
   "DOCUMENTCONFIG_REMOVE_ARIA": "Remove",
   "DOCUMENTCONFIG_LOADING_TYPES": "Loading document types...",
   "DOCUMENTCONFIG_SELECT_TYPE": "Select document type",
+  "DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER": "Select option",
   "DOCUMENTCONFIG_SAVE_ALL_BUTTON": "Save All Configurations",
   "DOCUMENTCONFIG_SAVE_ERROR": "Failed to save document configurations",
   "DOCUMENTCONFIG_SUBTITLE": "Add and manage document configurations.",

@@ -128,6 +128,7 @@
   "DOCUMENTCONFIG_REMOVE_ARIA": "हटाएं",
   "DOCUMENTCONFIG_LOADING_TYPES": "दस्तावेज़ प्रकार लोड हो रहे हैं...",
   "DOCUMENTCONFIG_SELECT_TYPE": "दस्तावेज़ प्रकार चुनें",
+  "DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER": "विकल्प चुनें",
   "DOCUMENTCONFIG_SAVE_ALL_BUTTON": "सभी कॉन्फ़िगरेशन सहेजें",
   "DOCUMENTCONFIG_SAVE_ERROR": "दस्तावेज़ कॉन्फ़िगरेशन सहेजने में विफल",
   "DOCUMENTCONFIG_SUBTITLE": "दस्तावेज़ कॉन्फ़िगरेशन जोड़ें और प्रबंधित करें।",

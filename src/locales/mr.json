@@ -127,6 +127,7 @@
     "DOCUMENTCONFIG_FIELD_REQUIRED": "आवश्यक आहे",
     "DOCUMENTCONFIG_REMOVE_ARIA": "काढा",
     "DOCUMENTCONFIG_LOADING_TYPES": "दस्तऐवज प्रकार लोड होत आहेत...",
+    "DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER": "पर्याय निवडा",
     "DOCUMENTCONFIG_SELECT_TYPE": "दस्तऐवज प्रकार निवडा",
     "DOCUMENTCONFIG_SAVE_ALL_BUTTON": "सर्व कॉन्फिगरेशन सेव्ह करा",
     "DOCUMENTCONFIG_SAVE_ERROR": "दस्तऐवज कॉन्फिगरेशन जतन करण्यात अयशस्वी",
