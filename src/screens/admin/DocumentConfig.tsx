@@ -27,10 +27,29 @@ interface DocumentConfig {
 	documentSubType: string;
 	docType: string;
 	vcFields: string;
+	issueVC: string;
+	docQRContains?: string;
 }
 interface ValidationErrors {
 	[key: string]: string;
 }
+
+// Dropdown options constants
+const ISSUE_VC_OPTIONS = [
+	{ label: 'Yes', value: 'yes' },
+	{ label: 'No', value: 'no' },
+];
+
+const DOC_QR_CONTAINS_OPTIONS = [
+	{ label: 'Doc URL', value: 'DOC_URL' },
+	{ label: 'Plain Text', value: 'PLAIN_TEXT' },
+	{ label: 'VC URL', value: 'VC_URL' },
+	{ label: 'Text and URL', value: 'TEXT_AND_URL' },
+	{ label: 'JSON URL', value: 'JSON_URL' },
+	{ label: 'XML URL', value: 'XML_URL' },
+	{ label: 'JSON', value: 'JSON' },
+	{ label: 'XML', value: 'XML' },
+];
 const DocumentConfig = () => {
 	const toast = useToast();
 	const { t } = useTranslation();
@@ -123,6 +142,8 @@ const DocumentConfig = () => {
 							documentSubType: item.documentSubType || '',
 							docType: item.docType || '',
 							vcFields: vcFieldsString,
+							issueVC: item.issueVC || '',
+							docQRContains: item.docQRContains || '',
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -135,6 +156,8 @@ const DocumentConfig = () => {
 							documentSubType: '',
 							docType: '',
 							vcFields: '',
+							issueVC: '',
+							docQRContains: '',
 						},
 					]);
 				}
@@ -188,11 +211,23 @@ const DocumentConfig = () => {
 		value: string
 	) => {
 		const updated = [...documentConfigs];
-		(updated[index] as any)[field] = value;
+		updated[index][field] = value as never;
+
+		// If issueVC changes to "yes", clear docQRContains
+		if (field === 'issueVC' && value === 'yes') {
+			updated[index].docQRContains = '';
+		}
+
 		setDocumentConfigs(updated);
 
 		const newErrors = { ...errors };
 		delete newErrors[`${field}_${index}`];
+
+		// If issueVC changes, clear docQRContains error
+		if (field === 'issueVC') {
+			delete newErrors[`docQRContains_${index}`];
+		}
+
 		// If the field is 'vcFields', validate JSON and structure
 		if (field === 'vcFields') {
 			if (value.trim() !== '' && !validateVcFields(value)) {
@@ -229,6 +264,8 @@ const DocumentConfig = () => {
 				documentSubType: '',
 				docType: '',
 				vcFields: '',
+				issueVC: '',
+				docQRContains: '',
 			},
 		]);
 	};
@@ -257,15 +294,28 @@ const DocumentConfig = () => {
 		const newErrors = {};
 		// Validate all required fields and vcFields structure
 		documentConfigs.forEach((doc, index) => {
-			['name', 'label', 'documentSubType', 'docType', 'vcFields'].forEach(
-				(field) => {
-					if (!doc[field]) {
-						newErrors[`${field}_${index}`] =
-							`${field} ${t('DOCUMENTCONFIG_FIELD_REQUIRED')}`;
-						hasError = true;
-					}
+			[
+				'name',
+				'label',
+				'documentSubType',
+				'docType',
+				'vcFields',
+				'issueVC',
+			].forEach((field) => {
+				if (!doc[field]) {
+					newErrors[`${field}_${index}`] = `${field} ${t(
+						'DOCUMENTCONFIG_FIELD_REQUIRED'
+					)}`;
+					hasError = true;
 				}
-			);
+			});
+			// Validate docQRContains is required when issueVC is "no"
+			if (doc.issueVC === 'no' && !doc.docQRContains) {
+				newErrors[`docQRContains_${index}`] = t(
+					'DOCUMENTCONFIG_FIELD_REQUIRED'
+				);
+				hasError = true;
+			}
 			if (doc.vcFields && doc.vcFields.trim() !== '') {
 				if (!validateVcFields(doc.vcFields)) {
 					newErrors[`vcFields_${index}`] = t(
@@ -295,6 +345,8 @@ const DocumentConfig = () => {
 				documentSubType: doc.documentSubType,
 				docType: doc.docType,
 				vcFields: doc.vcFields,
+				issueVC: doc.issueVC,
+				docQRContains: doc.docQRContains,
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 			toast({
@@ -342,28 +394,28 @@ const DocumentConfig = () => {
 					<Box>
 						<VStack spacing={6} align="stretch">
 							{documentTypesFetchFailed &&
-								!isLoadingDocumentTypes && (
-									<Box
-										bg="red.50"
-										border="1px solid"
-										borderColor="red.200"
-										borderRadius="md"
-										p={4}
-										mb={4}
-									>
-										<Text color="red.600" fontWeight="bold">
-											⚠️{' '}
-											{t(
-												'DOCUMENTCONFIG_TYPES_FAILED_WARNING'
-											)}
-										</Text>
-										<Text color="red.500" fontSize="sm">
-											{t(
-												'DOCUMENTCONFIG_TYPES_FAILED_MESSAGE'
-											)}
-										</Text>
-									</Box>
-								)}
+							!isLoadingDocumentTypes && (
+								<Box
+									bg="red.50"
+									border="1px solid"
+									borderColor="red.200"
+									borderRadius="md"
+									p={4}
+									mb={4}
+								>
+									<Text color="red.600" fontWeight="bold">
+										⚠️{' '}
+										{t(
+											'DOCUMENTCONFIG_TYPES_FAILED_WARNING'
+										)}
+									</Text>
+									<Text color="red.500" fontSize="sm">
+										{t(
+											'DOCUMENTCONFIG_TYPES_FAILED_MESSAGE'
+										)}
+									</Text>
+								</Box>
+							)}
 							{documentConfigs.map((doc, index) => (
 								<Box
 									key={doc.id}
@@ -543,13 +595,11 @@ const DocumentConfig = () => {
 														boxShadow:
 															'0 0 0 2px #06164B33',
 													}}
-													isDisabled={
-														isLoadingDocumentTypes ||
-														documentTypesFetchFailed
-													}
-													placeholder={
-														getDocumentTypeSelectPlaceholder()
-													}
+												isDisabled={
+													isLoadingDocumentTypes ||
+													documentTypesFetchFailed
+												}
+												placeholder={getDocumentTypeSelectPlaceholder()}
 												>
 													{documentTypes.map(
 														(type) => (
@@ -617,6 +667,150 @@ const DocumentConfig = () => {
 												</FormErrorMessage>
 											</FormControl>
 										</HStack>
+										<HStack
+											spacing={4}
+											align={{
+												base: 'stretch',
+												md: 'start',
+											}}
+											flexDir={{
+												base: 'column',
+												md: 'row',
+											}}
+										>
+											<FormControl
+												isInvalid={
+													!!errors[`issueVC_${index}`]
+												}
+												flex={1}
+											>
+												<FormLabel
+													fontSize="md"
+													fontWeight="bold"
+													color="#06164B"
+												>
+													{t(
+														'DOCUMENTCONFIG_ISSUE_VC_LABEL'
+													)}
+													<Text
+														as="span"
+														color="red.500"
+													>
+														*
+													</Text>
+												</FormLabel>
+												<Select
+													value={doc.issueVC}
+													onChange={(e) =>
+														handleChange(
+															index,
+															'issueVC',
+															e.target.value
+														)
+													}
+													borderWidth="2px"
+													bg="white"
+													size="lg"
+													borderRadius="md"
+													_focus={{
+														borderColor: 'blue.400',
+														boxShadow:
+															'0 0 0 2px #06164B33',
+													}}
+													placeholder="Select option"
+												>
+													{ISSUE_VC_OPTIONS.map(
+														(option) => (
+															<option
+																key={option.value}
+																value={
+																	option.value
+																}
+															>
+																{option.label}
+															</option>
+														)
+													)}
+												</Select>
+												<FormErrorMessage fontSize="xs">
+													{errors[`issueVC_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+											{doc.issueVC === 'no' && (
+												<FormControl
+													isInvalid={
+														!!errors[
+															`docQRContains_${index}`
+														]
+													}
+													flex={1}
+												>
+													<FormLabel
+														fontSize="md"
+														fontWeight="bold"
+														color="#06164B"
+													>
+														{t(
+															'DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL'
+														)}
+														<Text
+															as="span"
+															color="red.500"
+														>
+															*
+														</Text>
+													</FormLabel>
+													<Select
+														value={
+															doc.docQRContains ||
+															''
+														}
+														onChange={(e) =>
+															handleChange(
+																index,
+																'docQRContains',
+																e.target.value
+															)
+														}
+														borderWidth="2px"
+														bg="white"
+														size="lg"
+														borderRadius="md"
+														_focus={{
+															borderColor:
+																'blue.400',
+															boxShadow:
+																'0 0 0 2px #06164B33',
+														}}
+														placeholder="Select option"
+													>
+														{DOC_QR_CONTAINS_OPTIONS.map(
+															(option) => (
+																<option
+																	key={
+																		option.value
+																	}
+																	value={
+																		option.value
+																	}
+																>
+																	{
+																		option.label
+																	}
+																</option>
+															)
+														)}
+													</Select>
+													<FormErrorMessage fontSize="xs">
+														{
+															errors[
+																`docQRContains_${index}`
+															]
+														}
+													</FormErrorMessage>
+												</FormControl>
+											)}
+										</HStack>
 										<FormControl
 											isInvalid={
 												!!errors[`vcFields_${index}`]
@@ -669,7 +863,7 @@ const DocumentConfig = () => {
 											<FormErrorMessage fontSize="xs">
 												{errors[`vcFields_${index}`]}
 											</FormErrorMessage>
-										</FormControl>
+										</FormControl>						
 									</VStack>
 								</Box>
 							))}
