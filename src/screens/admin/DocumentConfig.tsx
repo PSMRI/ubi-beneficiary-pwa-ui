@@ -370,13 +370,13 @@ const DocumentConfig = () => {
 	// --- Helper function to get document type select placeholder ---
 	const getDocumentTypeSelectPlaceholder = () => {
 		if (isLoadingDocumentTypes) {
-			return 'Loading document types...';
+		  return t('DOCUMENTCONFIG_LOADING_TYPES');
 		}
 		if (documentTypesFetchFailed) {
-			return t('DOCUMENTCONFIG_TYPES_FAILED_WARNING');
+		  return t('DOCUMENTCONFIG_TYPES_FAILED_WARNING');
 		}
-		return 'Select document type';
-	};
+		return t('DOCUMENTCONFIG_SELECT_TYPE');
+	  };
 
 	return (
 		<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
@@ -705,7 +705,7 @@ const DocumentConfig = () => {
 														handleChange(
 															index,
 															'issueVC',
-															e.target.value
+															e.target.value as 'yes'|'no'
 														)
 													}
 													borderWidth="2px"
@@ -769,7 +769,7 @@ const DocumentConfig = () => {
 															handleChange(
 																index,
 																'docQRContains',
-																e.target.value
+																e.target.value as DocumentConfig['docQRContains']
 															)
 														}
 														borderWidth="2px"
