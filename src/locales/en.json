@@ -127,6 +127,8 @@
   "DOCUMENTCONFIG_CANNOT_SAVE_CONFIG": "Cannot save configurations. Document types failed to load. Please refresh the page.",
   "DOCUMENTCONFIG_FIELD_REQUIRED": "is required",
   "DOCUMENTCONFIG_REMOVE_ARIA": "Remove",
+  "DOCUMENTCONFIG_LOADING_TYPES": "Loading document types...",
+  "DOCUMENTCONFIG_SELECT_TYPE": "Select document type",
   "DOCUMENTCONFIG_SAVE_ALL_BUTTON": "Save All Configurations",
   "DOCUMENTCONFIG_SAVE_ERROR": "Failed to save document configurations",
   "DOCUMENTCONFIG_SUBTITLE": "Add and manage document configurations.",
