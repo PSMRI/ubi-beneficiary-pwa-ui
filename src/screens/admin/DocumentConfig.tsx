@@ -205,13 +205,13 @@ const DocumentConfig = () => {
 	};
 
 	// --- Handle input changes and validate fields ---
-	const handleChange = (
+	const handleChange = <K extends keyof DocumentConfig>(
 		index: number,
-		field: keyof DocumentConfig,
-		value: string
+		field: K,
+		value: DocumentConfig[K]
 	) => {
 		const updated = [...documentConfigs];
-		updated[index][field] = value as never;
+		updated[index][field] = value;
 
 		// If issueVC changes to "yes", clear docQRContains
 		if (field === 'issueVC' && value === 'yes') {
@@ -230,7 +230,11 @@ const DocumentConfig = () => {
 
 		// If the field is 'vcFields', validate JSON and structure
 		if (field === 'vcFields') {
-			if (value.trim() !== '' && !validateVcFields(value)) {
+			if (
+				typeof value === 'string' &&
+				value.trim() !== '' &&
+				!validateVcFields(value)
+			) {
 				newErrors[`vcFields_${index}`] = t(
 					'DOCUMENTCONFIG_VC_FIELDS_INVALID_FORMAT'
 				);
@@ -717,12 +721,16 @@ const DocumentConfig = () => {
 														boxShadow:
 															'0 0 0 2px #06164B33',
 													}}
-													placeholder="Select option"
+													placeholder={t(
+														'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
+													)}
 												>
 													{ISSUE_VC_OPTIONS.map(
 														(option) => (
 															<option
-																key={option.value}
+																key={
+																	option.value
+																}
 																value={
 																	option.value
 																}
@@ -782,7 +790,9 @@ const DocumentConfig = () => {
 															boxShadow:
 																'0 0 0 2px #06164B33',
 														}}
-														placeholder="Select option"
+														placeholder={t(
+															'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
+														)}
 													>
 														{DOC_QR_CONTAINS_OPTIONS.map(
 															(option) => (
