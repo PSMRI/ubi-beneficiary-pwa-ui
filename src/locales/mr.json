@@ -138,6 +138,8 @@
     "DOCUMENTCONFIG_VC_FIELDS_INVALID_FORMAT": "अवैध स्वरूप: JSON ऑब्जेक्ट असणे आवश्यक आहे जेथे प्रत्येक की हे फील्ड नाव आहे आणि त्याचे मूल्य \"type\" गुणधर्म असलेले ऑब्जेक्ट आहे.",
     "DOCUMENTCONFIG_VC_FIELDS_LABEL": "VC फील्ड (JSON)",
     "DOCUMENTCONFIG_VC_FIELDS_PLACEHOLDER": "{\"field1\": {\"type\": \"string\"}, \"field2\": {\"type\": \"number\"}}",
+    "DOCUMENTCONFIG_ISSUE_VC_LABEL": "VC जारी करा",
+    "DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL": "दस्तऐवज QR मध्ये समाविष्ट",
     "EDITPROFILE_ANNUAL_INCOME_LABEL": "वार्षिक उत्पन्न",
     "EDITPROFILE_BANK_ACCOUNT_HOLDER_NAME_LABEL": "बँक खाते धारकाचे नाव",
     "EDITPROFILE_BANK_ACCOUNT_NUMBER_HELP": "वैध 9-18 अंकी खाते क्रमांक प्रविष्ट करा",

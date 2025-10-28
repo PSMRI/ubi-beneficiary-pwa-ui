@@ -139,6 +139,8 @@
   "DOCUMENTCONFIG_VC_FIELDS_INVALID_FORMAT": "Invalid format: Must be a JSON object where each key is a field name and its value is an object with a \"type\" property.",
   "DOCUMENTCONFIG_VC_FIELDS_LABEL": "VC fields (JSON)",
   "DOCUMENTCONFIG_VC_FIELDS_PLACEHOLDER": "{\"field1\": {\"type\": \"string\"}, \"field2\": {\"type\": \"number\"}}",
+  "DOCUMENTCONFIG_ISSUE_VC_LABEL": "Issue VC",
+  "DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL": "Doc QR Contains",
   "EDITPROFILE_ANNUAL_INCOME_LABEL": "Annual Income",
   "EDITPROFILE_BANK_ACCOUNT_HOLDER_NAME_LABEL": "Bank Account Holder Name",
   "EDITPROFILE_BANK_ACCOUNT_NUMBER_HELP": "Enter valid 9-18 digit account number",
