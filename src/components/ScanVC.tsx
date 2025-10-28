@@ -177,11 +177,16 @@ const ScanVC: React.FC<ScanVCProps> = ({ onScanResult, showHeader = true }) => {
 							{t('SCAN_START_CAMERA_BUTTON')}
 						</Button>
 
-						{/* <Button as="label" colorScheme="teal" mt={2}>
-							Upload QR Image
+						{/* <Button
+							as="label"
+							colorScheme="teal"
+							size="md"
+							width="full"
+						>
+							<span>Upload Image OR PDF</span>
 							<input
 								type="file"
-								accept="image/*"
+								accept="image/*,application/pdf"
 								onChange={handleFileSelect}
 								hidden
 							/>
