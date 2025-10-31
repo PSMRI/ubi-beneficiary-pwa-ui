@@ -48,6 +48,43 @@ export const useQRScanner = ({
 		};
 	}, [stopCamera]);
 
+	const handleDecodedText = useCallback(
+		(decodedText: string) => {
+			if (hasScanned.current) return;
+			hasScanned.current = true;
+			console.log('Scanned QR code URL:', decodedText.trim());
+
+			// Use setTimeout to ensure the callback runs in the next tick
+			// This prevents React render cycle conflicts
+			setTimeout(() => {
+				try {
+					if (onScanResult) {
+						onScanResult(decodedText.trim());
+					}
+				} catch (error) {
+					console.error('Error in onScanResult callback:', error);
+				}
+			}, 0);
+
+			// Stop the camera after a brief delay
+			setTimeout(() => {
+				const qrInstance = html5QrCodeRef.current;
+				if (qrInstance) {
+					qrInstance
+						.stop()
+						.then(() => qrInstance.clear())
+						.catch(console.warn);
+					setScanning(false);
+				}
+			}, 100);
+		},
+		[onScanResult]
+	);
+
+	const handleScanError = useCallback((errorMessage: string) => {
+		console.warn('QR Scan Error:', errorMessage);
+	}, []);
+
 	const startCamera = useCallback(async () => {
 		setIsCameraStarting(true);
 		setCameraError(null);
@@ -62,39 +99,8 @@ export const useQRScanner = ({
 					? { facingMode: 'environment' }
 					: { facingMode: 'user' },
 				QR_SCANNER_CONFIG,
-				(decodedText: string) => {
-					if (!hasScanned.current) {
-						hasScanned.current = true;
-						console.log('Scanned QR code URL:', decodedText.trim());
-
-						// Use setTimeout to ensure the callback runs in the next tick
-						// This prevents React render cycle conflicts
-						setTimeout(() => {
-							try {
-								if (onScanResult) {
-									onScanResult(decodedText.trim());
-								}
-							} catch (error) {
-								console.error(
-									'Error in onScanResult callback:',
-									error
-								);
-							}
-						}, 0);
-
-						// Stop the camera after a brief delay
-						setTimeout(() => {
-							const qrInstance = html5QrCodeRef.current;
-							if (qrInstance) {
-								qrInstance.stop().catch(console.warn);
-								setScanning(false);
-							}
-						}, 100);
-					}
-				},
-				(errorMessage: string) => {
-					console.warn('QR Scan Error:', errorMessage);
-				}
+				handleDecodedText,
+				handleScanError
 			);
 
 			setScanning(true);
@@ -104,7 +110,7 @@ export const useQRScanner = ({
 		} finally {
 			setIsCameraStarting(false);
 		}
-	}, [onScanResult, t]);
+	}, [handleDecodedText, handleScanError, t]);
 
 	return {
 		scanning,

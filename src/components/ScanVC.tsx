@@ -137,7 +137,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							cursor={isUploading ? 'not-allowed' : 'pointer'}
 						>
 							<span>
-								{t('UPLOAD_DOCUMENT_FOR_VC')} (&lt;{' '}
+								{t('UPLOAD_DOCUMENT_FOR_VC')} ({'<'}{' '}
 								{MAX_FILE_SIZE_MB}MB)
 							</span>
 							<input
