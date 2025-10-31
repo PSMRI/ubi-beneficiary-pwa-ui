@@ -7,7 +7,6 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
  * @param {string} docType - Type of document (e.g., 'marksProof')
  * @param {string} docSubType - Sub-type of document (e.g., 'marksheet')
  * @param {string} docName - Name of the document (e.g., 'Marksheet')
- * @param {string} uploadedBy - User ID who is uploading the document
  * @param {string} importedFrom - Source of upload (default: 'Manual Upload')
  * @returns {Promise} - Promise representing the API response
  */

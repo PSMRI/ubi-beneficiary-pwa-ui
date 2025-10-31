@@ -56,7 +56,8 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 				},
 			};
 
-			const stream = await navigator.mediaDevices.getUserMedia(constraints);
+			const stream =
+				await navigator.mediaDevices.getUserMedia(constraints);
 			streamRef.current = stream;
 
 			if (videoRef.current) {
@@ -119,7 +120,9 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 					setIsCompressing(true);
 
 					try {
-						await new Promise((resolve) => setTimeout(resolve, 500));
+						await new Promise((resolve) =>
+							setTimeout(resolve, 500)
+						);
 
 						const originalSizeMB = (
 							tempFile.size /
@@ -130,7 +133,10 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 							title: t('SCAN_OPTIMIZING'),
 							description: t('SCAN_IMAGE_EXCEEDS_SIZE')
 								.replaceAll('{size}', originalSizeMB)
-								.replaceAll('{maxSize}', MAX_FILE_SIZE_MB.toString()),
+								.replaceAll(
+									'{maxSize}',
+									MAX_FILE_SIZE_MB.toString()
+								),
 							status: 'info',
 							duration: 2000,
 							isClosable: true,
@@ -145,9 +151,14 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 						setCompressedFileSize(compressedFile.size);
 
 						if (compressedFile.size > MAX_FILE_SIZE) {
-							const errorMessage = t('SCAN_IMAGE_EXCEEDS_AFTER_COMPRESSION')
+							const errorMessage = t(
+								'SCAN_IMAGE_EXCEEDS_AFTER_COMPRESSION'
+							)
 								.replaceAll('{size}', fileSizeMB.toFixed(2))
-								.replaceAll('{maxSize}', MAX_FILE_SIZE_MB.toString());
+								.replaceAll(
+									'{maxSize}',
+									MAX_FILE_SIZE_MB.toString()
+								);
 
 							setCameraError(errorMessage);
 							setIsCompressing(false);
@@ -214,4 +225,3 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 		setCameraError,
 	};
 };
-

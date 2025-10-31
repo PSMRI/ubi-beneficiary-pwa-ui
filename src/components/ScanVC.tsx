@@ -1,11 +1,5 @@
 import React, { useEffect } from 'react';
-import {
-	Box,
-	VStack,
-	Text,
-	Button,
-	HStack,
-} from '@chakra-ui/react';
+import { Box, VStack, Text, Button, HStack } from '@chakra-ui/react';
 import Layout from './common/layout/Layout';
 import { useTranslation } from 'react-i18next';
 
@@ -64,18 +58,20 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	} = useCameraCapture();
 
 	// File upload hook
-	const { isUploading, uploadDocumentFile, handleFileSelect } = useFileUpload({
-		documentConfig,
-		onUploadSuccess,
-		onUploadStart: () => {
-			setCaptureCameraError(null);
-		},
-		onUploadComplete: () => {
-			if (capturedFile) {
-				handleCancelCapture();
-			}
-		},
-	});
+	const { isUploading, uploadDocumentFile, handleFileSelect } = useFileUpload(
+		{
+			documentConfig,
+			onUploadSuccess,
+			onUploadStart: () => {
+				setCaptureCameraError(null);
+			},
+			onUploadComplete: () => {
+				if (capturedFile) {
+					handleCancelCapture();
+				}
+			},
+		}
+	);
 
 	// Combined camera error from both hooks
 	const cameraError = qrCameraError || captureCameraError;

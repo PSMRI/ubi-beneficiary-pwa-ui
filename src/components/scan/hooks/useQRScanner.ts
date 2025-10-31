@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from '../../../utils/deviceUtils';
@@ -25,6 +25,27 @@ export const useQRScanner = ({
 	const [cameraError, setCameraError] = useState<string | null>(null);
 	const hasScanned = useRef(false);
 	const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+
+	const stopCamera = useCallback(() => {
+		setScanning(false);
+		setCameraError(null);
+		if (html5QrCodeRef.current) {
+			html5QrCodeRef.current
+				.stop()
+				.then(() => html5QrCodeRef.current?.clear())
+				.catch((err) => {
+					console.warn('Error stopping camera:', err);
+				});
+			html5QrCodeRef.current = null;
+		}
+	}, []);
+
+	// Cleanup camera on unmount
+	useEffect(() => {
+		return () => {
+			stopCamera();
+		};
+	}, [stopCamera]);
 
 	const startCamera = useCallback(async () => {
 		setIsCameraStarting(true);
@@ -62,20 +83,6 @@ export const useQRScanner = ({
 		}
 	}, [onScanResult, t]);
 
-	const stopCamera = useCallback(() => {
-		setScanning(false);
-		setCameraError(null);
-		if (html5QrCodeRef.current) {
-			html5QrCodeRef.current
-				.stop()
-				.then(() => html5QrCodeRef.current?.clear())
-				.catch((err) => {
-					console.warn('Error stopping camera:', err);
-				});
-			html5QrCodeRef.current = null;
-		}
-	}, []);
-
 	return {
 		scanning,
 		isCameraStarting,
@@ -84,4 +91,3 @@ export const useQRScanner = ({
 		stopCamera,
 	};
 };
-

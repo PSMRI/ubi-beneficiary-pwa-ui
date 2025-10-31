@@ -20,11 +20,15 @@ interface UseFileUploadOptions {
 
 interface UseFileUploadReturn {
 	isUploading: boolean;
-	uploadDocumentFile: (file: File, importedFrom: string) => Promise<any>;
+	uploadDocumentFile: (file: File, importedFrom: string) => Promise<unknown>;
 	handleFileSelect: (
 		event: React.ChangeEvent<HTMLInputElement>
 	) => Promise<void>;
-	validateFile: (file: File) => { valid: boolean; error?: string };
+	validateFile: (file: File) => {
+		valid: boolean;
+		code?: string;
+		message?: string;
+	};
 }
 
 export const useFileUpload = ({
@@ -38,14 +42,16 @@ export const useFileUpload = ({
 	const [isUploading, setIsUploading] = useState(false);
 
 	const validateFile = useCallback(
-		(file: File): { valid: boolean; error?: string } => {
+		(file: File): { valid: boolean; code?: string; message?: string } => {
 			// Validate file type (image or PDF)
 			const isValidType =
-				file.type.startsWith('image/') || file.type === 'application/pdf';
+				file.type.startsWith('image/') ||
+				file.type === 'application/pdf';
 			if (!isValidType) {
 				return {
 					valid: false,
-					error: t('SCAN_INVALID_FILE_TYPE'),
+					code: 'type',
+					message: t('SCAN_INVALID_FILE_TYPE'),
 				};
 			}
 
@@ -63,7 +69,8 @@ export const useFileUpload = ({
 
 				return {
 					valid: false,
-					error: errorMessage,
+					code: 'size',
+					message: errorMessage,
 				};
 			}
 
@@ -102,13 +109,27 @@ export const useFileUpload = ({
 				return response;
 			} catch (error) {
 				console.error('Error during file upload:', error);
+				toast({
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
+					description: t('SCAN_ERROR_UPLOAD_FILE'),
+					status: 'error',
+					duration: 4000,
+					isClosable: true,
+				});
 				throw error;
 			} finally {
 				setIsUploading(false);
 				if (onUploadComplete) onUploadComplete();
 			}
 		},
-		[documentConfig, onUploadSuccess, onUploadStart, onUploadComplete, toast, t]
+		[
+			documentConfig,
+			onUploadSuccess,
+			onUploadStart,
+			onUploadComplete,
+			toast,
+			t,
+		]
 	);
 
 	const handleFileSelect = useCallback(
@@ -122,12 +143,13 @@ export const useFileUpload = ({
 			const validation = validateFile(file);
 			if (!validation.valid) {
 				toast({
-					title: validation.error?.includes('size')
-						? t('SCAN_FILE_TOO_LARGE_TITLE')
-						: t('SCAN_INVALID_FILE_TYPE_TITLE'),
-					description: validation.error,
+					title:
+						validation.code === 'size'
+							? t('SCAN_FILE_TOO_LARGE_TITLE')
+							: t('SCAN_INVALID_FILE_TYPE_TITLE'),
+					description: validation.message,
 					status: 'error',
-					duration: validation.error?.includes('size') ? 4000 : 3000,
+					duration: validation.code === 'size' ? 4000 : 3000,
 					isClosable: true,
 				});
 				event.target.value = '';
@@ -147,4 +169,3 @@ export const useFileUpload = ({
 		validateFile,
 	};
 };
-

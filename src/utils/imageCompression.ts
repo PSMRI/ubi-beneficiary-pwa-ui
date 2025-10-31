@@ -3,14 +3,16 @@
  * Maintains quality suitable for OCR and document processing
  */
 
-import imageCompression from 'browser-image-compression';
+import imageCompression, {
+    type Options as ImageCompressionOptions,
+} from 'browser-image-compression';
 
-interface CompressionOptions {
+export type CompressionOptions = {
     maxWidth?: number;
     maxHeight?: number;
     quality?: number;
     maxSizeMB?: number;
-}
+};
 
 /**
  * Compresses an image file while maintaining quality for OCR processing
@@ -30,13 +32,11 @@ export const compressImage = async (
     } = options;
 
     try {
-        const compressionOptions = {
+        const compressionOptions: ImageCompressionOptions = {
             maxSizeMB: maxSizeMB,
             maxWidthOrHeight: Math.max(maxWidth, maxHeight),
-            useWebWorker: true, // Use worker thread for better performance
+            useWebWorker: true,
             initialQuality: quality,
-            alwaysKeepResolution: false, // Allow resolution reduction if needed
-            fileType: 'image/jpeg', // Convert to JPEG for better compression
         };
 
         console.log('Starting image compression:', {
@@ -48,8 +48,12 @@ export const compressImage = async (
 
         console.log('Image compression complete:', {
             originalSize: (file.size / (1024 * 1024)).toFixed(2) + 'MB',
-            compressedSize: (compressedFile.size / (1024 * 1024)).toFixed(2) + 'MB',
-            reduction: (((file.size - compressedFile.size) / file.size) * 100).toFixed(1) + '%',
+            compressedSize:
+                (compressedFile.size / (1024 * 1024)).toFixed(2) + 'MB',
+            reduction:
+                (((file.size - compressedFile.size) / file.size) * 100).toFixed(
+                    1
+                ) + '%',
         });
 
         return compressedFile;
@@ -63,7 +67,10 @@ export const compressImage = async (
 /**
  * Quick validation to check if compression is needed
  */
-export const shouldCompressImage = (file: File, maxSizeMB: number = 2): boolean => {
+export const shouldCompressImage = (
+    file: File,
+    maxSizeMB: number = 2
+): boolean => {
     const sizeMB = file.size / (1024 * 1024);
     return sizeMB > maxSizeMB * 0.8; // Compress if over 80% of limit
 };
