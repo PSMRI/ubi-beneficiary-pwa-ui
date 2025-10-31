@@ -3,7 +3,7 @@
  */
 
 // File size limits
-export const MAX_FILE_SIZE_MB = 0.1; // Maximum file size in megabytes
+export const MAX_FILE_SIZE_MB = 2; // Maximum file size in megabytes
 export const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // Convert to bytes
 
 // Compression settings for captured images
