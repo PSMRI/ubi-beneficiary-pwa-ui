@@ -29,10 +29,11 @@ export const useQRScanner = ({
 	const stopCamera = useCallback(() => {
 		setScanning(false);
 		setCameraError(null);
-		if (html5QrCodeRef.current) {
-			html5QrCodeRef.current
+		const qrInstance = html5QrCodeRef.current;
+		if (qrInstance) {
+			qrInstance
 				.stop()
-				.then(() => html5QrCodeRef.current?.clear())
+				.then(() => qrInstance.clear())
 				.catch((err) => {
 					console.warn('Error stopping camera:', err);
 				});
@@ -64,9 +65,31 @@ export const useQRScanner = ({
 				(decodedText: string) => {
 					if (!hasScanned.current) {
 						hasScanned.current = true;
-						if (onScanResult) onScanResult(decodedText.trim());
-						html5QrCodeRef.current?.stop().catch(console.warn);
-						setScanning(false);
+						console.log('Scanned QR code URL:', decodedText.trim());
+
+						// Use setTimeout to ensure the callback runs in the next tick
+						// This prevents React render cycle conflicts
+						setTimeout(() => {
+							try {
+								if (onScanResult) {
+									onScanResult(decodedText.trim());
+								}
+							} catch (error) {
+								console.error(
+									'Error in onScanResult callback:',
+									error
+								);
+							}
+						}, 0);
+
+						// Stop the camera after a brief delay
+						setTimeout(() => {
+							const qrInstance = html5QrCodeRef.current;
+							if (qrInstance) {
+								qrInstance.stop().catch(console.warn);
+								setScanning(false);
+							}
+						}, 100);
 					}
 				},
 				(errorMessage: string) => {

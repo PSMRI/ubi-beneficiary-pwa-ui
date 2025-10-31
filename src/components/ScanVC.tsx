@@ -61,14 +61,14 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	const { isUploading, uploadDocumentFile, handleFileSelect } = useFileUpload(
 		{
 			documentConfig,
-			onUploadSuccess,
-			onUploadStart: () => {
-				setCaptureCameraError(null);
-			},
-			onUploadComplete: () => {
+			onUploadSuccess: () => {
 				if (capturedFile) {
 					handleCancelCapture();
 				}
+				onUploadSuccess?.();
+			},
+			onUploadStart: () => {
+				setCaptureCameraError(null);
 			},
 		}
 	);
