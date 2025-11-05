@@ -114,15 +114,12 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 		t: (key: string) => string
 	): string => {
 		if (
-			status === 'application resubmit' ||
-			status === 'application pending' ||
-			status === 'submitted'
-		) {
-			return t('BENEFIT_DETAILS_RESUBMIT_APPLICATION');
-		} else if (
 			status === 'application initiated'
 		) {
 			return t('BENEFIT_DETAILS_COMPLETE_APPLICATION');
+		}
+		else {
+			return t('BENEFIT_DETAILS_RESUBMIT_APPLICATION');
 		}
 	};
 	return (
