@@ -95,6 +95,7 @@
   "DIALOGUE_DELETE_ACTION_WARNING": "ही क्रिया पूर्ववत केली जाऊ शकत नाही.",
   "DIALOGUE_DELETE_CONFIRMATION_MESSAGE": "तुम्ही खरोखर दस्तऐवज हटवू इच्छिता का",
   "DIALOGUE_DOCUMENT_IMAGE_PREVIEW_TITLE": "दस्तऐवज प्रतिमा पूर्वावलोकन",
+  "DIALOGUE_NO_DOCUMENT_DATA": "कोणताही दस्तऐवज डेटा उपलब्ध नाही",
   "DIALOGUE_PREVIEW_DOCUMENT_TITLE": "दस्तऐवज पूर्वावलोकन",
   "DIALOGUE_T&C": "नियम व अटी",
   "DOCUMENT_ACTIONS_DELETE_ARIA": "हटवा",
@@ -383,5 +384,8 @@
   "SCAN_ERROR_UPLOAD_FILE": "फाइल अपलोड करताना त्रुटी. कृपया पुन्हा प्रयत्न करा.",
   "SCAN_QR_CAMERA_ERROR": "कॅमेरा सुरू करण्यात अयशस्वी. कृपया प्रवेशाची परवानगी द्या आणि पुन्हा प्रयत्न करा.",
   "SCAN_FILE_TOO_LARGE_TITLE": "फाइल खूप मोठी आहे",
-  "SCAN_INVALID_FILE_TYPE_TITLE": "अवैध फाइल प्रकार"
+  "SCAN_INVALID_FILE_TYPE_TITLE": "अवैध फाइल प्रकार",
+  "SCAN_PDF_CONVERSION_ERROR": "पीडीएफ रूपांतरण अयशस्वी",
+  "SCAN_PDF_CONVERSION_ERROR_DESCRIPTION": "पीडीएफ प्रतिमेत रूपांतरित करण्यात अक्षम. कृपया पुन्हा प्रयत्न करा किंवा त्याऐवजी प्रतिमा फाइल (JPG, PNG) अपलोड करा.",
+  "SCAN_PROCESSING_PDF": "पीडीएफ दस्तऐवज प्रक्रिया केला जात आहे..."
 }

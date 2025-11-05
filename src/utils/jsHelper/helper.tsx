@@ -192,12 +192,14 @@ export function processDocuments(documents, userId) {
 	});
 }
 
-interface DocumentStatus {
+export interface DocumentStatus {
 	matchFound: boolean;
 	doc_verified: boolean | null;
 	doc_id?: string;
 	doc_data?: unknown;
 	doc_name?: string;
+	download_url?: string | null;
+	doc_datatype?: string;
 }
 export function findDocumentStatus(documents, status): DocumentStatus {
 	// Iterate through the documents array
@@ -211,6 +213,8 @@ export function findDocumentStatus(documents, status): DocumentStatus {
 				doc_id: doc.doc_id,
 				doc_data: doc.doc_data,
 				doc_name: doc.doc_name,
+				download_url: doc.download_url,
+				doc_datatype: doc.doc_datatype,
 			};
 		}
 	}
@@ -221,6 +225,8 @@ export function findDocumentStatus(documents, status): DocumentStatus {
 		doc_id: '',
 		doc_data: null,
 		doc_name: '',
+		download_url: null,
+		doc_datatype: '',
 	};
 }
 export const convertToEditPayload = (formData) => {
