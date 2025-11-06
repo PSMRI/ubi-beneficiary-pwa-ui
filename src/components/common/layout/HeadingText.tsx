@@ -49,7 +49,7 @@ const HeadingText: React.FC<HeadingTextProps> = ({
 		<Box
 			display="flex"
 			flexDirection="column"
-			padding="5"
+			padding="3"
 			backgroundColor="#FFFFFF"
 			borderBottomWidth={beneficiary ? 0 : 1}
 			borderBottomColor="#DDDDDD"
@@ -66,9 +66,9 @@ const HeadingText: React.FC<HeadingTextProps> = ({
 								<Box>
 									<Text
 										fontFamily="Poppins"
-										fontSize="22px"
+										fontSize="18px"
 										fontWeight="400"
-										lineHeight="28px"
+										lineHeight="24px"
 										color="#4D4639"
 										marginLeft={handleBack ? '2' : '0'}
 									>

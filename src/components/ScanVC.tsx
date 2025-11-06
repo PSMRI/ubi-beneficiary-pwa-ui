@@ -1,219 +1,294 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-	Box,
-	VStack,
-	Text,
-	useTheme,
-	Button,
-	HStack,
-} from '@chakra-ui/react';
+import React, { useEffect } from 'react';
+import { Box, VStack, Text, Button, HStack } from '@chakra-ui/react';
 import Layout from './common/layout/Layout';
-
-import { Html5Qrcode } from 'html5-qrcode';
 import { useTranslation } from 'react-i18next';
+
+import { useQRScanner } from './scan/hooks/useQRScanner';
+import { useCameraCapture } from './scan/hooks/useCameraCapture';
+import { useFileUpload } from './scan/hooks/useFileUpload';
+import { CapturedImagePreview } from './scan/CapturedImagePreview';
+import { MAX_FILE_SIZE_MB, SCANNER_CONTAINER_ID } from './scan/scanConfig';
 
 interface ScanVCProps {
 	onScanResult?: (result: string) => void;
-}			
+	showHeader?: boolean;
+	documentConfig?: {
+		docType: string;
+		documentSubType: string;
+		label: string;
+		name: string;
+	};
+	onUploadSuccess?: () => void;
+}
 
-const ScanVC: React.FC<ScanVCProps> = ({ onScanResult }) => {
+const ScanVC: React.FC<ScanVCProps> = ({
+	onScanResult,
+	showHeader = true,
+	documentConfig,
+	onUploadSuccess,
+}) => {
 	const { t } = useTranslation();
-	const theme = useTheme();
-	/* // const toast = useToast(); */ // NO SONAR
-	const [scanning, setScanning] = useState(false);
-	const [cameraError, setCameraError] = useState<string | null>(null);
-	const [isCameraStarting, setIsCameraStarting] = useState(false);
-	const hasScanned = useRef(false);
-	const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-	const scannerContainerId = 'html5qr-code-full-region';
 
+	// QR Scanner hook
+	const {
+		scanning,
+		isCameraStarting,
+		cameraError: qrCameraError,
+		startCamera,
+		stopCamera,
+	} = useQRScanner({ onScanResult });
+
+	// Camera capture hook
+	const {
+		isCapturing,
+		capturedImage,
+		capturedFile,
+		isCompressing,
+		originalFileSize,
+		compressedFileSize,
+		showCompressionInfo,
+		cameraError: captureCameraError,
+		videoRef,
+		startCaptureCamera,
+		stopCaptureCamera,
+		capturePhoto,
+		handleRetakePhoto,
+		handleCancelCapture,
+		setCameraError: setCaptureCameraError,
+	} = useCameraCapture();
+
+	// File upload hook
+	const { isUploading, uploadDocumentFile, handleFileSelect } = useFileUpload(
+		{
+			documentConfig,
+			onUploadSuccess: () => {
+				if (capturedFile) {
+					handleCancelCapture();
+				}
+				onUploadSuccess?.();
+			},
+			onUploadStart: () => {
+				setCaptureCameraError(null);
+			},
+		}
+	);
+
+	// Combined camera error from both hooks
+	const cameraError = qrCameraError || captureCameraError;
+
+	// Stop cameras on unmount
 	useEffect(() => {
 		return () => {
 			stopCamera();
+			stopCaptureCamera();
 		};
-	}, []);
+	}, [stopCamera, stopCaptureCamera]);
 
-	const isMobile = () => {
-		return /Mobi|Android/i.test(navigator.userAgent);
+	// Handle camera coordination
+	const handleStartQRScanner = async () => {
+		stopCaptureCamera();
+		await startCamera();
 	};
 
-	const startCamera = async () => {
-		setIsCameraStarting(true);
-		setCameraError(null);
-		hasScanned.current = false;
+	const handleStartCaptureCamera = async () => {
+		stopCamera();
+		await startCaptureCamera();
+	};
 
-		try {
-			const config = {
-				fps: 10,
-				qrbox: 250,
-			};
+	const handleUploadCapturedImage = async () => {
+		if (!capturedFile) return;
+		await uploadDocumentFile(capturedFile, 'Camera Capture');
+	};
 
-			const html5QrCode = new Html5Qrcode(scannerContainerId);
-			html5QrCodeRef.current = html5QrCode;
+	const scannerContent = (
+		<Box px={3} py={1} height="100%">
+			<VStack spacing={2} align="stretch" width="100%" height="100%">
+				{/* Show buttons when not scanning or capturing */}
+				{!scanning && !isCapturing && !capturedImage && (
+					<Box textAlign="center" py={1}>
+						<Button
+							colorScheme="blue"
+							size="md"
+							width="full"
+							onClick={handleStartQRScanner}
+							isLoading={isCameraStarting}
+							loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
+						>
+							{t('SCAN_START_CAMERA_BUTTON')}
+						</Button>
 
-			await html5QrCode.start(
-				isMobile()
-					? { facingMode: 'environment' }
-					: { facingMode: 'user' }, // back camera on mobile
-				config,
-				(decodedText: string) => {
-					if (!hasScanned.current) {
-						hasScanned.current = true;
-						/* toast({
-							title: 'Scan Success',
-							description: decodedText,
-							status: 'success',
-							duration: 2000,
-							isClosable: true,
-						});
- 						*/	// NOSONAR
-						if (onScanResult) onScanResult(decodedText.trim());
-						stopCamera();
+						<Text
+							textAlign="center"
+							fontWeight="semibold"
+							color="gray.500"
+							my={3}
+						>
+							{t('OR')}
+						</Text>
+
+						<Button
+							as="label"
+							colorScheme="teal"
+							size="md"
+							width="full"
+							isLoading={isUploading}
+							loadingText={t('SCAN_UPLOADING')}
+							isDisabled={isUploading}
+							cursor={isUploading ? 'not-allowed' : 'pointer'}
+						>
+							<span>
+								{t('UPLOAD_DOCUMENT_FOR_VC')} ({'<'}{' '}
+								{MAX_FILE_SIZE_MB}MB)
+							</span>
+							<input
+								type="file"
+								accept="image/*,application/pdf"
+								onChange={handleFileSelect}
+								hidden
+								disabled={isUploading}
+							/>
+						</Button>
+						<Text
+							textAlign="center"
+							fontWeight="semibold"
+							color="gray.500"
+							my={3}
+						>
+							{t('OR')}
+						</Text>
+						<Button
+							colorScheme="purple"
+							size="md"
+							width="full"
+							onClick={handleStartCaptureCamera}
+							mb={3}
+						>
+							{t('SCAN_CAPTURE_PHOTO_CAMERA')}
+						</Button>
+					</Box>
+				)}
+
+				{/* QR Scanner controls */}
+				{scanning && (
+					<Box textAlign="center" pb={1}>
+						<Button
+							colorScheme="red"
+							size="sm"
+							onClick={stopCamera}
+						>
+							{t('SCAN_STOP_SCANNING_BUTTON')}
+						</Button>
+					</Box>
+				)}
+
+				{/* Camera capture view */}
+				{isCapturing && (
+					<Box textAlign="center">
+						<Box
+							position="relative"
+							width="100%"
+							bg="black"
+							borderRadius="md"
+							overflow="hidden"
+						>
+							<video
+								ref={videoRef}
+								autoPlay
+								playsInline
+								muted
+								aria-label="Camera preview for capturing document"
+								style={{
+									width: '100%',
+									height: 'auto',
+									maxHeight: '60vh',
+								}}
+							>
+								<track kind="captions" />
+							</video>
+						</Box>
+						<HStack spacing={2} mt={3} justifyContent="center">
+							<Button
+								colorScheme="green"
+								size="md"
+								onClick={capturePhoto}
+							>
+								{t('SCAN_CAPTURE_PHOTO')}
+							</Button>
+							<Button
+								colorScheme="gray"
+								size="md"
+								onClick={stopCaptureCamera}
+							>
+								{t('SCAN_CANCEL')}
+							</Button>
+						</HStack>
+					</Box>
+				)}
+
+				{/* Preview captured image */}
+				{capturedImage && (
+					<CapturedImagePreview
+						capturedImage={capturedImage}
+						isCompressing={isCompressing}
+						originalFileSize={originalFileSize}
+						compressedFileSize={compressedFileSize}
+						showCompressionInfo={showCompressionInfo}
+						isUploading={isUploading}
+						onUpload={handleUploadCapturedImage}
+						onRetake={handleRetakePhoto}
+						onCancel={handleCancelCapture}
+					/>
+				)}
+
+				{cameraError && (
+					<Box bg="red.50" p={2} borderRadius="md">
+						<Text color="red.600" fontSize="sm">
+							{cameraError}
+						</Text>
+					</Box>
+				)}
+
+				{/* QR Scanner will mount here - always keep in DOM */}
+				<Box
+					id={SCANNER_CONTAINER_ID}
+					width="100%"
+					flex={scanning ? '1' : 'initial'}
+					minHeight={scanning ? '0' : 'initial'}
+				/>
+			</VStack>
+
+			{/* Add compression loader animation */}
+			<style>{`
+				@keyframes compress {
+					0% {
+						transform: translateX(-100%);
 					}
-				},
-				(errorMessage: string) => {
-					console.warn('QR Scan Error:', errorMessage);
+					50% {
+						transform: translateX(100%);
+					}
+					100% {
+						transform: translateX(-100%);
+					}
 				}
-			);
-
-			setScanning(true);
-			/* 	toast({
-				title: 'Camera Started',
-				description: 'QR code scanner is ready',
-				status: 'success',
-				duration: 2000,
-				isClosable: true,
-			}); */ // NOSONAR
-		} catch (err) {
-			console.error('Camera error:', err);
-			setCameraError(
-				'Failed to start camera. Please allow access and try again.'
-			);
-		} finally {
-			setIsCameraStarting(false);
-		}
-	};
-
-	const stopCamera = () => {
-		setScanning(false);
-		setCameraError(null);
-		if (html5QrCodeRef.current) {
-			html5QrCodeRef.current
-				.stop()
-				.then(() => html5QrCodeRef.current?.clear())
-				.catch((err) => {
-					console.warn('Error stopping camera:', err);
-				});
-			html5QrCodeRef.current = null;
-		}
-	};
-
-	/* 	const handleFileSelect = async (
-		event: React.ChangeEvent<HTMLInputElement>
-	) => {
-		const file = event.target.files?.[0];
-		if (!file || !file.type.startsWith('image/')) {
-			toast({
-				title: 'Invalid file',
-				description: 'Please select a valid image file',
-				status: 'error',
-				duration: 3000,
-				isClosable: true,
-			});
-			return;
-		}
-
-		const reader = new FileReader();
-		reader.onload = (e) => {
-			const img = new Image();
-			img.onload = () => {
-				const canvas = document.createElement('canvas');
-				canvas.width = img.width;
-				canvas.height = img.height;
-				const ctx = canvas.getContext('2d');
-				if (!ctx) return;
-				ctx.drawImage(img, 0, 0);
-
-				const imageData = ctx.getImageData(
-					0,
-					0,
-					canvas.width,
-					canvas.height
-				);
-				const code = jsQR(
-					imageData.data,
-					imageData.width,
-					imageData.height
-				);
-
-				if (code) {
-					toast({
-						title: 'QR Code Found',
-						description: code.data,
-						status: 'success',
-						duration: 2000,
-						isClosable: true,
-					});
-					if (onScanResult) onScanResult(code.data.trim());
-				} else {
-					toast({
-						title: 'No QR Code',
-						description: 'No QR code found in the image',
-						status: 'warning',
-						duration: 3000,
-						isClosable: true,
-					});
+				.compress-loader {
+					animation: compress 2s ease-in-out infinite;
 				}
-			};
-			if (e.target?.result) img.src = e.target.result as string;
-		};
-		reader.readAsDataURL(file);
-	}; */ // NOSONAR
+			`}</style>
+		</Box>
+	);
+
+	if (!showHeader) {
+		return scannerContent;
+	}
 
 	return (
 		<Layout
 			_heading={{
 				heading: t('SCAN_DOCUMENTS_TITLE'),
-				handleBack: () => window.history.back(),
+				handleBack: () => globalThis.history.back(),
 			}}
 		>
-			<Box shadow="md" borderWidth="1px" borderRadius="md" p={4}>
-				<VStack spacing={4} align="stretch">
-					<Text
-						fontSize="lg"
-						fontWeight="medium"
-						color={theme.colors.text}
-					>
-						{t('SCAN_QR_CODE_SCANNER_TITLE')}
-					</Text>
-
-					<HStack spacing={4}>
-						<Button
-							colorScheme="blue"
-							onClick={scanning ? stopCamera : startCamera}
-							isLoading={isCameraStarting}
-							loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
-						>
-							{scanning ? t('SCAN_STOP_SCANNING_BUTTON') : t('SCAN_START_CAMERA_BUTTON')}
-						</Button>
-
-						{/* <Button as="label" colorScheme="teal">
-							Upload QR Image
-							<input
-								type="file"
-								accept="image/*"
-								onChange={handleFileSelect}
-								hidden
-							/>
-						</Button> */}
-					</HStack>
-
-					{cameraError && <Text color="red.500">{cameraError}</Text>}
-
-					{/* QR Scanner will mount here */}
-					<Box id={scannerContainerId} width="100%" />
-				</VStack>
-			</Box>
+			{scannerContent}
 		</Layout>
 	);
 };
