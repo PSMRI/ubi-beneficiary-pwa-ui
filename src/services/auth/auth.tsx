@@ -108,9 +108,25 @@ export const loginUser = async (loginData: object) => {
 
 		return response.data;
 	} catch (error) {
-		const errorMessage =
-			error?.response?.data?.message || 'Invalid username or password';
-		throw new Error(errorMessage);
+		if (error.response) {
+			// Re-throw the whole Axios error so frontend can inspect status and data
+			throw error;
+		}
+
+		// ❌ If no server response (network failure, timeout, etc.)
+		throw new Error('Network error, please try again later.');
+	}
+};
+
+export const updatePassword = async (data: { username: string; newPassword: string }) => {
+	try {
+		const response = await axios.post(`${apiBaseUrl}/auth/update-password`, data, {
+			headers: { 'Content-Type': 'application/json' },
+		});
+		return response.data;
+	} catch (error) {
+		if (error.response) throw error.response.data;
+		throw new Error('Network error');
 	}
 };
 
@@ -234,16 +250,16 @@ export const getApplicationList = async (
 		const requestBody =
 			searchText !== ''
 				? {
-						filters: {
-							user_id: user_id, // Correct: 3 tabs
-						},
-						search: searchText,
-					}
+					filters: {
+						user_id: user_id, // Correct: 3 tabs
+					},
+					search: searchText,
+				}
 				: {
-						filters: {
-							user_id: user_id, // Correct: 3 tabs
-						},
-					};
+					filters: {
+						user_id: user_id, // Correct: 3 tabs
+					},
+				};
 
 		// Send the dynamically created requestBody in the axios post request
 		const token = localStorage.getItem('authToken');
