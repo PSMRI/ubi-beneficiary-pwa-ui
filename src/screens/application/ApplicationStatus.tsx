@@ -24,11 +24,12 @@ type ApplicationType = {
 	application_name: string;
 	internal_application_id: string;
 	status:
-		| 'submitted'
-		| 'application approved'
-		| 'application rejected'
-		| 'application pending'
-		| 'application resubmit';
+	| 'submitted'
+	| 'application approved'
+	| 'application rejected'
+	| 'application pending'
+	| 'application resubmit'
+	| 'application initiated';
 	application_data: Record<string, unknown>;
 	benefit_provider_id: string;
 };
