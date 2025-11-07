@@ -1,5 +1,5 @@
 import { Box, IconButton, useToast } from '@chakra-ui/react';
-import { findDocumentStatus } from '../utils/jsHelper/helper';
+import { findDocumentStatus, type DocumentStatus } from '../utils/jsHelper/helper';
 import React, { useContext, useState } from 'react';
 import { deleteDocument } from '../services/user/User';
 import { FaEye, FaTrashAlt } from 'react-icons/fa';
@@ -85,6 +85,15 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 
 	const handleImagePreview = () => {
 		try {
+			// Check if download_url is present (S3 presigned URL)
+			if (documentStatus?.download_url) {
+				setdocImageList([documentStatus.download_url]);
+				setIsImageDialogOpen(true);
+				return;
+			}
+
+			// Fallback to old logic for base64 preview
+			console.log("documentStatus?.doc_data:", documentStatus);
 			const parseData = JSON.parse(documentStatus?.doc_data as string);
 			const credentialSubject = parseData?.credentialSubject;
 
