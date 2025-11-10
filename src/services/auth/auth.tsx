@@ -118,7 +118,7 @@ export const loginUser = async (loginData: object) => {
 	}
 };
 
-export const updatePassword = async (data: { username: string; newPassword: string }) => {
+export const updatePassword = async (data: { username: string; oldPassword: string; newPassword: string }) => {
 	try {
 		const response = await axios.post(`${apiBaseUrl}/auth/update-password`, data, {
 			headers: { 'Content-Type': 'application/json' },

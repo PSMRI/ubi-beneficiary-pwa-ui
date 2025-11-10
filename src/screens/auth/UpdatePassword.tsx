@@ -11,7 +11,6 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/layout/Layout';
 import CommonButton from '../../components/common/button/Button';
 import FloatingPasswordInput from '../../components/common/input/PasswordInput';
-// import { updatePassword } from '../../services/auth/auth';
 import { useTranslation } from 'react-i18next';
 import { updatePassword } from '../../services/auth/auth';
 
@@ -20,6 +19,7 @@ const UpdatePassword: React.FC = () => {
     const navigate = useNavigate();
     const toast = useToast();
 
+    const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,9 +27,9 @@ const UpdatePassword: React.FC = () => {
     const username = localStorage.getItem('pendingUser');
 
     const handleUpdatePassword = async () => {
-        if (!newPassword.trim() || !confirmPassword.trim()) {
+        if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
             toast({
-                title: t('PASSWORD_REQUIRED') || 'Password fields cannot be empty.',
+                title: t('PASSWORD_REQUIRED') || 'All password fields are required.',
                 status: 'warning',
                 duration: 2000,
                 isClosable: true,
@@ -51,26 +51,37 @@ const UpdatePassword: React.FC = () => {
             setLoading(true);
             const response = await updatePassword({
                 username,
+                oldPassword,
                 newPassword,
             });
 
-            if (response.data) {
+            if (response?.data) {
                 toast({
-                    title: t('PASSWORD_UPDATED_SUCCESS') || 'Password updated successfully!',
+                    title: t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
                     status: 'success',
                     duration: 4000,
                     isClosable: true,
                 });
             }
 
-
             // Clear pending user & redirect to login
             localStorage.removeItem('pendingUser');
             navigate('/signin');
 
         } catch (error: any) {
+
+            if (error?.statusCode === 401) {
+                toast({
+                    title: t('UPDATE_PASSWORD_FAILED') || 'Password update failed',
+                    description: t('UPDATE_PASSWORD_INVALID_OLD_PASSWORD_MESSAGE') || 'Invalid old password',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                });
+                return;
+            }
             toast({
-                title: t('PASSWORD_UPDATE_FAILED') || 'Password update failed',
+                title: t('UPDATE_PASSWORD_FAILED') || 'Password update failed',
                 description:
                     error?.response?.data?.message ||
                     error?.message ||
@@ -79,6 +90,7 @@ const UpdatePassword: React.FC = () => {
                 duration: 3000,
                 isClosable: true,
             });
+            return;
         } finally {
             setLoading(false);
         }
@@ -96,6 +108,11 @@ const UpdatePassword: React.FC = () => {
             <Box p={5} shadow="md" borderWidth="1px" borderRadius="md">
                 <VStack align="stretch">
                     <FormControl>
+                        <FloatingPasswordInput
+                            label={t('UPDATE_PASSWORD_ENTER_OLD_PASSWORD') || 'Enter Old Password'}
+                            value={oldPassword}
+                            onChange={(e) => setOldPassword(e.target.value)}
+                        />
                         <FloatingPasswordInput
                             label={t('UPDATE_PASSWORD_ENTER_NEW_PASSWORD') || 'Enter New Password'}
                             value={newPassword}
