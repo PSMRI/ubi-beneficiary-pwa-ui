@@ -240,6 +240,7 @@ const BenefitsDetails: React.FC = () => {
 			const isEditableStatus = [
 				'application resubmit',
 				'application pending',
+				'application initiated',
 				'submitted',
 			].includes(applicationStatus?.toLowerCase() || '');
 
