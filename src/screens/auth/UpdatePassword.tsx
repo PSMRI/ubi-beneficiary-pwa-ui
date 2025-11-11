@@ -1,0 +1,147 @@
+import React, { useState } from 'react';
+import {
+    Box,
+    VStack,
+    FormControl,
+    useToast,
+    Text,
+    Center,
+} from '@chakra-ui/react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '../../components/common/layout/Layout';
+import CommonButton from '../../components/common/button/Button';
+import FloatingPasswordInput from '../../components/common/input/PasswordInput';
+import { useTranslation } from 'react-i18next';
+import { updatePassword } from '../../services/auth/auth';
+
+const UpdatePassword: React.FC = () => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+    const toast = useToast();
+
+    const [oldPassword, setOldPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const username = localStorage.getItem('pendingUser');
+
+    const handleUpdatePassword = async () => {
+        if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
+            toast({
+                title: t('PASSWORD_REQUIRED') || 'All password fields are required.',
+                status: 'warning',
+                duration: 2000,
+                isClosable: true,
+            });
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast({
+                title: t('PASSWORD_MISMATCH') || 'Passwords do not match.',
+                status: 'error',
+                duration: 2000,
+                isClosable: true,
+            });
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await updatePassword({
+                username,
+                oldPassword,
+                newPassword,
+            });
+
+            if (response?.data) {
+                toast({
+                    title: t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
+                    status: 'success',
+                    duration: 4000,
+                    isClosable: true,
+                });
+            }
+
+            // Clear pending user & redirect to login
+            localStorage.removeItem('pendingUser');
+            navigate('/signin');
+
+        } catch (error: any) {
+
+            if (error?.statusCode === 401) {
+                toast({
+                    title: t('UPDATE_PASSWORD_FAILED') || 'Password update failed',
+                    description: t('UPDATE_PASSWORD_INVALID_OLD_PASSWORD_MESSAGE') || 'Invalid old password',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                });
+                return;
+            }
+            toast({
+                title: t('UPDATE_PASSWORD_FAILED') || 'Password update failed',
+                description:
+                    error?.response?.data?.message ||
+                    error?.message ||
+                    'Please try again later.',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Layout
+            isMenu={false}
+            _heading={{
+                heading: t('UPDATE_PASSWORD_TITLE') || 'Update Password',
+                handleBack: () => navigate('/'),
+            }}
+            isBottombar={false}
+        >
+            <Box p={5} shadow="md" borderWidth="1px" borderRadius="md">
+                <VStack align="stretch">
+                    <FormControl>
+                        <FloatingPasswordInput
+                            label={t('UPDATE_PASSWORD_ENTER_OLD_PASSWORD') || 'Enter Old Password'}
+                            value={oldPassword}
+                            onChange={(e) => setOldPassword(e.target.value)}
+                        />
+                        <FloatingPasswordInput
+                            label={t('UPDATE_PASSWORD_ENTER_NEW_PASSWORD') || 'Enter New Password'}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                        <FloatingPasswordInput
+                            label={t('UPDATE_PASSWORD_CONFIRM_NEW_PASSWORD') || 'Confirm New Password'}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                    </FormControl>
+
+                    <CommonButton
+                        loading={loading}
+                        loadingLabel="Updating..."
+                        onClick={handleUpdatePassword}
+                        label={t('UPDATE_PASSWORD_BUTTON') || 'Update Password'}
+                    />
+                </VStack>
+
+                <Center mt={6}>
+                    <Text color="gray.600" fontSize="sm">
+                        {t('UPDATE_PASSWORD_NOTE') ||
+                            'After updating your password, you will be redirected to login.'}
+                    </Text>
+                </Center>
+            </Box>
+        </Layout>
+    );
+};
+
+export default UpdatePassword;
