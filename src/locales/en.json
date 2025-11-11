@@ -44,6 +44,7 @@
   "BENEFIT_DETAILS_OBJECTIVE_DETAILS": "Objectives of the Pre-matric Scholarship-SC:",
   "BENEFIT_DETAILS_PROCEED_TO_APPLY": "Proceed To Apply",
   "BENEFIT_DETAILS_RESUBMIT_APPLICATION": "Resubmit Application",
+  "BENEFIT_DETAILS_COMPLETE_APPLICATION": "Complete Application",
   "BENEFITS_ALL_BENEFITS_TAB": "All Benefits",
   "BENEFITS_BENEFIT_IDENTIFIER_ERROR": "Benefit identifier not available. Please retry from the catalogue.",
   "BENEFITS_BROWSE_TITLE": "Browse Benefits",
@@ -95,6 +96,7 @@
   "DIALOGUE_DELETE_ACTION_WARNING": "This action cannot be undone.",
   "DIALOGUE_DELETE_CONFIRMATION_MESSAGE": "Are you sure you want to delete the document",
   "DIALOGUE_DOCUMENT_IMAGE_PREVIEW_TITLE": "Document Image Preview",
+  "DIALOGUE_NO_DOCUMENT_DATA": "No document data available",
   "DIALOGUE_PREVIEW_DOCUMENT_TITLE": "Preview Document",
   "DIALOGUE_T&C": "Terms and Conditions",
   "DIALOGUE_USER_INFO_COLLECTION": "I acknowledge that personal information may be collected as required for applying to the benefits. I understand that this information will be used solely for the purpose of benefit application, evaluation, and administration in accordance with applicable data protection laws. The following information may be collected:",
@@ -404,5 +406,8 @@
   "SCAN_ERROR_UPLOAD_FILE": "Error uploading file. Please try again.",
   "SCAN_QR_CAMERA_ERROR": "Failed to start camera. Please allow access and try again.",
   "SCAN_FILE_TOO_LARGE_TITLE": "File too large",
-  "SCAN_INVALID_FILE_TYPE_TITLE": "Invalid file type"
+  "SCAN_INVALID_FILE_TYPE_TITLE": "Invalid file type",
+  "SCAN_PDF_CONVERSION_ERROR": "PDF Conversion Failed",
+  "SCAN_PDF_CONVERSION_ERROR_DESCRIPTION": "Unable to convert PDF to image. Please try again or upload an image file (JPG, PNG) instead.",
+  "SCAN_PROCESSING_PDF": "Processing PDF document..."
 }

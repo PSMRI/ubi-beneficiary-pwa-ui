@@ -186,7 +186,7 @@ const BenefitsDetails: React.FC = () => {
 			if (!documentValidationResult.isValid) {
 				setError(
 					documentValidationResult.errorMessage ||
-						'Required documents are missing'
+					'Required documents are missing'
 				);
 				setValidationLoading(false);
 				return { isValid: false };
@@ -199,7 +199,7 @@ const BenefitsDetails: React.FC = () => {
 			if (!benefitEndDateValidation.isValid) {
 				setError(
 					benefitEndDateValidation.errorMessage ||
-						'Benefit validation failed'
+					'Benefit validation failed'
 				);
 				setValidationLoading(false);
 				return { isValid: false };
@@ -245,22 +245,22 @@ const BenefitsDetails: React.FC = () => {
 
 			const baseFormData = isEditableStatus
 				? {
-						...(authUser || {}),
-						...(applicationData?.application_data || {}),
-						bpp_application_id:
-							applicationData?.bpp_application_id,
-						order_id: applicationData?.order_id,
-						transaction_id: applicationData?.transaction_id,
-						remark: applicationData?.remark,
-					}
+					...(authUser || {}),
+					...(applicationData?.application_data || {}),
+					bpp_application_id:
+						applicationData?.bpp_application_id,
+					order_id: applicationData?.order_id,
+					transaction_id: applicationData?.transaction_id,
+					remark: applicationData?.remark,
+				}
 				: (authUser ?? undefined);
 
 			// Calculate age from dob if present
 			let formData = baseFormData?.dob
 				? {
-						...baseFormData,
-						age: calculateAge(baseFormData.dob) || baseFormData.age,
-					}
+					...baseFormData,
+					age: calculateAge(baseFormData.dob) || baseFormData.age,
+				}
 				: baseFormData;
 
 			// Filter out expired documents from form data if user has documents
@@ -623,7 +623,12 @@ const BenefitsDetails: React.FC = () => {
 			status === 'submitted'
 		) {
 			return t('BENEFIT_DETAILS_RESUBMIT_APPLICATION');
-		} else {
+		} else if (
+			status === 'application initiated'
+		) {
+			return t('BENEFIT_DETAILS_COMPLETE_APPLICATION');
+		}
+		else {
 			return t('BENEFIT_DETAILS_APPLICATION_SUBMITTED');
 		}
 	};
@@ -783,10 +788,10 @@ const BenefitsDetails: React.FC = () => {
 									const safeFormData =
 										validationResult.formData
 											? JSON.parse(
-													JSON.stringify(
-														validationResult.formData
-													)
+												JSON.stringify(
+													validationResult.formData
 												)
+											)
 											: null;
 
 									// Determine if this is a resubmit scenario
@@ -796,6 +801,7 @@ const BenefitsDetails: React.FC = () => {
 											'application pending',
 											'submitted',
 											'application resubmit',
+											'application initiated',
 										].includes(
 											applicationStatus.toLowerCase()
 										)
@@ -831,7 +837,6 @@ const BenefitsDetails: React.FC = () => {
 											'submitted',
 											'application resubmit',
 											'application initiated',
-											
 										].includes(
 											(
 												applicationStatus || ''

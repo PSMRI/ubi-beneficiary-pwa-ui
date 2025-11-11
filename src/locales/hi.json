@@ -44,6 +44,7 @@
   "BENEFIT_DETAILS_OBJECTIVE_DETAILS": "प्रारंभिक छात्रवृत्ति-एससी के उद्देश्य:",
   "BENEFIT_DETAILS_PROCEED_TO_APPLY": "आवेदन के लिए आगे बढ़ें",
   "BENEFIT_DETAILS_RESUBMIT_APPLICATION": "आवेदन पुनः जमा करें",
+  "BENEFIT_DETAILS_COMPLETE_APPLICATION": "आवेदन पूर्ण करें",
   "BENEFITS_ALL_BENEFITS_TAB": "सभी लाभ",
   "BENEFITS_BENEFIT_IDENTIFIER_ERROR": "लाभ पहचानकर्ता उपलब्ध नहीं है। कृपया कैटलॉग से पुनः प्रयास करें।",
   "BENEFITS_BROWSE_TITLE": "लाभ ब्राउज़ करें",
@@ -95,6 +96,7 @@
   "DIALOGUE_DELETE_ACTION_WARNING": "यह कार्य पूर्ववत नहीं किया जा सकता।",
   "DIALOGUE_DELETE_CONFIRMATION_MESSAGE": "क्या आप वाकई दस्तावेज़ को हटाना चाहते हैं",
   "DIALOGUE_DOCUMENT_IMAGE_PREVIEW_TITLE": "दस्तावेज़ छवि पूर्वावलोकन",
+  "DIALOGUE_NO_DOCUMENT_DATA": "कोई दस्तावेज़ डेटा उपलब्ध नहीं है",
   "DIALOGUE_PREVIEW_DOCUMENT_TITLE": "दस्तावेज़ पूर्वावलोकन",
   "DIALOGUE_T&C": "नियम और शर्तें",
   "DOCUMENT_ACTIONS_DELETE_ARIA": "हटाएं",
@@ -403,5 +405,8 @@
   "SCAN_ERROR_UPLOAD_FILE": "फ़ाइल अपलोड करने में त्रुटि। कृपया पुनः प्रयास करें।",
   "SCAN_QR_CAMERA_ERROR": "कैमरा शुरू करने में असफल। कृपया पहुंच की अनुमति दें और पुनः प्रयास करें।",
   "SCAN_FILE_TOO_LARGE_TITLE": "फ़ाइल बहुत बड़ी है",
-  "SCAN_INVALID_FILE_TYPE_TITLE": "अमान्य फ़ाइल प्रकार"
+  "SCAN_INVALID_FILE_TYPE_TITLE": "अमान्य फ़ाइल प्रकार",
+  "SCAN_PDF_CONVERSION_ERROR": "पीडीएफ रूपांतरण विफल",
+  "SCAN_PDF_CONVERSION_ERROR_DESCRIPTION": "पीडीएफ को छवि में परिवर्तित करने में असमर्थ। कृपया पुनः प्रयास करें या इसके बजाय एक छवि फ़ाइल (JPG, PNG) अपलोड करें।",
+  "SCAN_PROCESSING_PDF": "पीडीएफ दस्तावेज़ संसाधित किया जा रहा है..."
 }
