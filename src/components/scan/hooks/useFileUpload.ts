@@ -14,9 +14,10 @@ interface DocumentConfig {
 
 interface UseFileUploadOptions {
 	documentConfig?: DocumentConfig;
-	onUploadSuccess?: () => void;
+	onUploadSuccess?: (response?: unknown) => void;
 	onUploadStart?: () => void;
 	onUploadComplete?: () => void;
+	customUploadFn?: (file: File, importedFrom: string) => Promise<unknown>;  // NEW
 }
 
 interface UseFileUploadReturn {
@@ -38,6 +39,7 @@ export const useFileUpload = ({
 	onUploadSuccess,
 	onUploadStart,
 	onUploadComplete,
+	customUploadFn,
 }: UseFileUploadOptions): UseFileUploadReturn => {
 	const { t } = useTranslation();
 	const toast = useToast();
@@ -124,13 +126,21 @@ export const useFileUpload = ({
 			if (onUploadStart) onUploadStart();
 
 			try {
-				const response = await uploadDocument(
-					fileToUpload,
-					documentConfig?.docType || '',
-					documentConfig?.documentSubType || '',
-					documentConfig?.name || '',
-					importedFrom
-				);
+				let response;
+
+				// Use custom upload function if provided
+				if (customUploadFn) {
+					response = await customUploadFn(file, importedFrom);
+				} else {
+					// Default authenticated upload
+					response = await uploadDocument(
+						file,
+						documentConfig?.docType || '',
+						documentConfig?.documentSubType || '',
+						documentConfig?.name || '',
+						importedFrom
+					);
+				}
 
 				// Close processing toast and show success
 				toast.close(toastId);
@@ -143,7 +153,7 @@ export const useFileUpload = ({
 
 				if (onUploadSuccess) {
 					setTimeout(() => {
-						onUploadSuccess();
+						onUploadSuccess(response);  // Pass response
 					}, 1000);
 				}
 
