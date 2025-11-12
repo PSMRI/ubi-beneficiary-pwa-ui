@@ -1,5 +1,54 @@
 import axios from 'axios';
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+/**
+ * Uploads a document file to the server
+ * @param {File} file - The file to upload
+ * @param {string} docType - Type of document (e.g., 'marksProof')
+ * @param {string} docSubType - Sub-type of document (e.g., 'marksheet')
+ * @param {string} docName - Name of the document (e.g., 'Marksheet')
+ * @param {string} importedFrom - Source of upload (default: 'Manual Upload')
+ * @returns {Promise} - Promise representing the API response
+ */
+export const uploadDocument = async (
+	file: File,
+	docType: string,
+	docSubType: string,
+	docName: string,
+	importedFrom: string = 'Manual Upload'
+) => {
+	const token = localStorage.getItem('authToken');
+
+	try {
+		const formData = new FormData();
+		formData.append('file', file);
+		formData.append('docType', docType);
+		formData.append('docSubType', docSubType);
+		formData.append('docName', docName);
+		formData.append('importedFrom', importedFrom);
+
+		const response = await axios.post(
+			`${apiBaseUrl}/users/upload-document`,
+			formData,
+			{
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		);
+
+		console.log('Document uploaded successfully:', response.data);
+		return response.data;
+	} catch (error) {
+		console.error(
+			'Error uploading document:',
+			error.response?.data || error.message
+		);
+		throw error;
+	}
+};
+
 export const uploadUserDocuments = async (documents) => {
 	const token = localStorage.getItem('authToken');
 	try {
@@ -86,7 +135,10 @@ export const deleteDocument = async (id) => {
  * @param {string} filterDataFields - Comma-separated list of fields to include in response (e.g., 'name,label').
  * @returns {Promise<Array>} - Promise representing the API response with filtered fields.
  */
-export const getUserFields = async (context = 'USERS', filterDataFields = 'name,label') => {
+export const getUserFields = async (
+	context = 'USERS',
+	filterDataFields = 'name,label'
+) => {
 	const token = localStorage.getItem('authToken');
 
 	try {

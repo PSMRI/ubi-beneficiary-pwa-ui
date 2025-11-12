@@ -74,27 +74,43 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 
 	const { t } = useTranslation();
 	if (previewDocument) {
+		const hasDocumentData = document && document !== null && Object.keys(document).length > 0;
+
 		return (
-			<Modal isOpen={previewDocument} onClose={onClose} size="lg">
+			<Modal isOpen={previewDocument} onClose={onClose} size="xl">
 				<ModalOverlay />
-				<ModalContent>
-					<ModalHeader>{t('DIALOGUE_PREVIEW_DOCUMENT_TITLE')}: {documentName}</ModalHeader>
+				<ModalContent maxH="90vh">
+					<ModalHeader>
+						{t('DIALOGUE_PREVIEW_DOCUMENT_TITLE')}: {documentName}
+					</ModalHeader>
 					<ModalCloseButton />
-					<ModalBody>
-						<Box
-							as="pre"
-							p={4}
-							bg="gray.100"
-							rounded="md"
-							overflowX="auto"
-							overflowY="auto"
-							fontSize="sm"
-							whiteSpace="pre-wrap"
-							maxHeight="500px"
-							width="auto"
-						>
-							<Code>{JSON.stringify(document, null, 2)}</Code>
-						</Box>
+					<ModalBody overflowY="auto">
+						{hasDocumentData ? (
+							<Box
+								as="pre"
+								p={4}
+								bg="gray.100"
+								rounded="md"
+								overflowX="auto"
+								fontSize="sm"
+								whiteSpace="pre-wrap"
+							>
+								<Code>{JSON.stringify(document, null, 2)}</Code>
+							</Box>
+						) : (
+							<Box
+								p={6}
+								textAlign="center"
+								bg="gray.50"
+								rounded="md"
+								borderWidth="1px"
+								borderColor="gray.200"
+							>
+								<Text color="gray.600" fontSize="md">
+									{t('DIALOGUE_NO_DOCUMENT_DATA')}
+								</Text>
+							</Box>
+						)}
 					</ModalBody>
 					<ModalFooter>
 						<CommonButton
@@ -138,39 +154,75 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 	}
 	if (docImageList && docImageList.length > 0) {
 		return (
-			<Modal isOpen={true} onClose={onClose} size="xl">
-				<ModalOverlay />
-				<ModalContent>
-					<ModalHeader>
+			<Modal isOpen={true} onClose={onClose} size="full">
+				<ModalOverlay bg="blackAlpha.600" />
+				<ModalContent
+					maxW={{ base: '95vw', md: '90vw', lg: '85vw' }}
+					maxH={{ base: '95vh', md: '90vh' }}
+					m="auto"
+					borderRadius="lg"
+				>
+					<ModalHeader
+						fontSize={{ base: 'md', md: 'lg' }}
+						py={3}
+						borderBottom="1px"
+						borderColor="gray.200"
+					>
 						{t('DIALOGUE_DOCUMENT_IMAGE_PREVIEW_TITLE')}: {documentName}
 					</ModalHeader>
-					<ModalCloseButton />
-					<ModalBody
-						display="flex"
-						flexDirection="column"
-						alignItems="center"
-						gap={4}
-						p={4}
-					>
-						{docImageList.map((img, idx) => (
-							<img
-								key={img.slice(0, 20)}
-								src={`${img}`}
-								alt={`Document Preview ${idx + 1}`}
-								style={{
-									maxWidth: '100%',
-									maxHeight: '60vh',
-									borderRadius: '8px',
-									objectFit: 'contain',
-								}}
-							/>
-						))}
+					<ModalCloseButton top={2} right={2} />
+					<ModalBody p={0} overflow="hidden">
+						<Box
+							overflowY="auto"
+							maxH="calc(95vh - 120px)"
+							p={{ base: 4, md: 6 }}
+							bg="gray.50"
+						>
+							{docImageList.map((img, idx) => (
+								<Box
+									key={img.slice(0, 20)}
+									mb={docImageList.length > 1 ? 6 : 0}
+									pb={docImageList.length > 1 ? 6 : 0}
+									borderBottom={
+										idx < docImageList.length - 1 ? '1px' : 'none'
+									}
+									borderColor="gray.300"
+								>
+									{docImageList.length > 1 && (
+										<Text
+											fontSize="sm"
+											fontWeight="semibold"
+											color="gray.600"
+											mb={3}
+											textAlign="center"
+										>
+											Page {idx + 1} of {docImageList.length}
+										</Text>
+									)}
+									<Box
+										as="img"
+										src={img}
+										alt={`Document Preview ${idx + 1}`}
+										width="100%"
+										height="auto"
+										borderRadius="md"
+										boxShadow="md"
+										bg="white"
+									/>
+								</Box>
+							))}
+						</Box>
 					</ModalBody>
-					<ModalFooter>
+					<ModalFooter
+						py={3}
+						borderTop="1px"
+						borderColor="gray.200"
+						justifyContent="center"
+					>
 						<CommonButton
-							label="Close"
+							label={t('DIALOGUE_CLOSE_BUTTON')}
 							onClick={onClose}
-							width="100px"
+							width="120px"
 						/>
 					</ModalFooter>
 				</ModalContent>

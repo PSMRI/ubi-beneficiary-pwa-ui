@@ -108,9 +108,25 @@ export const loginUser = async (loginData: object) => {
 
 		return response.data;
 	} catch (error) {
-		const errorMessage =
-			error?.response?.data?.message || 'Invalid username or password';
-		throw new Error(errorMessage);
+		if (error.response) {
+			// Re-throw the whole Axios error so frontend can inspect status and data
+			throw error;
+		}
+
+		// ❌ If no server response (network failure, timeout, etc.)
+		throw new Error('Network error, please try again later.');
+	}
+};
+
+export const updatePassword = async (data: { username: string; oldPassword: string; newPassword: string }) => {
+	try {
+		const response = await axios.post(`${apiBaseUrl}/auth/update-password`, data, {
+			headers: { 'Content-Type': 'application/json' },
+		});
+		return response.data;
+	} catch (error) {
+		if (error.response) throw error.response.data;
+		throw new Error('Network error');
 	}
 };
 
@@ -234,16 +250,16 @@ export const getApplicationList = async (
 		const requestBody =
 			searchText !== ''
 				? {
-						filters: {
-							user_id: user_id, // Correct: 3 tabs
-						},
-						search: searchText,
-					}
+					filters: {
+						user_id: user_id, // Correct: 3 tabs
+					},
+					search: searchText,
+				}
 				: {
-						filters: {
-							user_id: user_id, // Correct: 3 tabs
-						},
-					};
+					filters: {
+						user_id: user_id, // Correct: 3 tabs
+					},
+				};
 
 		// Send the dynamically created requestBody in the axios post request
 		const token = localStorage.getItem('authToken');
@@ -337,5 +353,45 @@ export const registerWithPassword = async (userData) => {
 			error.response?.data?.message?.[0] || ''
 		);
 		throw error.response;
+	}
+};
+
+export const registerWithDocument = async (
+	file: File,
+	docType: string,
+	docSubType: string,
+	docName: string,
+	importedFrom: string
+) => {
+	const formData = new FormData();
+	formData.append('docType', docType);
+	formData.append('docSubType', docSubType);
+	formData.append('docName', docName);
+	formData.append('importedFrom', importedFrom);
+	formData.append('file', file);
+
+	const response = await axios.post(
+		`${apiBaseUrl}/auth/register_with_document`,
+		formData,
+		{
+			headers: {
+				'Content-Type': 'multipart/form-data'
+			},
+		}
+	);
+
+	return response.data;
+};
+
+export const setUserRequiredAction = async (username: string, actions: string[] = ['UPDATE_PASSWORD']) => {
+	try {
+		const response = await axios.post(`${apiBaseUrl}/auth/set-required-action`, {
+			username,
+			actions,
+		});
+		return response.data;
+	} catch (error: any) {
+		console.error('Error setting required action:', error);
+		throw error.response?.data || { message: 'Failed to set required action' };
 	}
 };

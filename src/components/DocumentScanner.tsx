@@ -9,16 +9,10 @@ import {
 	List,
 	ListItem,
 	Icon,
-	Modal,
-	ModalOverlay,
-	ModalContent,
-	ModalHeader,
-	ModalBody,
-	ModalCloseButton,
-	useDisclosure,
 	Tooltip,
 } from '@chakra-ui/react';
 import { CheckCircleIcon, AttachmentIcon } from '@chakra-ui/icons';
+import { useNavigate } from 'react-router-dom';
 import Layout from './common/layout/Layout';
 import ScanVC from './ScanVC';
 import { getDocumentsList, getUser } from '../services/auth/auth';
@@ -124,10 +118,11 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 }) => {
 	const { t } = useTranslation();
 	const toast = useToast();
-	const { isOpen, onOpen, onClose } = useDisclosure();
+	const navigate = useNavigate();
 	const [selectedDocument, setSelectedDocument] = useState<Document | null>(
 		null
 	);
+	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const { updateUserData } = useContext(AuthContext)!;
@@ -162,8 +157,8 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			} catch (error) {
 				console.error('Error fetching documents:', error);
 				toast({
-					title: 'Error',
-					description: 'Failed to load documents',
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
+					description: t('DOCUMENT_SCANNER_ERROR_LOAD_DOCUMENTS'),
 					status: 'error',
 					duration: 3000,
 					isClosable: true,
@@ -190,7 +185,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			const jsonData = jsonDataResult?.data?.vcData;
 
 			if (!jsonData || typeof jsonData !== 'object') {
-				throw new Error('Invalid document data structure');
+				throw new Error(t('DOCUMENT_SCANNER_ERROR_INVALID_DATA'));
 			}
 
 			const credentialTitle = jsonData?.credentialSchema?.title || '';
@@ -199,12 +194,12 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 				(doc) => doc.name === selectedDocument.name
 			);
 			if (!docConfig) {
-				throw new Error('Invalid document type selected');
+				throw new Error(t('DOCUMENT_SCANNER_ERROR_INVALID_TYPE'));
 			}
 
 			if (!credentialTitle.includes(docConfig.name)) {
 				throw new Error(
-					`Scanned document is not of type: ${docConfig.name}`
+					`${t('DOCUMENT_SCANNER_ERROR_WRONG_TYPE')}: ${docConfig.name}`
 				);
 			}
 
@@ -230,14 +225,15 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			const docsResult = await getDocumentsList();
 			updateUserData(userResult?.data, docsResult?.data?.value);
 			toast({
-				title: 'Success',
-				description: 'Document uploaded successfully',
+				title: t('DOCUMENT_SCANNER_SUCCESS_TITLE'),
+				description: t('DOCUMENT_SCANNER_SUCCESS_UPLOAD'),
 				status: 'success',
-				duration: 3000,
+					duration: 3000,
 				isClosable: true,
 			});
 
-			onClose(); // Close the modal
+			// Navigate to home page after successful upload
+			navigate('/');
 		} catch (error) {
 			console.error('Error uploading document:', error);
 
@@ -246,15 +242,15 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			if (Array.isArray(apiErrors) && apiErrors.length > 0) {
 				const errorMessages =
 					apiErrors.length === 1
-						? (apiErrors[0].error ?? 'Unexpected error occurred')
+						? (apiErrors[0].error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
 						: apiErrors
 								.map(
 									(errObj, idx) =>
-										`${idx + 1}. ${errObj.error ?? 'Unexpected error occurred'}`
+										`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
 								)
 								.join('\n');
 				toast({
-					title: 'Error',
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
 					description: (
 						<Box as="span" whiteSpace="pre-line">
 							{errorMessages}
@@ -266,12 +262,12 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 				});
 			} else {
 				toast({
-					title: 'Error',
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
 					description:
 						error?.response?.data?.message ??
 						(error instanceof Error
 							? error.message
-							: 'Unexpected error occurred'),
+							: t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')),
 					status: 'error',
 					duration: 10000,
 					isClosable: true,
@@ -284,18 +280,66 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 	const openUploadModal = (document: Document) => {
 		setSelectedDocument(document);
-		onOpen();
+		setShowScanner(true);
+	};
+
+	const handleUploadSuccess = async () => {
+		// Refresh user data to update the UI with uploaded document
+		try {
+			const userResult = await getUser();
+			const docsResult = await getDocumentsList();
+			updateUserData(userResult?.data, docsResult.data.value);
+		} catch (error) {
+			console.error('Failed to refresh user data', error);
+		}
+
+		// Navigate to home page after successful upload
+		navigate('/');
+	};
+
+	const handleBack = () => {
+		if (showScanner) {
+			setShowScanner(false);
+			setSelectedDocument(null);
+		} else {
+			globalThis.history.back();
+		}
 	};
 
 	if (isLoading) {
 		return <Loader />;
 	}
 
+	// Show scanner view
+	if (showScanner && selectedDocument) {
+		return (
+			<Layout
+				_heading={{
+					heading: `${t('SCAN_DOCUMENTS_TITLE')} ${selectedDocument.label}`,
+					handleBack: handleBack,
+				}}
+			>
+				<ScanVC
+					onScanResult={handleScanResult}
+					showHeader={false}
+					documentConfig={{
+						docType: selectedDocument.docType,
+						documentSubType: selectedDocument.documentSubType,
+						label: selectedDocument.label,
+						name: selectedDocument.name,
+					}}
+					onUploadSuccess={handleUploadSuccess}
+				/>
+			</Layout>
+		);
+	}
+
+	// Show document list view
 	return (
 		<Layout
 			_heading={{
 				heading: t('DOCUMENT_SCANNER_TITLE'),
-				handleBack: () => window.history.back(),
+				handleBack: handleBack,
 			}}
 		>
 			<Box shadow="md" borderWidth="1px" borderRadius="md" p={4}>
@@ -333,8 +377,12 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 											leftIcon={<AttachmentIcon />}
 										>
 											{documentStatus.matchFound
-												? t('DOCUMENT_SCANNER_REUPLOAD_BUTTON')
-												: t('DOCUMENT_SCANNER_UPLOAD_BUTTON')}
+												? t(
+														'DOCUMENT_SCANNER_REUPLOAD_BUTTON'
+													)
+												: t(
+														'DOCUMENT_SCANNER_UPLOAD_BUTTON'
+													)}
 										</Button>
 									</HStack>
 								</ListItem>
@@ -343,17 +391,6 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 					</List>
 				</VStack>
 			</Box>
-
-			<Modal isOpen={isOpen} onClose={onClose} size="xl">
-				<ModalOverlay />
-				<ModalContent>
-					<ModalHeader>{t('SCAN_DOCUMENTS_TITLE')} {selectedDocument?.name}</ModalHeader>
-					<ModalCloseButton />
-					<ModalBody pb={6}>
-						<ScanVC onScanResult={handleScanResult} />
-					</ModalBody>
-				</ModalContent>
-			</Modal>
 		</Layout>
 	);
 };

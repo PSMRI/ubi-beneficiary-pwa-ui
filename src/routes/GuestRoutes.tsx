@@ -3,8 +3,8 @@ import SignIn from '../screens/auth/SignIn';
 const Splash = lazy(() => import('../screens/auth/Splash'));
 const ExploreBenefits = lazy(() => import('../screens/benefit/Benefits'));
 const BenefitsDetails = lazy(() => import('../screens/benefit/Details'));
-const Signup = lazy(() => import('../screens/auth/SignUpWithPassword'));
-
+const Signup = lazy(() => import('../screens/auth/SignUpWithOtr'));
+const UpdatePassword = lazy(() => import('../screens/auth/UpdatePassword'));
 const routes = [
 	{
 		path: '/signup',
@@ -21,6 +21,10 @@ const routes = [
 	{
 		path: '/signin',
 		component: SignIn,
+	},
+	{
+		path: '/update-password',
+		component: UpdatePassword,
 	},
 	{
 		path: '*',
