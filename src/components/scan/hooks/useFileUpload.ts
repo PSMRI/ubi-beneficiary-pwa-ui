@@ -130,11 +130,11 @@ export const useFileUpload = ({
 
 				// Use custom upload function if provided
 				if (customUploadFn) {
-					response = await customUploadFn(file, importedFrom);
+					response = await customUploadFn(fileToUpload, importedFrom);
 				} else {
 					// Default authenticated upload
 					response = await uploadDocument(
-						file,
+						fileToUpload,
 						documentConfig?.docType || '',
 						documentConfig?.documentSubType || '',
 						documentConfig?.name || '',
@@ -179,6 +179,7 @@ export const useFileUpload = ({
 			onUploadSuccess,
 			onUploadStart,
 			onUploadComplete,
+			customUploadFn,
 			toast,
 			t,
 		]
