@@ -355,3 +355,43 @@ export const registerWithPassword = async (userData) => {
 		throw error.response;
 	}
 };
+
+export const registerWithDocument = async (
+	file: File,
+	docType: string,
+	docSubType: string,
+	docName: string,
+	importedFrom: string
+) => {
+	const formData = new FormData();
+	formData.append('docType', docType);
+	formData.append('docSubType', docSubType);
+	formData.append('docName', docName);
+	formData.append('importedFrom', importedFrom);
+	formData.append('file', file);
+
+	const response = await axios.post(
+		`${apiBaseUrl}/auth/register_with_document`,
+		formData,
+		{
+			headers: {
+				'Content-Type': 'multipart/form-data'
+			},
+		}
+	);
+
+	return response.data;
+};
+
+export const setUserRequiredAction = async (username: string, actions: string[] = ['UPDATE_PASSWORD']) => {
+	try {
+		const response = await axios.post(`${apiBaseUrl}/auth/set-required-action`, {
+			username,
+			actions,
+		});
+		return response.data;
+	} catch (error: any) {
+		console.error('Error setting required action:', error);
+		throw error.response?.data || { message: 'Failed to set required action' };
+	}
+};
