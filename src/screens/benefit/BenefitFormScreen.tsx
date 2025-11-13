@@ -652,7 +652,9 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 
 			// For resubmissions, include existing orderId and transaction_id
 			if (isResubmit) {
-				formDataNew.isResubmission = true;
+				// isResubmission should be false if order_id is null
+				// This determines whether submitForm calls init or update API
+				formDataNew.isResubmission = !!userData?.order_id;
 				if (applicationId && typeof applicationId === 'string') {
 					formDataNew.applicationId = applicationId;
 				}
@@ -671,8 +673,11 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 					? { ...context, transaction_id: userData.transaction_id }
 					: context;
 
-			// --- Step 1: Create Application Order ---
-			if (!isResubmit) {
+			// --- Step 1: Create Application Order (init API) OR Update existing application ---
+			// If order_id is null, call init API
+			// If order_id is not null, call update API
+			if (!userData?.order_id) {
+				// Init API call - Create initial application
 				const payloadInitial = {
 					user_id: userData?.user_id,
 					benefit_id: benefitId,
@@ -688,6 +693,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				formDataNew.bap_application_id =
 					responseInitial?.data?.internal_application_id;
 			}
+
 			// --- Step 2: Submit Order ---
 			const response = await submitForm(
 				formDataNew as any,
@@ -887,6 +893,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 								<Button
 									onClick={() => {
 										setError('');
+										navigate('/applicationstatus');
 									}}
 									label={t('DETAILS_CLOSE_BUTTON')}
 								/>

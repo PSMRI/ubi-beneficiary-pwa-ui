@@ -67,7 +67,7 @@ const HeadingText: React.FC<HeadingTextProps> = ({
 									<Text
 										fontFamily="Poppins"
 										fontSize="18px"
-										fontWeight="400"
+										fontWeight="600"
 										lineHeight="24px"
 										color="#4D4639"
 										marginLeft={handleBack ? '2' : '0'}

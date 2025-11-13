@@ -18,7 +18,7 @@ interface ScanVCProps {
 		label: string;
 		name: string;
 	};
-	onUploadSuccess?: () => void;
+	onUploadSuccess?: (response?: any) => void;
 }
 
 const ScanVC: React.FC<ScanVCProps> = ({
@@ -61,11 +61,11 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	const { isUploading, isConverting, uploadDocumentFile, handleFileSelect } = useFileUpload(
 		{
 			documentConfig,
-			onUploadSuccess: () => {
+			onUploadSuccess: (response) => {
 				if (capturedFile) {
 					handleCancelCapture();
 				}
-				onUploadSuccess?.();
+				onUploadSuccess?.(response);
 			},
 			onUploadStart: () => {
 				setCaptureCameraError(null);

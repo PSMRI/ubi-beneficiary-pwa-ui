@@ -23,6 +23,8 @@ import { fetchVCJson } from '../services/benefit/benefits';
 import Loader from '../components/common/Loader';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import { useTranslation } from 'react-i18next';
+import { VCFormWrapper } from './forms/VCFormWrapper';
+import { DocumentUploadResponse } from '../types/document.types';
 interface Document {
 	name: string;
 	label: string;
@@ -125,6 +127,8 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [uploadedDocument, setUploadedDocument] = useState<DocumentUploadResponse | null>(null);
+	const [showVCForm, setShowVCForm] = useState(false);
 	const { updateUserData } = useContext(AuthContext)!;
 
 	useEffect(() => {
@@ -283,7 +287,31 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 		setShowScanner(true);
 	};
 
-	const handleUploadSuccess = async () => {
+	const handleUploadSuccess = async (response?: any) => {
+		// Check if response has issue_vc flag
+		// For issue_vc: "yes" - Response structure: { statusCode, message, data: { doc_type, doc_subtype, issue_vc, mapped_data, ... } }
+		// For issue_vc: "no" - Response structure: { statusCode, message, data: { doc_id, user_id, doc_type, ... } }
+		// uploadDocument returns response.data from axios, which is { statusCode, message, data: {...} }
+		console.log('handleUploadSuccess - Full response:', response);
+		
+		// Extract the data object from response
+		// Response from uploadDocument is already { statusCode, message, data: {...} }
+		const uploadResponse = response?.data || response;
+		console.log('handleUploadSuccess - Upload response:', uploadResponse);
+		console.log('handleUploadSuccess - issue_vc:', uploadResponse?.issue_vc);
+		
+		// Show form if issue_vc is "yes" - doc_id is not required for form display
+		if (uploadResponse?.issue_vc === 'yes') {
+			console.log('handleUploadSuccess - Showing VC form');
+			// Show VC form instead of navigating away
+			setUploadedDocument(uploadResponse);
+			setShowVCForm(true);
+			setShowScanner(false);
+			return;
+		}
+		
+		console.log('handleUploadSuccess - Skipping form, navigating home');
+
 		// Refresh user data to update the UI with uploaded document
 		try {
 			const userResult = await getUser();
@@ -293,12 +321,33 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			console.error('Failed to refresh user data', error);
 		}
 
-		// Navigate to home page after successful upload
+		// Navigate to home page after successful upload (if no VC form needed)
+		navigate('/');
+	};
+
+	const handleVCCreated = async (vc: any) => {
+		// Refresh user data after VC creation
+		try {
+			const userResult = await getUser();
+			const docsResult = await getDocumentsList();
+			updateUserData(userResult?.data, docsResult.data.value);
+		} catch (error) {
+			console.error('Failed to refresh user data', error);
+		}
+
+		// Reset states and navigate home
+		setShowVCForm(false);
+		setUploadedDocument(null);
+		setSelectedDocument(null);
 		navigate('/');
 	};
 
 	const handleBack = () => {
-		if (showScanner) {
+		if (showVCForm) {
+			setShowVCForm(false);
+			setUploadedDocument(null);
+			setShowScanner(true);
+		} else if (showScanner) {
 			setShowScanner(false);
 			setSelectedDocument(null);
 		} else {
@@ -308,6 +357,26 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 	if (isLoading) {
 		return <Loader />;
+	}
+
+	// Show VC form if document was uploaded with issue_vc = yes
+	if (showVCForm && uploadedDocument) {
+		const documentLabel = selectedDocument?.label || '';
+		const meaningfulHeading = `Complete ${documentLabel} Details to Create Verifiable Credential`;
+		
+		return (
+			<Layout
+				_heading={{
+					heading: meaningfulHeading,
+					handleBack: handleBack,
+				}}
+			>
+				<VCFormWrapper
+					uploadedDocument={uploadedDocument}
+					onVCCreated={handleVCCreated}
+				/>
+			</Layout>
+		);
 	}
 
 	// Show scanner view

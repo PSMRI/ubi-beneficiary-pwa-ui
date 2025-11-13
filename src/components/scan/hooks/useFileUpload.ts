@@ -14,7 +14,7 @@ interface DocumentConfig {
 
 interface UseFileUploadOptions {
 	documentConfig?: DocumentConfig;
-	onUploadSuccess?: () => void;
+	onUploadSuccess?: (response?: any) => void;
 	onUploadStart?: () => void;
 	onUploadComplete?: () => void;
 }
@@ -100,9 +100,9 @@ export const useFileUpload = ({
 				setIsConverting(true);
 				try {
 					fileToUpload = await convertPDFToImage(file, {
-						scale: 2.0,
+						scale: 2,
 						quality: 0.8,
-						format: 'jpeg'
+						format: 'jpeg',
 					});
 				} catch (error) {
 					console.error('Error converting PDF to image:', error);
@@ -143,7 +143,7 @@ export const useFileUpload = ({
 
 				if (onUploadSuccess) {
 					setTimeout(() => {
-						onUploadSuccess();
+						onUploadSuccess(response);
 					}, 1000);
 				}
 
