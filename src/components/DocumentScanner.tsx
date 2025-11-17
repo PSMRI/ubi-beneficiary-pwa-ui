@@ -32,6 +32,7 @@ interface Document {
 	label: string;
 	documentSubType: string;
 	docType: string;
+	issuer?: string;
 }
 
 interface UserDocument {
@@ -161,6 +162,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						label: doc.label,
 						documentSubType: doc.documentSubType,
 						docType: doc.docType,
+						issuer: doc.issuer,
 					}));
 				setDocuments(formattedDocuments);
 			} catch (error) {
@@ -223,6 +225,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 					imported_from: 'QR Code',
 					doc_datatype: 'Application/JSON',
 					doc_data_link: vcUrl,
+					issuer: docConfig.issuer,
 				},
 			];
 
