@@ -23,7 +23,9 @@ import { fetchVCJson } from '../services/benefit/benefits';
 import Loader from '../components/common/Loader';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import { useTranslation } from 'react-i18next';
-import { VCFormWrapper } from './forms/VCFormWrapper';
+// NOSONAR - VCFormWrapper import commented out: Backend does not support VC creation yet
+// Uncomment when backend is ready. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
+// import { VCFormWrapper } from './forms/VCFormWrapper';
 import { DocumentUploadResponse } from '../types/document.types';
 interface Document {
 	name: string;
@@ -127,9 +129,12 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [uploadedDocument, setUploadedDocument] = useState<DocumentUploadResponse | null>(null);
+	// NOSONAR - Variables needed when VC form is enabled. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
+	const [uploadedDocument, setUploadedDocument] = // NOSONAR
+		useState<DocumentUploadResponse | null>(null);
+	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // NOSONAR
 	const [showVCForm, setShowVCForm] = useState(false);
-	const { updateUserData } = useContext(AuthContext)!;
+	const { updateUserData } = useContext(AuthContext);
 
 	useEffect(() => {
 		const fetchUserData = async () => {
@@ -232,7 +237,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 				title: t('DOCUMENT_SCANNER_SUCCESS_TITLE'),
 				description: t('DOCUMENT_SCANNER_SUCCESS_UPLOAD'),
 				status: 'success',
-					duration: 3000,
+				duration: 3000,
 				isClosable: true,
 			});
 
@@ -246,7 +251,8 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			if (Array.isArray(apiErrors) && apiErrors.length > 0) {
 				const errorMessages =
 					apiErrors.length === 1
-						? (apiErrors[0].error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
+						? (apiErrors[0].error ??
+							t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
 						: apiErrors
 								.map(
 									(errObj, idx) =>
@@ -287,29 +293,40 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 		setShowScanner(true);
 	};
 
-	const handleUploadSuccess = async (response?: any) => {
+	const handleUploadSuccess = async (response?: any, file?: File) => {
 		// Check if response has issue_vc flag
 		// For issue_vc: "yes" - Response structure: { statusCode, message, data: { doc_type, doc_subtype, issue_vc, mapped_data, ... } }
 		// For issue_vc: "no" - Response structure: { statusCode, message, data: { doc_id, user_id, doc_type, ... } }
 		// uploadDocument returns response.data from axios, which is { statusCode, message, data: {...} }
 		console.log('handleUploadSuccess - Full response:', response);
-		
+		console.log('handleUploadSuccess - Uploaded file:', file);
+
 		// Extract the data object from response
 		// Response from uploadDocument is already { statusCode, message, data: {...} }
 		const uploadResponse = response?.data || response;
 		console.log('handleUploadSuccess - Upload response:', uploadResponse);
-		console.log('handleUploadSuccess - issue_vc:', uploadResponse?.issue_vc);
-		
+		console.log(
+			'handleUploadSuccess - issue_vc:',
+			uploadResponse?.issue_vc
+		);
+
+		// NOSONAR - VC Form disabled: Backend does not handle VC creation yet
+		// The following code is commented out because the backend at http://localhost:3000/users/upload-document
+		// does not currently support VC creation logic. When backend is ready, uncomment this section.
+		// See: src/components/forms/VC_FORM_IMPLEMENTATION.md for instructions on how to enable.
+		/* NOSONAR:START - Commented code preserved for future VC form feature
 		// Show form if issue_vc is "yes" - doc_id is not required for form display
 		if (uploadResponse?.issue_vc === 'yes') {
 			console.log('handleUploadSuccess - Showing VC form');
 			// Show VC form instead of navigating away
 			setUploadedDocument(uploadResponse);
+			setUploadedFile(file || null);
 			setShowVCForm(true);
 			setShowScanner(false);
 			return;
 		}
-		
+		NOSONAR:END */
+
 		console.log('handleUploadSuccess - Skipping form, navigating home');
 
 		// Refresh user data to update the UI with uploaded document
@@ -325,6 +342,8 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 		navigate('/');
 	};
 
+	// NOSONAR - Function needed when VC form is enabled. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
+	/* NOSONAR:START - Commented function preserved for future VC form feature
 	const handleVCCreated = async (vc: any) => {
 		// Refresh user data after VC creation
 		try {
@@ -341,6 +360,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 		setSelectedDocument(null);
 		navigate('/');
 	};
+	NOSONAR:END */
 
 	const handleBack = () => {
 		if (showVCForm) {
@@ -359,11 +379,16 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 		return <Loader />;
 	}
 
-	// Show VC form if document was uploaded with issue_vc = yes
+	// NOSONAR - VC Form rendering disabled: Backend does not handle VC creation yet
+	// The following code is commented out because the backend does not support VC creation logic.
+	// When backend is ready to handle VC creation, uncomment this section to show the form.
+	// See: src/components/forms/VC_FORM_IMPLEMENTATION.md for detailed instructions.
+	/* NOSONAR:START - Commented code preserved for future VC form rendering
+	//VC form if document was uploaded with issue_vc = yes
 	if (showVCForm && uploadedDocument) {
 		const documentLabel = selectedDocument?.label || '';
 		const meaningfulHeading = `Complete ${documentLabel} Details to Create Verifiable Credential`;
-		
+
 		return (
 			<Layout
 				_heading={{
@@ -373,11 +398,13 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			>
 				<VCFormWrapper
 					uploadedDocument={uploadedDocument}
+					uploadedFile={uploadedFile || undefined}
 					onVCCreated={handleVCCreated}
 				/>
 			</Layout>
 		);
 	}
+	NOSONAR:END */
 
 	// Show scanner view
 	if (showScanner && selectedDocument) {

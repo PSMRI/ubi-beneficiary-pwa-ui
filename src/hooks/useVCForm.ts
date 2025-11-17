@@ -10,27 +10,23 @@ export const useVCForm = () => {
         docId: string | undefined,
         formData: Record<string, any>,
         docType?: string,
-        docSubtype?: string
+        docSubtype?: string,
+        uploadedFile?: File,
+        docName?: string
     ) => {
         setIsSubmitting(true);
         setSubmitError(null);
 
         try {
-            // Build VC form data - use doc_id if available, otherwise use doc_type and doc_subtype
-            const vcFormData: any = {
-                form_data: formData,
-            };
-
-            if (docId) {
-                vcFormData.doc_id = docId;
-            } else if (docType && docSubtype) {
-                vcFormData.doc_type = docType;
-                vcFormData.doc_subtype = docSubtype;
-            } else {
-                throw new Error('Either doc_id or doc_type/doc_subtype must be provided');
-            }
-
-            const result = await VCService.createVC(vcFormData);
+            // The formData already contains all the form fields
+            // Pass it directly along with the uploaded file and document metadata
+            const result = await VCService.createVC(
+                formData,
+                uploadedFile,
+                docType,
+                docSubtype,
+                docName
+            );
             setCreatedVC(result);
             return result;
         } catch (error) {

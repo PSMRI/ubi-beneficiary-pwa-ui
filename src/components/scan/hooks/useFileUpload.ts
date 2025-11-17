@@ -14,7 +14,7 @@ interface DocumentConfig {
 
 interface UseFileUploadOptions {
 	documentConfig?: DocumentConfig;
-	onUploadSuccess?: (response?: unknown) => void;
+	onUploadSuccess?: (response?: unknown, uploadedFile?: File) => void;
 	onUploadStart?: () => void;
 	onUploadComplete?: () => void;
 	customUploadFn?: (file: File, importedFrom: string) => Promise<unknown>;  // NEW
@@ -153,7 +153,7 @@ export const useFileUpload = ({
 
 				if (onUploadSuccess) {
 					setTimeout(() => {
-						onUploadSuccess(response);  // Pass response
+						onUploadSuccess(response, fileToUpload);  // Pass both response and file
 					}, 1000);
 				}
 
