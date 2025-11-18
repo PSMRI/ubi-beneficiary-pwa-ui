@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { uploadDocument } from '../../../services/user/User';
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB } from '../scanConfig';
 import { convertPDFToImage } from '../../../utils/pdfToImage';
+import { ConfigService } from '../../../services/configService';
 
 interface DocumentConfig {
 	docType?: string;
@@ -17,7 +18,7 @@ interface UseFileUploadOptions {
 	onUploadSuccess?: (response?: unknown, uploadedFile?: File) => void;
 	onUploadStart?: () => void;
 	onUploadComplete?: () => void;
-	customUploadFn?: (file: File, importedFrom: string) => Promise<unknown>;  // NEW
+	customUploadFn?: (file: File, importedFrom: string) => Promise<unknown>; // NEW
 }
 
 interface UseFileUploadReturn {
@@ -132,13 +133,36 @@ export const useFileUpload = ({
 				if (customUploadFn) {
 					response = await customUploadFn(fileToUpload, importedFrom);
 				} else {
+					// Fetch issuer from VC configuration
+					let issuer: string | undefined;
+					if (
+						documentConfig?.docType &&
+						documentConfig?.documentSubType
+					) {
+						try {
+							const vcConfig =
+								await ConfigService.getVCConfiguration(
+									documentConfig.docType,
+									documentConfig.documentSubType
+								);
+							issuer = vcConfig.issuer;
+						} catch (error) {
+							console.warn(
+								'Failed to fetch VC configuration for issuer:',
+								error
+							);
+							// Continue without issuer if config fetch fails
+						}
+					}
+
 					// Default authenticated upload
 					response = await uploadDocument(
 						fileToUpload,
 						documentConfig?.docType || '',
 						documentConfig?.documentSubType || '',
 						documentConfig?.name || '',
-						importedFrom
+						importedFrom,
+						issuer
 					);
 				}
 
@@ -153,7 +177,7 @@ export const useFileUpload = ({
 
 				if (onUploadSuccess) {
 					setTimeout(() => {
-						onUploadSuccess(response, fileToUpload);  // Pass both response and file
+						onUploadSuccess(response, fileToUpload); // Pass both response and file
 					}, 1000);
 				}
 

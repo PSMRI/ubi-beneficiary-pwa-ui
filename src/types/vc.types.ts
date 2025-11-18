@@ -21,6 +21,7 @@ export interface VCConfiguration {
 	issue_vc: boolean;
 	vc_fields: Record<string, VCField>;
 	ui_schema?: Record<string, any>;
+	issuer?: string;
 }
 
 export interface VCFormData {

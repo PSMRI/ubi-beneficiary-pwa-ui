@@ -11,7 +11,7 @@ import {
 	Icon,
 	Tooltip,
 } from '@chakra-ui/react';
-import { CheckCircleIcon, AttachmentIcon } from '@chakra-ui/icons';
+import { CheckCircleIcon, AttachmentIcon, TimeIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import Layout from './common/layout/Layout';
 import ScanVC from './ScanVC';
@@ -23,6 +23,7 @@ import { fetchVCJson } from '../services/benefit/benefits';
 import Loader from '../components/common/Loader';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import { useTranslation } from 'react-i18next';
+import { ConfigService } from '../services/configService';
 // NOSONAR - VCFormWrapper import commented out: Backend does not support VC creation yet
 // Uncomment when backend is ready. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
 // import { VCFormWrapper } from './forms/VCFormWrapper';
@@ -67,18 +68,59 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	'aria-label': ariaLabel,
 	userDocuments,
 }) => {
+	const { t } = useTranslation();
+	const [issueVC, setIssueVC] = React.useState<boolean | null>(null);
+	const [isLoading, setIsLoading] = React.useState(true);
+
 	const { result, success, isExpired } = useMemo(() => {
 		const res = findDocumentStatus(userDocuments, status);
 		const { success, isExpired } = getExpiryDate(userDocuments, status);
 		return { result: res, success, isExpired };
 	}, [userDocuments, status]);
+
+	// Fetch VC configuration to check if issueVC is "yes"
+	useEffect(() => {
+		const fetchVCConfig = async () => {
+			if (result?.matchFound && result?.docType && result?.docSubtype) {
+				try {
+					const vcConfig = await ConfigService.getVCConfiguration(
+						result.docType,
+						result.docSubtype
+					);
+					setIssueVC(vcConfig.issue_vc);
+				} catch (error) {
+					console.warn('Failed to fetch VC configuration:', error);
+					setIssueVC(null);
+				} finally {
+					setIsLoading(false);
+				}
+			} else {
+				setIsLoading(false);
+			}
+		};
+
+		fetchVCConfig();
+	}, [result?.matchFound, result?.docType, result?.docSubtype]);
+
 	const documentExpired = success && isExpired;
+
+	// Check if document is pending verification
+	const isPendingVerification =
+		result?.matchFound &&
+		issueVC === true &&
+		result?.doc_verified === false &&
+		result?.imported_from === 'Manual Upload';
+
 	let iconComponent;
 	let iconColor;
 
 	if (documentExpired) {
 		iconComponent = AiFillCloseCircle;
 		iconColor = '#C03744';
+	} else if (isPendingVerification) {
+		// Show pending icon for documents with issueVC: yes and doc_verified: false
+		iconComponent = TimeIcon;
+		iconColor = '#FF9800'; // Orange color for pending
 	} else if (result?.matchFound) {
 		iconComponent = CheckCircleIcon;
 		iconColor = '#0B7B69';
@@ -92,30 +134,32 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 		let statusText;
 
 		if (isExpired) {
-			statusText = 'Expired';
+			statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
+		} else if (isPendingVerification) {
+			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
 		} else if (result?.matchFound) {
-			statusText = 'Available';
+			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
 		}
 
-		label = `Document status: ${statusText}`;
+		label = `${t('DOCUMENT_LIST_STATUS_PREFIX')}: ${statusText}`;
 	}
 
-	if (result?.matchFound) {
-		return (
-			<Tooltip label={label} hasArrow>
-				<Box display="inline-block">
-					<Icon
-						as={iconComponent}
-						color={iconColor}
-						boxSize={size}
-						aria-label={label}
-					/>
-				</Box>
-			</Tooltip>
-		);
+	if (isLoading || !result?.matchFound) {
+		return null;
 	}
 
-	return null;
+	return (
+		<Tooltip label={label} hasArrow>
+			<Box display="inline-block">
+				<Icon
+					as={iconComponent}
+					color={iconColor}
+					boxSize={size}
+					aria-label={label}
+				/>
+			</Box>
+		</Tooltip>
+	);
 };
 const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	userId,
@@ -130,6 +174,9 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [pendingVerificationDocs, setPendingVerificationDocs] = useState<
+		Set<string>
+	>(new Set());
 	// NOSONAR - Variables needed when VC form is enabled. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
 	const [uploadedDocument, setUploadedDocument] = // NOSONAR
 		useState<DocumentUploadResponse | null>(null);
@@ -181,6 +228,51 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 		fetchDocuments();
 	}, []);
+
+	// Check pending verification status for all documents
+	useEffect(() => {
+		const checkPendingVerification = async () => {
+			if (documents.length === 0 || userData.length === 0) {
+				return;
+			}
+
+			const pendingSet = new Set<string>();
+
+			for (const document of documents) {
+				const documentStatus = findDocumentStatus(
+					userData,
+					document.documentSubType
+				);
+
+				if (documentStatus?.matchFound) {
+					try {
+						const vcConfig = await ConfigService.getVCConfiguration(
+							documentStatus.docType,
+							documentStatus.docSubtype
+						);
+
+						const isPending =
+							vcConfig?.issue_vc === true &&
+							documentStatus.doc_verified === false &&
+							documentStatus.imported_from === 'Manual Upload';
+
+						if (isPending) {
+							pendingSet.add(document.documentSubType);
+						}
+					} catch (error) {
+						console.warn(
+							'Failed to fetch VC configuration:',
+							error
+						);
+					}
+				}
+			}
+
+			setPendingVerificationDocs(pendingSet);
+		};
+
+		checkPendingVerification();
+	}, [documents, userData]);
 
 	const handleScanResult = async (result: string) => {
 		if (!selectedDocument) return;
@@ -474,6 +566,9 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 											colorScheme="blue"
 											onClick={() => openUploadModal(doc)}
 											leftIcon={<AttachmentIcon />}
+											isDisabled={pendingVerificationDocs.has(
+												doc.documentSubType
+											)}
 										>
 											{documentStatus.matchFound
 												? t(

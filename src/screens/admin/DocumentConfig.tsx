@@ -18,6 +18,7 @@ import {
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { getMapping, updateMapping } from '../../services/admin/admin';
 import { getIssuers, type Issuer } from '../../services/admin/issuer';
+import { ConfigService } from '../../services/configService';
 import Layout from '../../components/common/admin/Layout';
 import { useTranslation } from 'react-i18next';
 
@@ -31,6 +32,7 @@ interface DocumentConfig {
 	issueVC: string;
 	docQRContains?: string;
 	issuer?: string; // Issuer ID (e.g., "passport_seva")
+	spaceId?: string;
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -201,6 +203,7 @@ const DocumentConfig = () => {
 							issueVC: item.issueVC || '',
 							docQRContains: item.docQRContains || '',
 							issuer: item.issuer || '',
+							spaceId: item.spaceId || '',
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -216,6 +219,7 @@ const DocumentConfig = () => {
 							issueVC: '',
 							docQRContains: '',
 							issuer: '',
+							spaceId: '',
 						},
 					]);
 				}
@@ -276,14 +280,20 @@ const DocumentConfig = () => {
 			updated[index].docQRContains = '';
 		}
 
+		// If issueVC changes to "no", clear spaceId
+		if (field === 'issueVC' && value === 'no') {
+			updated[index].spaceId = '';
+		}
+
 		setDocumentConfigs(updated);
 
 		const newErrors = { ...errors };
 		delete newErrors[`${field}_${index}`];
 
-		// If issueVC changes, clear docQRContains error
+		// If issueVC changes, clear docQRContains and spaceId errors
 		if (field === 'issueVC') {
 			delete newErrors[`docQRContains_${index}`];
+			delete newErrors[`spaceId_${index}`];
 		}
 
 		// If docType changes, clear issuer error
@@ -334,6 +344,7 @@ const DocumentConfig = () => {
 				issueVC: '',
 				docQRContains: '',
 				issuer: '',
+				spaceId: '',
 			},
 		]);
 	};
@@ -385,6 +396,13 @@ const DocumentConfig = () => {
 				);
 				hasError = true;
 			}
+			// Validate spaceId is required when issueVC is "yes"
+			if (doc.issueVC === 'yes' && !doc.spaceId) {
+				newErrors[`spaceId_${index}`] = t(
+					'DOCUMENTCONFIG_FIELD_REQUIRED'
+				);
+				hasError = true;
+			}
 			if (doc.vcFields && doc.vcFields.trim() !== '') {
 				if (!validateVcFields(doc.vcFields)) {
 					newErrors[`vcFields_${index}`] = t(
@@ -417,8 +435,13 @@ const DocumentConfig = () => {
 				issueVC: doc.issueVC,
 				docQRContains: doc.docQRContains,
 				issuer: doc.issuer,
+				spaceId: doc.spaceId,
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
+
+			// Clear the cache so the new configuration is loaded on next access
+			ConfigService.clearCache();
+
 			toast({
 				title: t('DOCUMENTCONFIG_SUCCESS_TITLE'),
 				description: `${documentConfigs.length}${t('DOCUMENTCONFIG_SUCCESS_MESSAGE')}`,
@@ -904,6 +927,62 @@ const DocumentConfig = () => {
 												md: 'row',
 											}}
 										>
+											{doc.issueVC === 'yes' && (
+												<FormControl
+													isInvalid={
+														!!errors[
+															`spaceId_${index}`
+														]
+													}
+													flex={1}
+												>
+													<FormLabel
+														fontSize="md"
+														fontWeight="bold"
+														color="#06164B"
+													>
+														{t(
+															'DOCUMENTCONFIG_SPACE_ID_LABEL'
+														)}
+														<Text
+															as="span"
+															color="red.500"
+														>
+															*
+														</Text>
+													</FormLabel>
+													<Input
+														value={
+															doc.spaceId || ''
+														}
+														onChange={(e) =>
+															handleChange(
+																index,
+																'spaceId',
+																e.target.value
+															)
+														}
+														placeholder="f7401ef81-aa6e-44be-b929-0ffb0c958383"
+														borderWidth="2px"
+														bg="white"
+														size="lg"
+														borderRadius="md"
+														_focus={{
+															borderColor:
+																'blue.400',
+															boxShadow:
+																'0 0 0 2px #06164B33',
+														}}
+													/>
+													<FormErrorMessage fontSize="xs">
+														{
+															errors[
+																`spaceId_${index}`
+															]
+														}
+													</FormErrorMessage>
+												</FormControl>
+											)}
 											{doc.issueVC === 'no' && (
 												<FormControl
 													isInvalid={

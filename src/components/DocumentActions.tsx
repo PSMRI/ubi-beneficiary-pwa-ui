@@ -1,6 +1,6 @@
 import { Box, IconButton, useToast } from '@chakra-ui/react';
-import { findDocumentStatus, type DocumentStatus } from '../utils/jsHelper/helper';
-import React, { useContext, useState } from 'react';
+import { findDocumentStatus } from '../utils/jsHelper/helper';
+import React, { useContext, useState, useEffect } from 'react';
 import { deleteDocument } from '../services/user/User';
 import { FaEye, FaTrashAlt } from 'react-icons/fa';
 import { getDocumentsList, getUser } from '../services/auth/auth';
@@ -8,6 +8,7 @@ import { AuthContext } from '../utils/context/checkToken';
 import CommonDialogue from './common/Dialogue';
 import { VscPreview } from 'react-icons/vsc';
 import { useTranslation } from 'react-i18next';
+import { ConfigService } from '../services/configService';
 
 interface DocumentActionsProps {
 	status: string;
@@ -34,8 +35,49 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 	const [document, setDocument] = useState();
 	const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
 	const [docImageList, setdocImageList] = useState<string[]>([]);
+	const [issueVC, setIssueVC] = useState<boolean | null>(null);
+	const [isLoadingVC, setIsLoadingVC] = useState(true);
 	const { updateUserData } = useContext(AuthContext)!;
 	const toast = useToast();
+
+	// Fetch VC configuration to check if issueVC is "yes"
+	useEffect(() => {
+		const fetchVCConfig = async () => {
+			if (
+				documentStatus?.matchFound &&
+				documentStatus?.docType &&
+				documentStatus?.docSubtype
+			) {
+				try {
+					const vcConfig = await ConfigService.getVCConfiguration(
+						documentStatus.docType,
+						documentStatus.docSubtype
+					);
+					setIssueVC(vcConfig.issue_vc);
+				} catch (error) {
+					console.warn('Failed to fetch VC configuration:', error);
+					setIssueVC(null);
+				} finally {
+					setIsLoadingVC(false);
+				}
+			} else {
+				setIsLoadingVC(false);
+			}
+		};
+
+		fetchVCConfig();
+	}, [
+		documentStatus?.matchFound,
+		documentStatus?.docType,
+		documentStatus?.docSubtype,
+	]);
+
+	// Check if document is pending verification
+	const isPendingVerification =
+		documentStatus?.matchFound &&
+		issueVC === true &&
+		documentStatus?.doc_verified === false &&
+		documentStatus?.imported_from === 'Manual Upload';
 
 	const init = async () => {
 		try {
@@ -93,7 +135,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 			}
 
 			// Fallback to old logic for base64 preview
-			console.log("documentStatus?.doc_data:", documentStatus);
+			console.log('documentStatus?.doc_data:', documentStatus);
 			const parseData = JSON.parse(documentStatus?.doc_data as string);
 			const credentialSubject = parseData?.credentialSubject;
 
@@ -146,6 +188,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 						size="sm"
 						color={'grey'}
 						onClick={() => handlepreview()}
+						isDisabled={isPendingVerification}
 					/>
 					<IconButton
 						icon={<VscPreview />}
@@ -153,6 +196,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 						size="sm"
 						color="grey"
 						onClick={handleImagePreview}
+						isDisabled={isPendingVerification}
 					/>
 					{isDelete && (
 						<IconButton

@@ -5,6 +5,7 @@ import { Box, Text, VStack, HStack, Button, useTheme } from '@chakra-ui/react';
 // import { VCFormWrapper } from '../forms/VCFormWrapper';
 import { useDocumentUpload } from '../../hooks/useDocumentUpload';
 import { DocumentUploadResponse } from '../../types/document.types';
+import { ConfigService } from '../../services/configService';
 
 interface DocumentUploadProps {
 	onUpload: (
@@ -93,10 +94,27 @@ export const DocumentUploadWithForm: React.FC<DocumentUploadWithFormProps> = ({
 		uploadDocSubtype: string
 	) => {
 		try {
+			// Fetch issuer from VC configuration
+			let issuer: string | undefined;
+			try {
+				const vcConfig = await ConfigService.getVCConfiguration(
+					uploadDocType,
+					uploadDocSubtype
+				);
+				issuer = vcConfig.issuer;
+			} catch (error) {
+				console.warn(
+					'Failed to fetch VC configuration for issuer:',
+					error
+				);
+				// Continue without issuer if config fetch fails
+			}
+
 			const result = await uploadDocument(
 				file,
 				uploadDocType,
-				uploadDocSubtype
+				uploadDocSubtype,
+				issuer
 			);
 			setUploadedDocument(result);
 			setUploadedFile(file); // Store the uploaded file

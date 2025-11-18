@@ -20,14 +20,6 @@ export class VCService {
 		docSubtype?: string,
 		docName?: string
 	) {
-		console.log('=== VC Form Submission ===');
-		console.log('Form Data:', formData);
-		console.log('Uploaded File:', uploadedFile);
-		console.log('Document Type:', docType);
-		console.log('Document Subtype:', docSubtype);
-		console.log('Document Name:', docName);
-		console.log('=========================');
-
 		// Return success for now - backend will handle VC creation
 		return {
 			success: true,
