@@ -633,32 +633,37 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 			const vcDocuments: VCDocument[] = [];
 
 			// Use Promise.all to process all documents in parallel for better performance
-			const documentPromises = documentFieldNames.map(async (fieldName) => {
-				const fieldValue = (formData as any)[fieldName];
-				if (!fieldValue) {
-					return null;
+			const documentPromises = documentFieldNames.map(
+				async (fieldName) => {
+					const fieldValue = (formData as any)[fieldName];
+					if (!fieldValue) {
+						return null;
+					}
+
+					const fieldSchema = formSchema?.properties?.[fieldName];
+					const encodedContent = encodeToBase64(fieldValue);
+
+					// Determine if this is a file upload or VC document based on field pattern and metadata
+					const isFileUpload =
+						fieldSchema?.vcMeta?.isFileUpload ||
+						isFileUploadField(fieldName);
+
+					if (isFileUpload) {
+						return {
+							type: 'file' as const,
+							data: { [fieldName]: encodedContent } as FileUpload,
+						};
+					} else {
+						// Create VC document with metadata, actual document type and issuer from VC config
+						const vcDocument = await createVCDocument(
+							fieldName,
+							encodedContent,
+							fieldSchema
+						);
+						return { type: 'vc' as const, data: vcDocument };
+					}
 				}
-
-				const fieldSchema = formSchema?.properties?.[fieldName];
-				const encodedContent = encodeToBase64(fieldValue);
-
-				// Determine if this is a file upload or VC document based on field pattern and metadata
-				const isFileUpload =
-					fieldSchema?.vcMeta?.isFileUpload ||
-					isFileUploadField(fieldName);
-
-				if (isFileUpload) {
-					return { type: 'file' as const, data: { [fieldName]: encodedContent } as FileUpload };
-				} else {
-					// Create VC document with metadata, actual document type and issuer from VC config
-					const vcDocument = await createVCDocument(
-						fieldName,
-						encodedContent,
-						fieldSchema
-					);
-					return { type: 'vc' as const, data: vcDocument };
-				}
-			});
+			);
 
 			// Wait for all document processing to complete
 			const documentResults = await Promise.all(documentPromises);
