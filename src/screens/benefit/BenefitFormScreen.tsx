@@ -39,6 +39,7 @@ import {
 	extractDocumentSubtype,
 	extractDocumentMetadataFromSelection,
 } from './ConvertToRJSF';
+import { ConfigService } from '../../services/configService';
 
 // Interface for VC document structure
 interface VCDocument {
@@ -48,6 +49,7 @@ interface VCDocument {
 	document_format: string;
 	document_imported_from: string;
 	document_content: string;
+	document_issuer_name: string;
 }
 
 // Interface for file upload structure
@@ -477,12 +479,12 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		// --- END CONSOLIDATED GROUPING ---
 	};
 
-	// Helper function to create VC document with actual document type and issuer from selection
-	const createVCDocument = (
+	// Helper function to create VC document with actual document type and issuer from VC configuration
+	const createVCDocument = async (
 		fieldName: string,
 		encodedContent: string,
 		fieldSchema: any
-	): VCDocument => {
+	): Promise<VCDocument> => {
 		const vcMeta = fieldSchema?.vcMeta;
 		const formValue = (formData as any)[fieldName];
 
@@ -490,6 +492,22 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 		const { documentType, documentIssuer } =
 			extractDocumentMetadataFromSelection(formValue, docsArray);
 		const documentSubtype = extractDocumentSubtype(formValue, fieldSchema);
+
+		// Fetch issuer from VC configuration
+		let issuerName = ''; // Default empty, will use value from VC config
+		try {
+			const vcConfig = await ConfigService.getVCConfiguration(
+				documentType,
+				documentSubtype
+			);
+			issuerName = vcConfig.issuer || '';
+		} catch (error) {
+			console.warn(
+				`Failed to fetch VC configuration for ${documentType}/${documentSubtype}:`,
+				error
+			);
+			// Keep empty if no configuration found
+		}
 
 		return {
 			document_submission_reason: JSON.stringify(
@@ -500,6 +518,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 			document_format: vcMeta?.format || 'json',
 			document_imported_from: documentIssuer, // Real imported_from from selected document
 			document_content: encodedContent,
+			document_issuer_name: issuerName, // Dynamic issuer from VC configuration
 		};
 	};
 
@@ -609,14 +628,15 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				}
 			});
 
-			// Process document fields
+			// Process document fields with async handling for VC configuration
 			const files: FileUpload[] = [];
 			const vcDocuments: VCDocument[] = [];
 
-			documentFieldNames.forEach((fieldName) => {
+			// Use Promise.all to process all documents in parallel for better performance
+			const documentPromises = documentFieldNames.map(async (fieldName) => {
 				const fieldValue = (formData as any)[fieldName];
 				if (!fieldValue) {
-					return;
+					return null;
 				}
 
 				const fieldSchema = formSchema?.properties?.[fieldName];
@@ -628,16 +648,27 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 					isFileUploadField(fieldName);
 
 				if (isFileUpload) {
-					// Add to files array
-					files.push({ [fieldName]: encodedContent });
+					return { type: 'file' as const, data: { [fieldName]: encodedContent } as FileUpload };
 				} else {
-					// Create VC document with metadata, actual document type and issuer
-					const vcDocument = createVCDocument(
+					// Create VC document with metadata, actual document type and issuer from VC config
+					const vcDocument = await createVCDocument(
 						fieldName,
 						encodedContent,
 						fieldSchema
 					);
-					vcDocuments.push(vcDocument);
+					return { type: 'vc' as const, data: vcDocument };
+				}
+			});
+
+			// Wait for all document processing to complete
+			const documentResults = await Promise.all(documentPromises);
+
+			// Separate files and VC documents
+			documentResults.forEach((result) => {
+				if (result?.type === 'file') {
+					files.push(result.data);
+				} else if (result?.type === 'vc') {
+					vcDocuments.push(result.data);
 				}
 			});
 
@@ -693,6 +724,8 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 				formDataNew.bap_application_id =
 					responseInitial?.data?.internal_application_id;
 			}
+
+			console.log('Submitting form data:', formDataNew);
 
 			// --- Step 2: Submit Order ---
 			const response = await submitForm(
