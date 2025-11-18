@@ -109,7 +109,19 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 			a.localeCompare(b, undefined, { sensitivity: 'base' })
 		);
 	}, [groupedApplications]);
-
+	const getActionLabel = (
+		status: string | null,
+		t: (key: string) => string
+	): string => {
+		if (
+			status === 'application initiated'
+		) {
+			return t('BENEFIT_DETAILS_COMPLETE_APPLICATION');
+		}
+		else {
+			return t('BENEFIT_DETAILS_RESUBMIT_APPLICATION');
+		}
+	};
 	return (
 		<Box
 			as="section"
@@ -225,9 +237,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 														);
 													}}
 												>
-													{t(
-														'BENEFIT_DETAILS_RESUBMIT_APPLICATION'
-													)}
+													{getActionLabel(app.status, t)}
 												</Button>
 											)}
 										</Link>
