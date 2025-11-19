@@ -25,6 +25,20 @@ const SignIn: React.FC = () => {
 	const [loading, setLoading] = useState(false);
 	const [isFormValid, setIsFormValid] = useState<boolean>(false);
 
+	// Check for prefilled credentials from registration
+	useEffect(() => {
+		const storedUsername = sessionStorage.getItem('prefill_username');
+		const storedPassword = sessionStorage.getItem('prefill_password');
+
+		if (storedUsername && storedPassword) {
+			setUsername(storedUsername);
+			setPassword(storedPassword);
+			// Clear the stored credentials after using them
+			sessionStorage.removeItem('prefill_username');
+			sessionStorage.removeItem('prefill_password');
+		}
+	}, []);
+
 	useEffect(() => {
 		// Check for empty fields after trimming spaces
 		const isValid = username.trim() !== '' && password.trim() !== '';

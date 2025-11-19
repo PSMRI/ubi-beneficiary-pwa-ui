@@ -375,10 +375,25 @@ export const registerWithDocument = async (
 		formData,
 		{
 			headers: {
-				'Content-Type': 'multipart/form-data'
+				'Content-Type': 'multipart/form-data',
 			},
 		}
 	);
+
+	// Store credentials for prefilling login form if available
+	if (
+		response?.data?.data?.user?.userName &&
+		response?.data?.data?.user?.password
+	) {
+		sessionStorage.setItem(
+			'prefill_username',
+			response.data.data.user.userName
+		);
+		sessionStorage.setItem(
+			'prefill_password',
+			response.data.data.user.password
+		);
+	}
 
 	return response.data;
 };
@@ -390,8 +405,12 @@ export const setUserRequiredAction = async (username: string, actions: string[] 
 			actions,
 		});
 		return response.data;
-	} catch (error: any) {
+	} catch (error: unknown) {
 		console.error('Error setting required action:', error);
-		throw error.response?.data || { message: 'Failed to set required action' };
+		throw (
+			(error as { response?: { data?: unknown } })?.response?.data || {
+				message: 'Failed to set required action',
+			}
+		);
 	}
 };
