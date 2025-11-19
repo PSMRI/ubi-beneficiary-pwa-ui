@@ -58,7 +58,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	} = useCameraCapture();
 
 	// File upload hook
-	const { isUploading, uploadDocumentFile, handleFileSelect } = useFileUpload(
+	const { isUploading, isConverting, uploadDocumentFile, handleFileSelect } = useFileUpload(
 		{
 			documentConfig,
 			onUploadSuccess: () => {
@@ -131,10 +131,10 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							colorScheme="teal"
 							size="md"
 							width="full"
-							isLoading={isUploading}
-							loadingText={t('SCAN_UPLOADING')}
-							isDisabled={isUploading}
-							cursor={isUploading ? 'not-allowed' : 'pointer'}
+							isLoading={isUploading || isConverting}
+							loadingText={isConverting ? t('SCAN_CONVERTING_PDF') : t('SCAN_UPLOADING')}
+							isDisabled={isUploading || isConverting}
+							cursor={isUploading || isConverting ? 'not-allowed' : 'pointer'}
 						>
 							<span>
 								{t('UPLOAD_DOCUMENT_FOR_VC')} ({'<'}{' '}
@@ -145,7 +145,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 								accept="image/*,application/pdf"
 								onChange={handleFileSelect}
 								hidden
-								disabled={isUploading}
+								disabled={isUploading || isConverting}
 							/>
 						</Button>
 						<Text

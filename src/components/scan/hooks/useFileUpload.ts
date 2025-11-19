@@ -3,6 +3,7 @@ import { useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument } from '../../../services/user/User';
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB } from '../scanConfig';
+import { convertPDFToImage } from '../../../utils/pdfToImage';
 
 interface DocumentConfig {
 	docType?: string;
@@ -13,13 +14,15 @@ interface DocumentConfig {
 
 interface UseFileUploadOptions {
 	documentConfig?: DocumentConfig;
-	onUploadSuccess?: () => void;
+	onUploadSuccess?: (response?: unknown) => void;
 	onUploadStart?: () => void;
 	onUploadComplete?: () => void;
+	customUploadFn?: (file: File, importedFrom: string) => Promise<unknown>;  // NEW
 }
 
 interface UseFileUploadReturn {
 	isUploading: boolean;
+	isConverting: boolean;
 	uploadDocumentFile: (file: File, importedFrom: string) => Promise<unknown>;
 	handleFileSelect: (
 		event: React.ChangeEvent<HTMLInputElement>
@@ -36,10 +39,12 @@ export const useFileUpload = ({
 	onUploadSuccess,
 	onUploadStart,
 	onUploadComplete,
+	customUploadFn,
 }: UseFileUploadOptions): UseFileUploadReturn => {
 	const { t } = useTranslation();
 	const toast = useToast();
 	const [isUploading, setIsUploading] = useState(false);
+	const [isConverting, setIsConverting] = useState(false);
 
 	const validateFile = useCallback(
 		(file: File): { valid: boolean; code?: string; message?: string } => {
@@ -81,18 +86,64 @@ export const useFileUpload = ({
 
 	const uploadDocumentFile = useCallback(
 		async (file: File, importedFrom: string) => {
+			let fileToUpload = file;
+			const isPDF = file.type === 'application/pdf';
+
+			// Show single processing toast
+			const toastId = toast({
+				title: isPDF ? t('SCAN_PROCESSING_PDF') : t('SCAN_UPLOADING'),
+				status: 'info',
+				duration: null,
+				isClosable: false,
+			});
+
+			// Convert PDF to image (required for QR code extraction)
+			if (isPDF) {
+				setIsConverting(true);
+				try {
+					fileToUpload = await convertPDFToImage(file, {
+						scale: 2.0,
+						quality: 0.8,
+						format: 'jpeg'
+					});
+				} catch (error) {
+					console.error('Error converting PDF to image:', error);
+					toast.close(toastId);
+					toast({
+						title: t('SCAN_PDF_CONVERSION_ERROR'),
+						description: t('SCAN_PDF_CONVERSION_ERROR_DESCRIPTION'),
+						status: 'error',
+						duration: 5000,
+						isClosable: true,
+					});
+					throw error;
+				} finally {
+					setIsConverting(false);
+				}
+			}
+
 			setIsUploading(true);
 			if (onUploadStart) onUploadStart();
 
 			try {
-				const response = await uploadDocument(
-					file,
-					documentConfig?.docType || '',
-					documentConfig?.documentSubType || '',
-					documentConfig?.name || '',
-					importedFrom
-				);
+				let response;
 
+				// Use custom upload function if provided
+				if (customUploadFn) {
+					response = await customUploadFn(file, importedFrom);
+				} else {
+					// Default authenticated upload
+					response = await uploadDocument(
+						file,
+						documentConfig?.docType || '',
+						documentConfig?.documentSubType || '',
+						documentConfig?.name || '',
+						importedFrom
+					);
+				}
+
+				// Close processing toast and show success
+				toast.close(toastId);
 				toast({
 					title: t('SCAN_UPLOAD_SUCCESS'),
 					status: 'success',
@@ -102,13 +153,14 @@ export const useFileUpload = ({
 
 				if (onUploadSuccess) {
 					setTimeout(() => {
-						onUploadSuccess();
+						onUploadSuccess(response);  // Pass response
 					}, 1000);
 				}
 
 				return response;
 			} catch (error) {
 				console.error('Error during file upload:', error);
+				toast.close(toastId);
 				toast({
 					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
 					description: t('SCAN_ERROR_UPLOAD_FILE'),
@@ -164,6 +216,7 @@ export const useFileUpload = ({
 
 	return {
 		isUploading,
+		isConverting,
 		uploadDocumentFile,
 		handleFileSelect,
 		validateFile,

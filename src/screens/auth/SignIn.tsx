@@ -25,6 +25,20 @@ const SignIn: React.FC = () => {
 	const [loading, setLoading] = useState(false);
 	const [isFormValid, setIsFormValid] = useState<boolean>(false);
 
+	// Check for prefilled credentials from registration
+	useEffect(() => {
+		const storedUsername = sessionStorage.getItem('prefill_username');
+		const storedPassword = sessionStorage.getItem('prefill_password');
+
+		if (storedUsername && storedPassword) {
+			setUsername(storedUsername);
+			setPassword(storedPassword);
+			// Clear the stored credentials after using them
+			sessionStorage.removeItem('prefill_username');
+			sessionStorage.removeItem('prefill_password');
+		}
+	}, []);
+
 	useEffect(() => {
 		// Check for empty fields after trimming spaces
 		const isValid = username.trim() !== '' && password.trim() !== '';
@@ -35,36 +49,24 @@ const SignIn: React.FC = () => {
 
 	const handleLogin = async () => {
 		try {
-			setLoading(true); // Show loading indicator
+			setLoading(true);
 
-			// Trim spaces from username and password
 			const trimmedUsername = username.trim();
 
 			const response = await loginUser({
 				username: trimmedUsername,
 				password,
 			});
-			if (response?.data) {
-				// Validate required fields
-				if (!response.data.username) {
-					throw new Error(t('SIGNIN_USERNAME_MISSING_ERROR'));
-				}
 
-				// Store tokens
+			// ✅ Success case
+			if (response?.data?.access_token) {
 				localStorage.setItem('authToken', response.data.access_token);
-				localStorage.setItem(
-					'refreshToken',
-					response.data.refresh_token
-				);
+				localStorage.setItem('refreshToken', response.data.refresh_token);
+
 				if (response.data.walletToken) {
-					// Store wallet token if available
-					localStorage.setItem(
-						'walletToken',
-						response.data.walletToken
-					);
+					localStorage.setItem('walletToken', response.data.walletToken);
 				}
 
-				// Create user object with data from API response
 				const userData = {
 					accountId: response.data.username,
 					firstName: response.data.firstName ?? '',
@@ -72,10 +74,7 @@ const SignIn: React.FC = () => {
 					email: response.data.email ?? '',
 					phone: response.data.phone ?? '',
 					username: response.data.username,
-					// Add any additional user fields from the API response
 				};
-
-				// Store user data
 				localStorage.setItem('user', JSON.stringify(userData));
 
 				toast({
@@ -83,28 +82,63 @@ const SignIn: React.FC = () => {
 					status: 'success',
 					duration: 3000,
 					isClosable: true,
-					containerStyle: {
-						padding: '16px',
-						margin: '16px',
-					},
 				});
 
 				navigate(0);
-			} else {
-				throw new Error(t('SIGNIN_INVALID_RESPONSE_ERROR'));
+				return;
 			}
-		} catch (error) {
+
+			throw new Error(t('SIGNIN_INVALID_RESPONSE_ERROR'));
+		} catch (error: any) {
+			// 👇 Handle password update required case
+			console.log("in catch", error);
+
+			if (
+				error?.response?.status === 403 &&
+				error?.response?.data?.error === 'PASSWORD_UPDATE_REQUIRED'
+			) {
+				toast({
+					title: t('SIGNIN_PASSWORD_UPDATE_REQUIRED_TITLE') || 'Password Update Required',
+					description:
+						t('SIGNIN_PASSWORD_UPDATE_REQUIRED_DESC') ||
+						'You must update your password before continuing.',
+					status: 'warning',
+					duration: 3000,
+					isClosable: true,
+				});
+
+				// Store username for update password flow
+				localStorage.setItem('pendingUser', username.trim());
+				navigate('/update-password');
+				return;
+			}
+
+			// Handle invalid credentials
+			if (error?.response?.status === 401) {
+				toast({
+					title: t('SIGNIN_FAILED'),
+					description: t('SIGNIN_INVALID_CREDENTIALS') || 'Invalid username or password',
+					status: 'error',
+					duration: 3000,
+					isClosable: true,
+				});
+				return;
+			}
+
+			// Other unknown errors
 			toast({
 				title: t('SIGNIN_FAILED'),
-				status: 'error',
-				duration: 2000,
-				isClosable: true,
 				description: error?.message ?? t('SIGNIN_UNKNOWN_ERROR'),
+				status: 'error',
+				duration: 3000,
+				isClosable: true,
 			});
 		} finally {
 			setLoading(false);
 		}
 	};
+
+
 
 	const handleBack = () => {
 		navigate('/');

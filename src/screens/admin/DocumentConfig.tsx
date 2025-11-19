@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { getMapping, updateMapping } from '../../services/admin/admin';
+import { getIssuers, type Issuer } from '../../services/admin/issuer';
 import Layout from '../../components/common/admin/Layout';
 import { useTranslation } from 'react-i18next';
 
@@ -29,6 +30,7 @@ interface DocumentConfig {
 	vcFields: string;
 	issueVC: string;
 	docQRContains?: string;
+	issuer?: string; // Issuer ID (e.g., "passport_seva")
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -59,6 +61,11 @@ const DocumentConfig = () => {
 		[]
 	);
 	const [errors, setErrors] = useState<ValidationErrors>({});
+
+	// --- State for issuers ---
+	const [allIssuers, setAllIssuers] = useState<Issuer[]>([]);
+	const [isLoadingIssuers, setIsLoadingIssuers] = useState(true);
+	const [issuersFetchFailed, setIssuersFetchFailed] = useState(false);
 
 	// --- State for document types ---
 	const [documentTypes, setDocumentTypes] = useState<string[]>([]);
@@ -118,6 +125,55 @@ const DocumentConfig = () => {
 		};
 	}, [toast, t]);
 
+	// --- Fetch issuers from API ---
+	useEffect(() => {
+		let isMounted = true;
+
+		const fetchIssuers = async () => {
+			try {
+				if (!isMounted) return;
+				setIsLoadingIssuers(true);
+				setIssuersFetchFailed(false);
+
+				const issuers = await getIssuers();
+
+				if (!isMounted) return;
+
+				if (Array.isArray(issuers)) {
+					setAllIssuers(issuers);
+					setIssuersFetchFailed(false);
+				} else {
+					console.warn('Issuers not found in expected format');
+					setAllIssuers([]);
+					setIssuersFetchFailed(true);
+				}
+			} catch (error) {
+				if (!isMounted) return;
+
+				console.error('Error fetching issuers:', error);
+				setIssuersFetchFailed(true);
+				toast({
+					title: t('DOCUMENTCONFIG_ERROR_TITLE'),
+					description: t('DOCUMENTCONFIG_FETCH_ISSUERS_ERROR'),
+					status: 'error',
+					duration: 2000,
+					isClosable: true,
+				});
+				setAllIssuers([]);
+			} finally {
+				if (isMounted) {
+					setIsLoadingIssuers(false);
+				}
+			}
+		};
+
+		fetchIssuers();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [toast, t]);
+
 	// --- Fetch document configurations from API ---
 	useEffect(() => {
 		const fetchConfigs = async () => {
@@ -144,6 +200,7 @@ const DocumentConfig = () => {
 							vcFields: vcFieldsString,
 							issueVC: item.issueVC || '',
 							docQRContains: item.docQRContains || '',
+							issuer: item.issuer || '',
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -158,6 +215,7 @@ const DocumentConfig = () => {
 							vcFields: '',
 							issueVC: '',
 							docQRContains: '',
+							issuer: '',
 						},
 					]);
 				}
@@ -228,6 +286,11 @@ const DocumentConfig = () => {
 			delete newErrors[`docQRContains_${index}`];
 		}
 
+		// If docType changes, clear issuer error
+		if (field === 'docType') {
+			delete newErrors[`issuer_${index}`];
+		}
+
 		// If the field is 'vcFields', validate JSON and structure
 		if (field === 'vcFields') {
 			if (
@@ -270,6 +333,7 @@ const DocumentConfig = () => {
 				vcFields: '',
 				issueVC: '',
 				docQRContains: '',
+				issuer: '',
 			},
 		]);
 	};
@@ -305,6 +369,7 @@ const DocumentConfig = () => {
 				'docType',
 				'vcFields',
 				'issueVC',
+				'issuer',
 			].forEach((field) => {
 				if (!doc[field]) {
 					newErrors[`${field}_${index}`] = `${field} ${t(
@@ -351,6 +416,7 @@ const DocumentConfig = () => {
 				vcFields: doc.vcFields,
 				issueVC: doc.issueVC,
 				docQRContains: doc.docQRContains,
+				issuer: doc.issuer,
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 			toast({
@@ -374,13 +440,13 @@ const DocumentConfig = () => {
 	// --- Helper function to get document type select placeholder ---
 	const getDocumentTypeSelectPlaceholder = () => {
 		if (isLoadingDocumentTypes) {
-		  return t('DOCUMENTCONFIG_LOADING_TYPES');
+			return t('DOCUMENTCONFIG_LOADING_TYPES');
 		}
 		if (documentTypesFetchFailed) {
-		  return t('DOCUMENTCONFIG_TYPES_FAILED_WARNING');
+			return t('DOCUMENTCONFIG_TYPES_FAILED_WARNING');
 		}
 		return t('DOCUMENTCONFIG_SELECT_TYPE');
-	  };
+	};
 
 	return (
 		<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
@@ -398,28 +464,28 @@ const DocumentConfig = () => {
 					<Box>
 						<VStack spacing={6} align="stretch">
 							{documentTypesFetchFailed &&
-							!isLoadingDocumentTypes && (
-								<Box
-									bg="red.50"
-									border="1px solid"
-									borderColor="red.200"
-									borderRadius="md"
-									p={4}
-									mb={4}
-								>
-									<Text color="red.600" fontWeight="bold">
-										⚠️{' '}
-										{t(
-											'DOCUMENTCONFIG_TYPES_FAILED_WARNING'
-										)}
-									</Text>
-									<Text color="red.500" fontSize="sm">
-										{t(
-											'DOCUMENTCONFIG_TYPES_FAILED_MESSAGE'
-										)}
-									</Text>
-								</Box>
-							)}
+								!isLoadingDocumentTypes && (
+									<Box
+										bg="red.50"
+										border="1px solid"
+										borderColor="red.200"
+										borderRadius="md"
+										p={4}
+										mb={4}
+									>
+										<Text color="red.600" fontWeight="bold">
+											⚠️{' '}
+											{t(
+												'DOCUMENTCONFIG_TYPES_FAILED_WARNING'
+											)}
+										</Text>
+										<Text color="red.500" fontSize="sm">
+											{t(
+												'DOCUMENTCONFIG_TYPES_FAILED_MESSAGE'
+											)}
+										</Text>
+									</Box>
+								)}
 							{documentConfigs.map((doc, index) => (
 								<Box
 									key={doc.id}
@@ -599,11 +665,11 @@ const DocumentConfig = () => {
 														boxShadow:
 															'0 0 0 2px #06164B33',
 													}}
-												isDisabled={
-													isLoadingDocumentTypes ||
-													documentTypesFetchFailed
-												}
-												placeholder={getDocumentTypeSelectPlaceholder()}
+													isDisabled={
+														isLoadingDocumentTypes ||
+														documentTypesFetchFailed
+													}
+													placeholder={getDocumentTypeSelectPlaceholder()}
 												>
 													{documentTypes.map(
 														(type) => (
@@ -684,6 +750,86 @@ const DocumentConfig = () => {
 										>
 											<FormControl
 												isInvalid={
+													!!errors[`issuer_${index}`]
+												}
+												flex={1}
+											>
+												<FormLabel
+													fontSize="md"
+													fontWeight="bold"
+													color="#06164B"
+												>
+													{t(
+														'DOCUMENTCONFIG_ISSUER_LABEL'
+													)}
+													<Text
+														as="span"
+														color="red.500"
+													>
+														*
+													</Text>
+												</FormLabel>
+												<Select
+													value={doc.issuer || ''}
+													onChange={(e) =>
+														handleChange(
+															index,
+															'issuer',
+															e.target.value
+														)
+													}
+													borderWidth="2px"
+													bg="white"
+													size="lg"
+													borderRadius="md"
+													_focus={{
+														borderColor: 'blue.400',
+														boxShadow:
+															'0 0 0 2px #06164B33',
+													}}
+													isDisabled={
+														isLoadingIssuers ||
+														issuersFetchFailed ||
+														allIssuers.length === 0
+													}
+													placeholder={
+														isLoadingIssuers
+															? t(
+																	'DOCUMENTCONFIG_LOADING_ISSUERS'
+																)
+															: issuersFetchFailed
+																? t(
+																		'DOCUMENTCONFIG_ISSUERS_FAILED'
+																	)
+																: allIssuers.length ===
+																	  0
+																	? t(
+																			'DOCUMENTCONFIG_NO_ISSUERS_AVAILABLE'
+																		)
+																	: t(
+																			'DOCUMENTCONFIG_SELECT_ISSUER'
+																		)
+													}
+												>
+													{allIssuers.map(
+														(issuer) => (
+															<option
+																key={issuer.id}
+																value={
+																	issuer.id
+																}
+															>
+																{issuer.name}
+															</option>
+														)
+													)}
+												</Select>
+												<FormErrorMessage fontSize="xs">
+													{errors[`issuer_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+											<FormControl
+												isInvalid={
 													!!errors[`issueVC_${index}`]
 												}
 												flex={1}
@@ -709,7 +855,9 @@ const DocumentConfig = () => {
 														handleChange(
 															index,
 															'issueVC',
-															e.target.value as 'yes'|'no'
+															e.target.value as
+																| 'yes'
+																| 'no'
 														)
 													}
 													borderWidth="2px"
@@ -744,6 +892,18 @@ const DocumentConfig = () => {
 													{errors[`issueVC_${index}`]}
 												</FormErrorMessage>
 											</FormControl>
+										</HStack>
+										<HStack
+											spacing={4}
+											align={{
+												base: 'stretch',
+												md: 'start',
+											}}
+											flexDir={{
+												base: 'column',
+												md: 'row',
+											}}
+										>
 											{doc.issueVC === 'no' && (
 												<FormControl
 													isInvalid={
@@ -777,7 +937,8 @@ const DocumentConfig = () => {
 															handleChange(
 																index,
 																'docQRContains',
-																e.target.value as DocumentConfig['docQRContains']
+																e.target
+																	.value as DocumentConfig['docQRContains']
 															)
 														}
 														borderWidth="2px"
@@ -873,7 +1034,7 @@ const DocumentConfig = () => {
 											<FormErrorMessage fontSize="xs">
 												{errors[`vcFields_${index}`]}
 											</FormErrorMessage>
-										</FormControl>						
+										</FormControl>
 									</VStack>
 								</Box>
 							))}
