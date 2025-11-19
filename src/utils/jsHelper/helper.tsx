@@ -200,6 +200,9 @@ export interface DocumentStatus {
 	doc_name?: string;
 	download_url?: string | null;
 	doc_datatype?: string;
+	docType?: string;
+	docSubtype?: string;
+	imported_from?: string;
 }
 export function findDocumentStatus(documents, status): DocumentStatus {
 	// Iterate through the documents array
@@ -215,6 +218,9 @@ export function findDocumentStatus(documents, status): DocumentStatus {
 				doc_name: doc.doc_name,
 				download_url: doc.download_url,
 				doc_datatype: doc.doc_datatype,
+				docType: doc.doc_type,
+				docSubtype: doc.doc_subtype,
+				imported_from: doc.imported_from,
 			};
 		}
 	}
@@ -227,6 +233,9 @@ export function findDocumentStatus(documents, status): DocumentStatus {
 		doc_name: '',
 		download_url: null,
 		doc_datatype: '',
+		docType: '',
+		docSubtype: '',
+		imported_from: '',
 	};
 }
 export const convertToEditPayload = (formData) => {

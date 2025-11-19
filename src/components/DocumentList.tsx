@@ -9,13 +9,14 @@ import {
 	Tooltip,
 } from '@chakra-ui/react';
 
-import { CheckCircleIcon, WarningIcon } from '@chakra-ui/icons';
+import { CheckCircleIcon, WarningIcon, TimeIcon } from '@chakra-ui/icons';
 import Loader from './common/Loader';
 import { findDocumentStatus, getExpiryDate } from '../utils/jsHelper/helper';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import DocumentActions from './DocumentActions';
 import DocumentExpiry from './DocumentExpiry';
 import { useTranslation } from 'react-i18next';
+import { ConfigService } from '../services/configService';
 interface StatusIconProps {
 	status: string;
 	size?: number;
@@ -53,15 +54,54 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	userDocuments,
 }) => {
 	const { t } = useTranslation();
+	const [issueVC, setIssueVC] = React.useState<boolean | null>(null);
+	const [isLoading, setIsLoading] = React.useState(true);
+
 	const result = findDocumentStatus(userDocuments, status);
 	const { success, isExpired } = getExpiryDate(userDocuments, status);
 	const documentExpired = success && isExpired;
+
+	// Fetch VC configuration to check if issueVC is "yes"
+	React.useEffect(() => {
+		const fetchVCConfig = async () => {
+			if (result?.matchFound && result?.docType && result?.docSubtype) {
+				try {
+					const vcConfig = await ConfigService.getVCConfiguration(
+						result.docType,
+						result.docSubtype
+					);
+					setIssueVC(vcConfig.issue_vc);
+				} catch (error) {
+					console.warn('Failed to fetch VC configuration:', error);
+					setIssueVC(null);
+				} finally {
+					setIsLoading(false);
+				}
+			} else {
+				setIsLoading(false);
+			}
+		};
+
+		fetchVCConfig();
+	}, [result?.matchFound, result?.docType, result?.docSubtype]);
+
+	// Check if document is pending verification
+	const isPendingVerification =
+		result?.matchFound &&
+		issueVC === true &&
+		result?.doc_verified === false &&
+		result?.imported_from === 'Manual Upload';
+
 	let iconComponent;
 	let iconColor;
 
 	if (documentExpired) {
 		iconComponent = AiFillCloseCircle;
 		iconColor = '#C03744';
+	} else if (isPendingVerification) {
+		// Show pending icon for documents with issueVC: yes and doc_verified: false
+		iconComponent = TimeIcon;
+		iconColor = '#FF9800'; // Orange color for pending
 	} else if (result?.matchFound) {
 		iconComponent = CheckCircleIcon;
 		iconColor = '#0B7B69';
@@ -79,6 +119,8 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 
 		if (isExpired) {
 			statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
+		} else if (isPendingVerification) {
+			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
 		} else if (result?.matchFound) {
 			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
 		} else {
@@ -86,6 +128,10 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 		}
 
 		label = `${t('DOCUMENT_LIST_STATUS_PREFIX')}: ${statusText}`;
+	}
+
+	if (isLoading) {
+		return null; // or a small loading spinner
 	}
 
 	return (

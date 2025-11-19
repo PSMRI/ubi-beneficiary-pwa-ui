@@ -18,7 +18,7 @@ interface ScanVCProps {
 		label: string;
 		name: string;
 	};
-	onUploadSuccess?: () => void;
+	onUploadSuccess?: (response?: any, uploadedFile?: File) => void;
 }
 
 const ScanVC: React.FC<ScanVCProps> = ({
@@ -58,20 +58,19 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	} = useCameraCapture();
 
 	// File upload hook
-	const { isUploading, isConverting, uploadDocumentFile, handleFileSelect } = useFileUpload(
-		{
+	const { isUploading, isConverting, uploadDocumentFile, handleFileSelect } =
+		useFileUpload({
 			documentConfig,
-			onUploadSuccess: () => {
+			onUploadSuccess: (response, file) => {
 				if (capturedFile) {
 					handleCancelCapture();
 				}
-				onUploadSuccess?.();
+				onUploadSuccess?.(response, file);
 			},
 			onUploadStart: () => {
 				setCaptureCameraError(null);
 			},
-		}
-	);
+		});
 
 	// Combined camera error from both hooks
 	const cameraError = qrCameraError || captureCameraError;
@@ -132,9 +131,17 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							size="md"
 							width="full"
 							isLoading={isUploading || isConverting}
-							loadingText={isConverting ? t('SCAN_CONVERTING_PDF') : t('SCAN_UPLOADING')}
+							loadingText={
+								isConverting
+									? t('SCAN_CONVERTING_PDF')
+									: t('SCAN_UPLOADING')
+							}
 							isDisabled={isUploading || isConverting}
-							cursor={isUploading || isConverting ? 'not-allowed' : 'pointer'}
+							cursor={
+								isUploading || isConverting
+									? 'not-allowed'
+									: 'pointer'
+							}
 						>
 							<span>
 								{t('UPLOAD_DOCUMENT_FOR_VC')} ({'<'}{' '}

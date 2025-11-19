@@ -8,6 +8,7 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
  * @param {string} docSubType - Sub-type of document (e.g., 'marksheet')
  * @param {string} docName - Name of the document (e.g., 'Marksheet')
  * @param {string} importedFrom - Source of upload (default: 'Manual Upload')
+ * @param {string} issuer - Optional issuer identifier
  * @returns {Promise} - Promise representing the API response
  */
 export const uploadDocument = async (
@@ -15,7 +16,8 @@ export const uploadDocument = async (
 	docType: string,
 	docSubType: string,
 	docName: string,
-	importedFrom: string = 'Manual Upload'
+	importedFrom: string = 'Manual Upload',
+	issuer?: string
 ) => {
 	const token = localStorage.getItem('authToken');
 
@@ -26,6 +28,9 @@ export const uploadDocument = async (
 		formData.append('docSubType', docSubType);
 		formData.append('docName', docName);
 		formData.append('importedFrom', importedFrom);
+		if (issuer) {
+			formData.append('issuer', issuer);
+		}
 
 		const response = await axios.post(
 			`${apiBaseUrl}/users/upload-document`,

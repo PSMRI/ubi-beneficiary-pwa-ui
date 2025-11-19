@@ -11,7 +11,7 @@ import {
 	Icon,
 	Tooltip,
 } from '@chakra-ui/react';
-import { CheckCircleIcon, AttachmentIcon } from '@chakra-ui/icons';
+import { CheckCircleIcon, AttachmentIcon, TimeIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import Layout from './common/layout/Layout';
 import ScanVC from './ScanVC';
@@ -23,6 +23,11 @@ import { fetchVCJson } from '../services/benefit/benefits';
 import Loader from '../components/common/Loader';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import { useTranslation } from 'react-i18next';
+import { ConfigService } from '../services/configService';
+// NOSONAR - VCFormWrapper import commented out: Backend does not support VC creation yet
+// Uncomment when backend is ready. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
+// import { VCFormWrapper } from './forms/VCFormWrapper';
+import { DocumentUploadResponse } from '../types/document.types';
 interface Document {
 	name: string;
 	label: string;
@@ -63,18 +68,59 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	'aria-label': ariaLabel,
 	userDocuments,
 }) => {
+	const { t } = useTranslation();
+	const [issueVC, setIssueVC] = React.useState<boolean | null>(null);
+	const [isLoading, setIsLoading] = React.useState(true);
+
 	const { result, success, isExpired } = useMemo(() => {
 		const res = findDocumentStatus(userDocuments, status);
 		const { success, isExpired } = getExpiryDate(userDocuments, status);
 		return { result: res, success, isExpired };
 	}, [userDocuments, status]);
+
+	// Fetch VC configuration to check if issueVC is "yes"
+	useEffect(() => {
+		const fetchVCConfig = async () => {
+			if (result?.matchFound && result?.docType && result?.docSubtype) {
+				try {
+					const vcConfig = await ConfigService.getVCConfiguration(
+						result.docType,
+						result.docSubtype
+					);
+					setIssueVC(vcConfig.issue_vc);
+				} catch (error) {
+					console.warn('Failed to fetch VC configuration:', error);
+					setIssueVC(null);
+				} finally {
+					setIsLoading(false);
+				}
+			} else {
+				setIsLoading(false);
+			}
+		};
+
+		fetchVCConfig();
+	}, [result?.matchFound, result?.docType, result?.docSubtype]);
+
 	const documentExpired = success && isExpired;
+
+	// Check if document is pending verification
+	const isPendingVerification =
+		result?.matchFound &&
+		issueVC === true &&
+		result?.doc_verified === false &&
+		result?.imported_from === 'Manual Upload';
+
 	let iconComponent;
 	let iconColor;
 
 	if (documentExpired) {
 		iconComponent = AiFillCloseCircle;
 		iconColor = '#C03744';
+	} else if (isPendingVerification) {
+		// Show pending icon for documents with issueVC: yes and doc_verified: false
+		iconComponent = TimeIcon;
+		iconColor = '#FF9800'; // Orange color for pending
 	} else if (result?.matchFound) {
 		iconComponent = CheckCircleIcon;
 		iconColor = '#0B7B69';
@@ -88,30 +134,32 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 		let statusText;
 
 		if (isExpired) {
-			statusText = 'Expired';
+			statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
+		} else if (isPendingVerification) {
+			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
 		} else if (result?.matchFound) {
-			statusText = 'Available';
+			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
 		}
 
-		label = `Document status: ${statusText}`;
+		label = `${t('DOCUMENT_LIST_STATUS_PREFIX')}: ${statusText}`;
 	}
 
-	if (result?.matchFound) {
-		return (
-			<Tooltip label={label} hasArrow>
-				<Box display="inline-block">
-					<Icon
-						as={iconComponent}
-						color={iconColor}
-						boxSize={size}
-						aria-label={label}
-					/>
-				</Box>
-			</Tooltip>
-		);
+	if (isLoading || !result?.matchFound) {
+		return null;
 	}
 
-	return null;
+	return (
+		<Tooltip label={label} hasArrow>
+			<Box display="inline-block">
+				<Icon
+					as={iconComponent}
+					color={iconColor}
+					boxSize={size}
+					aria-label={label}
+				/>
+			</Box>
+		</Tooltip>
+	);
 };
 const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	userId,
@@ -126,7 +174,15 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const { updateUserData } = useContext(AuthContext)!;
+	const [pendingVerificationDocs, setPendingVerificationDocs] = useState<
+		Set<string>
+	>(new Set());
+	// NOSONAR - Variables needed when VC form is enabled. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
+	const [uploadedDocument, setUploadedDocument] = // NOSONAR
+		useState<DocumentUploadResponse | null>(null);
+	const [uploadedFile, setUploadedFile] = useState<File | null>(null); // NOSONAR
+	const [showVCForm, setShowVCForm] = useState(false);
+	const { updateUserData } = useContext(AuthContext);
 
 	useEffect(() => {
 		const fetchUserData = async () => {
@@ -172,6 +228,51 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 		fetchDocuments();
 	}, []);
+
+	// Check pending verification status for all documents
+	useEffect(() => {
+		const checkPendingVerification = async () => {
+			if (documents.length === 0 || userData.length === 0) {
+				return;
+			}
+
+			const pendingSet = new Set<string>();
+
+			for (const document of documents) {
+				const documentStatus = findDocumentStatus(
+					userData,
+					document.documentSubType
+				);
+
+				if (documentStatus?.matchFound) {
+					try {
+						const vcConfig = await ConfigService.getVCConfiguration(
+							documentStatus.docType,
+							documentStatus.docSubtype
+						);
+
+						const isPending =
+							vcConfig?.issue_vc === true &&
+							documentStatus.doc_verified === false &&
+							documentStatus.imported_from === 'Manual Upload';
+
+						if (isPending) {
+							pendingSet.add(document.documentSubType);
+						}
+					} catch (error) {
+						console.warn(
+							'Failed to fetch VC configuration:',
+							error
+						);
+					}
+				}
+			}
+
+			setPendingVerificationDocs(pendingSet);
+		};
+
+		checkPendingVerification();
+	}, [documents, userData]);
 
 	const handleScanResult = async (result: string) => {
 		if (!selectedDocument) return;
@@ -287,7 +388,42 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 		setShowScanner(true);
 	};
 
-	const handleUploadSuccess = async () => {
+	const handleUploadSuccess = async (response?: any, file?: File) => {
+		// Check if response has issue_vc flag
+		// For issue_vc: "yes" - Response structure: { statusCode, message, data: { doc_type, doc_subtype, issue_vc, mapped_data, ... } }
+		// For issue_vc: "no" - Response structure: { statusCode, message, data: { doc_id, user_id, doc_type, ... } }
+		// uploadDocument returns response.data from axios, which is { statusCode, message, data: {...} }
+		console.log('handleUploadSuccess - Full response:', response);
+		console.log('handleUploadSuccess - Uploaded file:', file);
+
+		// Extract the data object from response
+		// Response from uploadDocument is already { statusCode, message, data: {...} }
+		const uploadResponse = response?.data || response;
+		console.log('handleUploadSuccess - Upload response:', uploadResponse);
+		console.log(
+			'handleUploadSuccess - issue_vc:',
+			uploadResponse?.issue_vc
+		);
+
+		// NOSONAR - VC Form disabled: Backend does not handle VC creation yet
+		// The following code is commented out because the backend at http://localhost:3000/users/upload-document
+		// does not currently support VC creation logic. When backend is ready, uncomment this section.
+		// See: src/components/forms/VC_FORM_IMPLEMENTATION.md for instructions on how to enable.
+		/* NOSONAR:START - Commented code preserved for future VC form feature
+		// Show form if issue_vc is "yes" - doc_id is not required for form display
+		if (uploadResponse?.issue_vc === 'yes') {
+			console.log('handleUploadSuccess - Showing VC form');
+			// Show VC form instead of navigating away
+			setUploadedDocument(uploadResponse);
+			setUploadedFile(file || null);
+			setShowVCForm(true);
+			setShowScanner(false);
+			return;
+		}
+		NOSONAR:END */
+
+		console.log('handleUploadSuccess - Skipping form, navigating home');
+
 		// Refresh user data to update the UI with uploaded document
 		try {
 			const userResult = await getUser();
@@ -297,12 +433,36 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 			console.error('Failed to refresh user data', error);
 		}
 
-		// Navigate to home page after successful upload
+		// Navigate to home page after successful upload (if no VC form needed)
 		navigate('/');
 	};
 
+	// NOSONAR - Function needed when VC form is enabled. See: src/components/forms/VC_FORM_IMPLEMENTATION.md
+	/* NOSONAR:START - Commented function preserved for future VC form feature
+	const handleVCCreated = async (vc: any) => {
+		// Refresh user data after VC creation
+		try {
+			const userResult = await getUser();
+			const docsResult = await getDocumentsList();
+			updateUserData(userResult?.data, docsResult.data.value);
+		} catch (error) {
+			console.error('Failed to refresh user data', error);
+		}
+
+		// Reset states and navigate home
+		setShowVCForm(false);
+		setUploadedDocument(null);
+		setSelectedDocument(null);
+		navigate('/');
+	};
+	NOSONAR:END */
+
 	const handleBack = () => {
-		if (showScanner) {
+		if (showVCForm) {
+			setShowVCForm(false);
+			setUploadedDocument(null);
+			setShowScanner(true);
+		} else if (showScanner) {
 			setShowScanner(false);
 			setSelectedDocument(null);
 		} else {
@@ -313,6 +473,33 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	if (isLoading) {
 		return <Loader />;
 	}
+
+	// NOSONAR - VC Form rendering disabled: Backend does not handle VC creation yet
+	// The following code is commented out because the backend does not support VC creation logic.
+	// When backend is ready to handle VC creation, uncomment this section to show the form.
+	// See: src/components/forms/VC_FORM_IMPLEMENTATION.md for detailed instructions.
+	/* NOSONAR:START - Commented code preserved for future VC form rendering
+	//VC form if document was uploaded with issue_vc = yes
+	if (showVCForm && uploadedDocument) {
+		const documentLabel = selectedDocument?.label || '';
+		const meaningfulHeading = `Complete ${documentLabel} Details to Create Verifiable Credential`;
+
+		return (
+			<Layout
+				_heading={{
+					heading: meaningfulHeading,
+					handleBack: handleBack,
+				}}
+			>
+				<VCFormWrapper
+					uploadedDocument={uploadedDocument}
+					uploadedFile={uploadedFile || undefined}
+					onVCCreated={handleVCCreated}
+				/>
+			</Layout>
+		);
+	}
+	NOSONAR:END */
 
 	// Show scanner view
 	if (showScanner && selectedDocument) {
@@ -379,6 +566,9 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 											colorScheme="blue"
 											onClick={() => openUploadModal(doc)}
 											leftIcon={<AttachmentIcon />}
+											isDisabled={pendingVerificationDocs.has(
+												doc.documentSubType
+											)}
 										>
 											{documentStatus.matchFound
 												? t(
