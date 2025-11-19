@@ -11,6 +11,7 @@ import ProgressBar from '../components/common/ProgressBar';
 import UserDetails from '../components/common/UserDetails';
 
 import UploadDocumentEwallet from '../components/common/UploadDocumentEwallet';
+import { isWalletUploadEnabled } from '../utils/envUtils';
 import CommonButton from '../components/common/button/Button';
 import { useTranslation } from 'react-i18next';
 
@@ -146,14 +147,17 @@ const UserProfile: React.FC = () => {
 							documents={documents}
 							userDocuments={userData?.docs}
 						/>
-						{showIframe ? (
-							<UploadDocumentEwallet />
-						) : (
-							<CommonButton
-								onClick={() => setShowIframe(true)}
-								label={t('USER_PROFILE_UPLOAD_DOCUMENT_BUTTON')}
-							/>
-						)}
+						{isWalletUploadEnabled() &&
+							(showIframe ? (
+								<UploadDocumentEwallet />
+							) : (
+								<CommonButton
+									onClick={() => setShowIframe(true)}
+									label={t(
+										'USER_PROFILE_UPLOAD_DOCUMENT_BUTTON'
+									)}
+								/>
+							))}
 					</VStack>
 				</Box>
 			</Box>
