@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { uploadUserDocuments } from '../../services/user/User';
 import { getDocumentsList, getUser } from '../../services/auth/auth';
 import { AuthContext } from '../../utils/context/checkToken';
+import { isWalletUploadEnabled } from '../../utils/envUtils';
 import CommonButton from './button/Button';
 import { useTranslation } from 'react-i18next';
 import {
@@ -75,6 +76,10 @@ const VITE_EWALLET_ORIGIN = import.meta.env.VITE_EWALLET_ORIGIN;
 const VITE_EWALLET_IFRAME_SRC = import.meta.env.VITE_EWALLET_IFRAME_SRC;
 
 const UploadDocumentEwallet = () => {
+	// Check if wallet upload is enabled via environment variable
+	if (!isWalletUploadEnabled()) {
+		return null;
+	}
 	const { t } = useTranslation();
 	const { updateUserData } = useContext(AuthContext);
 	const iframeRef = useRef<HTMLIFrameElement>(null);
