@@ -16,6 +16,7 @@ import DocumentList from '../components/DocumentList';
 // import { useKeycloak } from '@react-keycloak/web'; // NOSONAR
 import '../assets/styles/App.css';
 import UploadDocumentEwallet from '../components/common/UploadDocumentEwallet';
+import { isWalletUploadEnabled } from '../utils/envUtils';
 import CommonDialogue from '../components/common/Dialogue';
 import termsAndConditions from '../assets/termsAndConditions.json';
 /* import { getAadhar, getDigiLockerRequest } from '../services/dhiway/aadhar'; */ // NOSONAR
@@ -219,14 +220,15 @@ const Home: React.FC = () => {
 						onClick={handleRedirect}
 						label={t('PROFILE_EXPLORE_BENEFITS')}
 					/>
-					{!showIframe ? (
-						<UploadDocumentEwallet />
-					) : (
-						<CommonButton
-							onClick={() => setShowIframe(false)}
-							label={t('HIDE_DIGILOCKER')}
-						/>
-					)}
+					{isWalletUploadEnabled() &&
+						(!showIframe ? (
+							<UploadDocumentEwallet />
+						) : (
+							<CommonButton
+								onClick={() => setShowIframe(false)}
+								label={t('HIDE_DIGILOCKER')}
+							/>
+						))}
 				</VStack>
 			</Box>
 
