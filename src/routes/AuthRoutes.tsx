@@ -15,6 +15,7 @@ const UploadDocuments = lazy(
 const Home = lazy(() => import('../screens/Home'));
 const UserProfile = lazy(() => import('../screens/UserProfile'));
 const DocumentScanner = lazy(() => import('../components/DocumentScanner'));
+const EditUserProfile = lazy(() => import('../screens/auth/EditUserProfile'));
 const DocumentScannerRoute = () => {
 	const { userData } = useContext(AuthContext)!;
 	return (
@@ -61,6 +62,10 @@ const routes = [
 	{
 		path: '/userprofile',
 		component: UserProfile,
+	},
+	{
+		path: '/edit-user-profile',
+		component: EditUserProfile,
 	},
 	{
 		path: '*',

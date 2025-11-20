@@ -380,10 +380,12 @@ export const registerWithDocument = async (
 		}
 	);
 
+	console.log(response.data, 'response');
+
 	// Store credentials for prefilling login form if available
 	if (
 		response?.data?.data?.user?.userName &&
-		response?.data?.data?.user?.password
+		response?.data?.data?.password
 	) {
 		sessionStorage.setItem(
 			'prefill_username',
@@ -391,7 +393,7 @@ export const registerWithDocument = async (
 		);
 		sessionStorage.setItem(
 			'prefill_password',
-			response.data.data.user.password
+			response.data?.data?.password
 		);
 	}
 

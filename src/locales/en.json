@@ -418,5 +418,9 @@
 	"SCAN_INVALID_FILE_TYPE_TITLE": "Invalid file type",
 	"SCAN_PDF_CONVERSION_ERROR": "PDF Conversion Failed",
 	"SCAN_PDF_CONVERSION_ERROR_DESCRIPTION": "Unable to convert PDF to image. Please try again or upload an image file (JPG, PNG) instead.",
-	"SCAN_PROCESSING_PDF": "Processing PDF document..."
+	"SCAN_PROCESSING_PDF": "Processing PDF document...",
+	"EDIT_USER_PROFILE_PHONE_NUMBER": "Enter Phone Number",
+	"EDIT_USER_PROFILE_UPLOAD_PICTURE": "Upload Profile Picture",
+	"EDIT_USER_PROFILE_CONTACT_NUMBER_LABEL": "Whose phone number is this?",
+	"EDIT_USER_PROFILE_TITLE": "Edit User Profile"
 }

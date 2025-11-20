@@ -92,6 +92,14 @@ const Home: React.FC = () => {
 		try {
 			await sendConsent(userData?.user_id, purpose, purpose_text);
 			setConsentSaved(false);
+
+			// Check if isFirstTimeLogin is true in sessionStorage
+			const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
+			if (isFirstTimeLogin === 'true') {
+				// Redirect to edit-user-profile page
+				navigate('/edit-user-profile');
+				return;
+			}
 		} catch {
 			console.log(t('HOME_CONSENT_SEND_ERROR'));
 		}
