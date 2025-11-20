@@ -16,6 +16,8 @@ import FloatingInput from '../../components/common/input/Input';
 import FloatingSelect from '../../components/common/input/FloatingSelect';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../utils/context/checkToken';
+import { updateUserProfile } from '../../services/user/User';
+import { getUser, getDocumentsList } from '../../services/auth/auth';
 
 const EditUserProfile: React.FC = () => {
 	const { t } = useTranslation();
@@ -23,6 +25,7 @@ const EditUserProfile: React.FC = () => {
 	const toast = useToast();
 	const authContext = useContext(AuthContext);
 	const userData = authContext?.userData;
+	const updateUserData = authContext?.updateUserData;
 
 	const [phoneNumber, setPhoneNumber] = useState<string>('');
 	const [profilePicture, setProfilePicture] = useState<File | null>(null);
@@ -31,27 +34,26 @@ const EditUserProfile: React.FC = () => {
 	const [loading, setLoading] = useState(false);
 
 	const contactNumberOptions = [
-		{ value: 'self', label: 'Self' },
-		{ value: 'father', label: 'Father' },
-		{ value: 'mother', label: 'Mother' },
-		{ value: 'guardian', label: 'Guardian' },
-		{ value: 'Relative', label: 'Relative' },
-		{ value: 'Other', label: 'Other' },
+		{ value: 'self', label: t('SELF') },
+		{ value: 'father', label: t('FATHER') },
+		{ value: 'mother', label: t('MOTHER') },
+		{ value: 'guardian', label: t('GUARDIAN') },
+		{ value: 'Relative', label: t('RELATIVE') },
+		{ value: 'Other', label: t('OTHER') },
 	];
 
-	
-
-
-
-
-
-
-	// Prefill phone number from userData
+	// Prefill phone number and contact number from userData
 	useEffect(() => {
 		if (userData?.phoneNumber) {
 			// Remove +91 prefix if present
 			const phone = userData.phoneNumber.replace(/^\+91[- ]?/, '');
 			setPhoneNumber(phone);
+		}
+		if (userData?.whosePhoneNumber) {
+			setContactNumber(userData.whosePhoneNumber);
+		}
+		if (userData?.picture) {
+			setProfilePicturePreview(userData.picture);
 		}
 	}, [userData]);
 
@@ -97,22 +99,11 @@ const EditUserProfile: React.FC = () => {
 	};
 
 	const handleSubmit = async () => {
-		// Validate form
-		if (!phoneNumber.trim()) {
+		// Validate phone number if provided
+		if (phoneNumber.trim() && !/^\d{10}$/.test(phoneNumber.trim())) {
 			toast({
 				title: 'Validation Error',
-				description: 'Phone Number is required.',
-				status: 'error',
-				duration: 3000,
-				isClosable: true,
-			});
-			return;
-		}
-
-		if (!contactNumber) {
-			toast({
-				title: 'Validation Error',
-				description: 'Contact Number (Who does this belong to?) is required.',
+				description: 'Phone number must be exactly 10 digits.',
 				status: 'error',
 				duration: 3000,
 				isClosable: true,
@@ -123,17 +114,15 @@ const EditUserProfile: React.FC = () => {
 		try {
 			setLoading(true);
 
-			// Add API call to submit the form data
-			// const formData = new FormData();
-			// formData.append('phoneNumber', phoneNumber);
-			// if (profilePicture) {
-			//     formData.append('profilePicture', profilePicture);
-			// }
-			// formData.append('contactNumber', contactNumber);
-			// await updateUserProfile(formData);
+			// Call API to update user profile (all fields are optional)
+			await updateUserProfile(phoneNumber, contactNumber, profilePicture);
 
-			// Simulate API call
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			// Refresh user data after successful update
+			if (updateUserData) {
+				const result = await getUser();
+				const data = await getDocumentsList();
+				updateUserData(result?.data, data?.data?.value);
+			}
 
 			// Set isFirstTimeLogin to false in sessionStorage
 			sessionStorage.setItem('isFirstTimeLogin', 'false');
@@ -146,12 +135,12 @@ const EditUserProfile: React.FC = () => {
 				isClosable: true,
 			});
 
-			// Redirect to home
-			navigate('/');
+			// Navigate back or to home
+			navigate(-1);
 		} catch (error: any) {
 			toast({
 				title: 'Update Failed',
-				description: error?.message || 'Failed to update profile. Please try again.',
+				description: error?.response?.data?.message || error?.message || 'Failed to update profile. Please try again.',
 				status: 'error',
 				duration: 3000,
 				isClosable: true,
@@ -180,9 +169,15 @@ const EditUserProfile: React.FC = () => {
 						<FloatingInput
 							label={t('EDIT_USER_PROFILE_PHONE_NUMBER') || 'Enter Mobile Number'}
 							value={phoneNumber}
-							onChange={(e) => setPhoneNumber(e.target.value)}
+							onChange={(e) => {
+								const value = e.target.value.replaceAll(/\D/g, ''); // Remove non-digits
+								if (value.length <= 10) {
+									setPhoneNumber(value);
+								}
+							}}
 							name="phoneNumber"
-							isInvalid={false}
+							isInvalid={phoneNumber.trim() !== '' && !/^\d{10}$/.test(phoneNumber.trim())}
+							errorMessage={phoneNumber.trim() !== '' && !/^\d{10}$/.test(phoneNumber.trim()) ? 'Phone number must be exactly 10 digits' : ''}
 						/>
 					</FormControl>
 						<FormControl>
@@ -265,7 +260,7 @@ const EditUserProfile: React.FC = () => {
 						loadingLabel="Saving..."
 						onClick={handleSubmit}
 						label={t('COMMON_BUTTON_SUBMIT_LABEL')}
-						isDisabled={!phoneNumber.trim() || !profilePicture || !contactNumber}
+						isDisabled={false}
 					/>
 				</VStack>
 			</Box>
