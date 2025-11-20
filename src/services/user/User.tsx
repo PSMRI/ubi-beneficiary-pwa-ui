@@ -45,12 +45,30 @@ export const uploadDocument = async (
 
 		console.log('Document uploaded successfully:', response.data);
 		return response.data;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error uploading document:',
 			error.response?.data || error.message
 		);
-		throw error;
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to upload document. Please try again.';
+
+		if (error.response?.data?.message) {
+			// API returned a specific error message
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			// Alternative error field
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			// Use axios error message
+			errorMessage = error.message;
+		}
+
+		// Throw error with the extracted message
+		const enhancedError = new Error(errorMessage);
+		(enhancedError as any).response = error.response; // Preserve original response for debugging
+		throw enhancedError;
 	}
 };
 
@@ -70,12 +88,24 @@ export const uploadUserDocuments = async (documents) => {
 
 		// Return response data
 		return response.data;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error uploading documents:',
 			error.response || error.message
 		);
-		throw error; // Rethrow error to handle it in the calling code
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to upload documents. Please try again.';
+
+		if (error.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		throw new Error(errorMessage);
 	}
 };
 
@@ -104,12 +134,24 @@ export const updateUserDetails = async (userId, data) => {
 
 		console.log('User updated successfully:', response.data);
 		return response.data; // Return response for further handling
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error updating user:',
 			error.response?.data || error.message
 		);
-		throw error; // Re-throw the error for the caller to handle
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to update user details. Please try again.';
+
+		if (error.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		throw new Error(errorMessage);
 	}
 };
 
@@ -125,12 +167,24 @@ export const deleteDocument = async (id) => {
 		const response = await axios.delete(url, { headers });
 
 		return response.data;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error in Deleteing Document:',
 			error.response?.data || error.message
 		);
-		throw error;
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to delete document. Please try again.';
+
+		if (error.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		throw new Error(errorMessage);
 	}
 };
 
@@ -158,11 +212,23 @@ export const getUserFields = async (
 		);
 
 		return response.data;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error fetching user fields:',
 			error.response?.data || error.message
 		);
-		throw error;
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to fetch user fields. Please try again.';
+
+		if (error.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		throw new Error(errorMessage);
 	}
 };

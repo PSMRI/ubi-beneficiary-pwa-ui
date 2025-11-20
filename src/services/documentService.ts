@@ -32,9 +32,24 @@ export class DocumentService {
 			);
 
 			return response.data.data;
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Document upload failed:', error);
-			throw new Error('Failed to upload document. Please try again.');
+
+			// Extract error message from API response
+			let errorMessage = 'Failed to upload document. Please try again.';
+
+			if (error.response?.data?.message) {
+				// API returned a specific error message
+				errorMessage = error.response.data.message;
+			} else if (error.response?.data?.error) {
+				// Alternative error field
+				errorMessage = error.response.data.error;
+			} else if (error.message) {
+				// Use axios error message
+				errorMessage = error.message;
+			}
+
+			throw new Error(errorMessage);
 		}
 	}
 
@@ -50,9 +65,24 @@ export class DocumentService {
 				}
 			);
 			return response.data.data;
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Failed to fetch document:', error);
-			throw new Error('Failed to fetch document details.');
+
+			// Extract error message from API response
+			let errorMessage = 'Failed to fetch document details.';
+
+			if (error.response?.data?.message) {
+				// API returned a specific error message
+				errorMessage = error.response.data.message;
+			} else if (error.response?.data?.error) {
+				// Alternative error field
+				errorMessage = error.response.data.error;
+			} else if (error.message) {
+				// Use axios error message
+				errorMessage = error.message;
+			}
+
+			throw new Error(errorMessage);
 		}
 	}
 }
