@@ -17,7 +17,9 @@ import FloatingSelect from '../../components/common/input/FloatingSelect';
 import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../utils/context/checkToken';
 import { updateUserProfile } from '../../services/user/User';
-import { getUser, getDocumentsList } from '../../services/auth/auth';
+import { getUser, getDocumentsList, getUserConsents, sendConsent, logoutUser } from '../../services/auth/auth';
+import CommonDialogue from '../../components/common/Dialogue';
+import termsAndConditions from '../../assets/termsAndConditions.json';
 
 const EditUserProfile: React.FC = () => {
 	const { t } = useTranslation();
@@ -32,15 +34,46 @@ const EditUserProfile: React.FC = () => {
 	const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
 	const [contactNumber, setContactNumber] = useState<string>('');
 	const [loading, setLoading] = useState(false);
+	const [consentSaved, setConsentSaved] = useState(false);
+	const [consentChecked, setConsentChecked] = useState(false);
+
+	const purpose = 'sign_up_tnc';
+	const purpose_text = 'sign_up_tnc';
+
+	// Initialize user data (like Home.tsx)
+	const init = async () => {
+		try {
+			const result = await getUser();
+			const data = await getDocumentsList();
+			updateUserData?.(result?.data, data?.data?.value);
+		} catch (error) {
+			console.error('Error fetching user data or documents:', error);
+		}
+	};
 
 	const contactNumberOptions = [
 		{ value: 'self', label: t('SELF') },
 		{ value: 'father', label: t('FATHER') },
 		{ value: 'mother', label: t('MOTHER') },
 		{ value: 'guardian', label: t('GUARDIAN') },
-		{ value: 'Relative', label: t('RELATIVE') },
-		{ value: 'Other', label: t('OTHER') },
+		{ value: 'relative', label: t('RELATIVE') },
+		{ value: 'other', label: t('OTHER') },
 	];
+
+	// Initialize userData and check consent (like Home page)
+	useEffect(() => {
+		if (!userData?.user_id) {
+			init();
+		}
+	}, [userData]);
+
+	// Check consent after userData is available (only once)
+	useEffect(() => {
+		if (userData?.user_id && !consentChecked) {
+			setConsentChecked(true);
+			getConsent();
+		}
+	}, [userData?.user_id, consentChecked]);
 
 	// Prefill phone number and contact number from userData
 	useEffect(() => {
@@ -117,16 +150,6 @@ const EditUserProfile: React.FC = () => {
 			// Call API to update user profile (all fields are optional)
 			await updateUserProfile(phoneNumber, contactNumber, profilePicture);
 
-			// Refresh user data after successful update
-			if (updateUserData) {
-				const result = await getUser();
-				const data = await getDocumentsList();
-				updateUserData(result?.data, data?.data?.value);
-			}
-
-			// Set isFirstTimeLogin to false in sessionStorage
-			sessionStorage.setItem('isFirstTimeLogin', 'false');
-
 			toast({
 				title: 'Profile Updated',
 				description: 'Your profile has been updated successfully.',
@@ -135,8 +158,27 @@ const EditUserProfile: React.FC = () => {
 				isClosable: true,
 			});
 
-			// Navigate back or to home
-			navigate(-1);
+			// Check if this was a first-time login flow
+			const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
+			if (isFirstTimeLogin === 'true') {
+				// Set isFirstTimeLogin to false first
+				sessionStorage.setItem('isFirstTimeLogin', 'false');
+				
+				// Show success message for setup completion
+				toast({
+					title: 'Setup Complete!',
+					description: 'Your profile has been set up successfully. Redirecting to sign in...',
+					status: 'success',
+					duration: 3000,
+					isClosable: true,
+				});
+			}
+			
+			// Redirect to userprofile page after profile update (for both first-time and regular updates)
+			// Using window.location.href to avoid authentication issues with React navigation
+			setTimeout(() => {
+				window.location.href = '/userprofile';
+			}, 1500);
 		} catch (error: any) {
 			toast({
 				title: 'Update Failed',
@@ -152,6 +194,108 @@ const EditUserProfile: React.FC = () => {
 
 	const handleBack = () => {
 		navigate(-1);
+	};
+
+	// Consent form functions (similar to Home.tsx)
+	const checkConsent = (consent: any[]) => {
+		console.log('EditProfile - Checking consent array:', consent);
+		const isPurposeMatched = consent.some(
+			(item) => item.purpose === purpose
+		);
+		console.log('EditProfile - Purpose matched:', isPurposeMatched, 'for purpose:', purpose);
+
+		// Show consent if user hasn't consented (like Home page)
+		if (!isPurposeMatched) {
+			console.log('EditProfile - Showing consent dialog');
+			setConsentSaved(true);
+		}
+	};
+
+	const getConsent = async () => {
+		try {
+			console.log('EditProfile - Getting consent for user:', userData?.user_id);
+			const response = await getUserConsents();
+			console.log('EditProfile - Consent response:', response?.data);
+			checkConsent(response?.data.data);
+		} catch (error) {
+			console.log('EditProfile - Error getting consent (non-critical):', error);
+			// Don't show error toast for consent check failures
+			// This prevents 401 errors from causing logout during consent operations
+		}
+	};
+
+	const handleConsent = async () => {
+		setConsentSaved(!consentSaved);
+		try {
+			console.log('EditProfile - User denied consent, logging out');
+			const response = await logoutUser();
+			if (response) {
+				navigate('/');
+				navigate(0);
+			}
+		} catch (error) {
+			console.log(error);
+			toast({
+				title: t('HOME_LOGOUT_FAILED'),
+				status: 'error',
+				duration: 3000,
+				isClosable: true,
+				description: t('HOME_TRY_AGAIN'),
+			});
+		}
+	};
+
+	const saveConsent = async () => {
+		try {
+			console.log('EditProfile - userData:', userData);
+			console.log('EditProfile - Sending consent with user_id:', userData?.user_id, 'purpose:', purpose, 'purpose_text:', purpose_text);
+			
+			// Try to get user_id from userData or localStorage as fallback
+			let userId = userData?.user_id;
+			
+			if (!userId) {
+				// Fallback: try to get user data from localStorage
+				const storedUser = localStorage.getItem('user');
+				if (storedUser) {
+					try {
+						const parsedUser = JSON.parse(storedUser);
+						userId = parsedUser?.user_id || parsedUser?.accountId;
+						console.log('EditProfile - Using fallback user_id from localStorage:', userId);
+					} catch (e) {
+						console.error('Failed to parse stored user:', e);
+					}
+				}
+			}
+			
+			if (!userId) {
+				// Try to refresh user data
+				await init();
+				userId = userData?.user_id;
+			}
+			
+			if (!userId) {
+				throw new Error('User ID not found. Please try refreshing the page.');
+			}
+			
+			await sendConsent(userId, purpose, purpose_text);
+			setConsentSaved(false);
+			toast({
+				title: 'Consent Saved',
+				description: 'Your consent has been saved successfully.',
+				status: 'success',
+				duration: 3000,
+				isClosable: true,
+			});
+		} catch (error) {
+			console.log(t('HOME_CONSENT_SEND_ERROR'), error);
+			toast({
+				title: 'Consent Error',
+				description: `Failed to save consent: ${error.message}`,
+				status: 'error',
+				duration: 5000,
+				isClosable: true,
+			});
+		}
 	};
 
 	return (
@@ -264,6 +408,16 @@ const EditUserProfile: React.FC = () => {
 					/>
 				</VStack>
 			</Box>
+
+			{/* Consent dialog for first-time login users */}
+			{consentSaved && (
+				<CommonDialogue
+					isOpen={consentSaved}
+					onClose={handleConsent}
+					termsAndConditions={termsAndConditions}
+					handleDialog={saveConsent}
+				/>
+			)}
 		</Layout>
 	);
 };
