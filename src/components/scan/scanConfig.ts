@@ -1,9 +1,10 @@
 /**
  * Configuration constants for document scanning
  */
+import { getMaxFileSizeMB } from '../../utils/envUtils';
 
 // File size limits
-export const MAX_FILE_SIZE_MB = 2; // Maximum file size in megabytes
+export const MAX_FILE_SIZE_MB = getMaxFileSizeMB(); // Maximum file size in megabytes from env
 export const MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024; // Convert to bytes
 
 // Compression settings for captured images
@@ -28,4 +29,3 @@ export const CAMERA_CONSTRAINTS = {
 
 // Scanner container ID
 export const SCANNER_CONTAINER_ID = 'html5qr-code-full-region';
-

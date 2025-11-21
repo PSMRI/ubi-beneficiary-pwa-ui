@@ -182,12 +182,23 @@ export const useFileUpload = ({
 				}
 
 				return response;
-			} catch (error) {
+			} catch (error: any) {
 				console.error('Error during file upload:', error);
 				toast.close(toastId);
+
+				// Extract error message from the error object
+				let errorMessage = t('SCAN_ERROR_UPLOAD_FILE');
+				if (
+					error.message &&
+					error.message !== 'SCAN_ERROR_UPLOAD_FILE'
+				) {
+					// Use the actual error message from API if available
+					errorMessage = error.message;
+				}
+
 				toast({
 					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
-					description: t('SCAN_ERROR_UPLOAD_FILE'),
+					description: errorMessage,
 					status: 'error',
 					duration: 4000,
 					isClosable: true,

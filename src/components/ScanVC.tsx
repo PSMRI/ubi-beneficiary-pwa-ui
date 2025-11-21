@@ -105,7 +105,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 				{/* Show buttons when not scanning or capturing */}
 				{!scanning && !isCapturing && !capturedImage && (
 					<Box textAlign="center" py={1}>
-						<Button
+						{/* <Button
 							colorScheme="blue"
 							size="md"
 							width="full"
@@ -114,16 +114,16 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
 						>
 							{t('SCAN_START_CAMERA_BUTTON')}
-						</Button>
+						</Button> */}
 
-						<Text
+						{/* <Text
 							textAlign="center"
 							fontWeight="semibold"
 							color="gray.500"
 							my={3}
 						>
 							{t('OR')}
-						</Text>
+						</Text> */}
 
 						<Button
 							as="label"
