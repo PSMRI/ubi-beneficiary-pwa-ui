@@ -25,7 +25,19 @@ export const isWalletUploadEnabled = (): boolean => {
 export const getMaxFileSizeMB = (): number => {
 	const maxFileSizeMB = import.meta.env.VITE_DOCUMENT_MAX_FILE_SIZE_MB;
 
-	// Parse the value and default to 2 MB if not set or invalid
+	// Parse the value and default to 5 MB if not set or invalid
 	const parsed = Number.parseFloat(maxFileSizeMB);
-	return Number.isNaN(parsed) ? 2 : parsed;
+	return Number.isNaN(parsed) ? 5 : parsed;
+};
+
+/**
+ * Get the maximum profile picture size in megabytes from environment variable
+ * @returns number representing max profile picture size in MB (defaults to 10 if not set)
+ */
+export const getProfilePictureMaxSizeMB = (): number => {
+	const maxFileSizeMB = import.meta.env.VITE_PROFILE_PICTURE_MAX_SIZE_MB;
+
+	// Parse the value and default to 10 MB if not set or invalid
+	const parsed = Number.parseFloat(maxFileSizeMB);
+	return Number.isNaN(parsed) ? 10 : parsed;
 };
