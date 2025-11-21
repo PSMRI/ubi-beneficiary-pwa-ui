@@ -83,6 +83,14 @@ const SignIn: React.FC = () => {
 					isClosable: true,
 				});
 
+				// Check if this is a first-time login after password update
+				const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
+				if (isFirstTimeLogin === 'true') {
+					// Redirect to edit-user-profile page for first-time login
+					navigate('/edit-user-profile');
+					return;
+				}
+
 				navigate(0);
 				return;
 			}
