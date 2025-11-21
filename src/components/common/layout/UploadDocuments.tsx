@@ -11,17 +11,24 @@ import {
 import React, { useState } from 'react';
 import { CheckIcon, CloseIcon } from '@chakra-ui/icons';
 import { useTranslation } from 'react-i18next';
+import { getMaxFileSizeMB } from '../../../utils/envUtils';
 
 function UploadDocuments() {
 	const { t } = useTranslation();
 	const [fileName, setFileName] = useState('');
 
+	// Get max file size from environment
+	const maxFileSize = getMaxFileSizeMB();
+
 	const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 		if (file) {
-			// Validate file size (e.g., 5MB limit)
-			if (file.size > 5 * 1024 * 1024) {
-				alert(t('UPLOAD_DOCUMENTS_FILE_SIZE_ERROR'));
+			// Validate file size using configurable limit
+			if (file.size > maxFileSize * 1024 * 1024) {
+				const errorMessage = t(
+					'UPLOAD_DOCUMENTS_FILE_SIZE_ERROR'
+				).replaceAll('{maxSize}', maxFileSize.toString());
+				alert(errorMessage);
 				return;
 			}
 			// Validate file type

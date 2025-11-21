@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { AuthContext } from '../../utils/context/checkToken';
 import { updateUserProfile } from '../../services/user/User';
 import { getUser, getDocumentsList, getUserConsents, sendConsent, logoutUser } from '../../services/auth/auth';
+import { getProfilePictureMaxSizeMB } from '../../utils/envUtils';
 import CommonDialogue from '../../components/common/Dialogue';
 import termsAndConditions from '../../assets/termsAndConditions.json';
 
@@ -31,9 +32,14 @@ const EditUserProfile: React.FC = () => {
 
 	const [phoneNumber, setPhoneNumber] = useState<string>('');
 	const [profilePicture, setProfilePicture] = useState<File | null>(null);
-	const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+	const [profilePicturePreview, setProfilePicturePreview] = useState<
+		string | null
+	>(null);
 	const [contactNumber, setContactNumber] = useState<string>('');
 	const [loading, setLoading] = useState(false);
+
+	// Get profile picture max size from environment
+	const maxProfilePictureSize = getProfilePictureMaxSizeMB();
 	const [consentSaved, setConsentSaved] = useState(false);
 	const [consentChecked, setConsentChecked] = useState(false);
 
@@ -90,7 +96,9 @@ const EditUserProfile: React.FC = () => {
 		}
 	}, [userData]);
 
-	const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+	const handleProfilePictureChange = (
+		event: React.ChangeEvent<HTMLInputElement>
+	) => {
 		const file = event.target.files?.[0];
 		if (file) {
 			// Validate file type
@@ -105,11 +113,14 @@ const EditUserProfile: React.FC = () => {
 				return;
 			}
 
-			// Validate file size (max 5MB)
-			if (file.size > 5 * 1024 * 1024) {
+			// Validate file size (max configurable MB)
+			if (file.size > maxProfilePictureSize * 1024 * 1024) {
+				const errorMessage = t(
+					'EDIT_USER_PROFILE_FILE_TOO_LARGE'
+				).replaceAll('{maxSize}', maxProfilePictureSize.toString());
 				toast({
 					title: 'File Too Large',
-					description: 'Please upload an image smaller than 5MB.',
+					description: errorMessage,
 					status: 'error',
 					duration: 3000,
 					isClosable: true,
@@ -182,7 +193,10 @@ const EditUserProfile: React.FC = () => {
 		} catch (error: any) {
 			toast({
 				title: 'Update Failed',
-				description: error?.response?.data?.message || error?.message || 'Failed to update profile. Please try again.',
+				description:
+					error?.response?.data?.message ||
+					error?.message ||
+					'Failed to update profile. Please try again.',
 				status: 'error',
 				duration: 3000,
 				isClosable: true,
@@ -311,20 +325,34 @@ const EditUserProfile: React.FC = () => {
 				<VStack spacing={4} align="stretch">
 					<FormControl>
 						<FloatingInput
-							label={t('EDIT_USER_PROFILE_PHONE_NUMBER') || 'Enter Mobile Number'}
+							label={
+								t('EDIT_USER_PROFILE_PHONE_NUMBER') ||
+								'Enter Mobile Number'
+							}
 							value={phoneNumber}
 							onChange={(e) => {
-								const value = e.target.value.replaceAll(/\D/g, ''); // Remove non-digits
+								const value = e.target.value.replaceAll(
+									/\D/g,
+									''
+								); // Remove non-digits
 								if (value.length <= 10) {
 									setPhoneNumber(value);
 								}
 							}}
 							name="phoneNumber"
-							isInvalid={phoneNumber.trim() !== '' && !/^\d{10}$/.test(phoneNumber.trim())}
-							errorMessage={phoneNumber.trim() !== '' && !/^\d{10}$/.test(phoneNumber.trim()) ? 'Phone number must be exactly 10 digits' : ''}
+							isInvalid={
+								phoneNumber.trim() !== '' &&
+								!/^\d{10}$/.test(phoneNumber.trim())
+							}
+							errorMessage={
+								phoneNumber.trim() !== '' &&
+								!/^\d{10}$/.test(phoneNumber.trim())
+									? 'Phone number must be exactly 10 digits'
+									: ''
+							}
 						/>
 					</FormControl>
-						<FormControl>
+					<FormControl>
 						<FloatingSelect
 							label={t('EDIT_USER_PROFILE_CONTACT_NUMBER_LABEL')}
 							value={contactNumber}
@@ -346,7 +374,12 @@ const EditUserProfile: React.FC = () => {
 								px={1}
 								zIndex={100}
 							>
-								{t('EDIT_USER_PROFILE_UPLOAD_PICTURE')}
+								{t(
+									'EDIT_USER_PROFILE_UPLOAD_PICTURE'
+								).replaceAll(
+									'{maxSize}',
+									maxProfilePictureSize.toString()
+								)}
 							</Text>
 							<Box
 								mt={4}
@@ -385,13 +418,28 @@ const EditUserProfile: React.FC = () => {
 											type="file"
 											id="profilePictureInput"
 											accept="image/*"
-											onChange={handleProfilePictureChange}
+											onChange={
+												handleProfilePictureChange
+											}
 											style={{ display: 'none' }}
 										/>
-										<Box onClick={() => document.getElementById('profilePictureInput')?.click()}>
+										<Box
+											onClick={() =>
+												document
+													.getElementById(
+														'profilePictureInput'
+													)
+													?.click()
+											}
+										>
 											<CommonButton
 												variant="outline"
-												label={t('EDIT_USER_PROFILE_UPLOAD_PICTURE')}
+												label={t(
+													'EDIT_USER_PROFILE_UPLOAD_PICTURE'
+												).replaceAll(
+													'{maxSize}',
+													maxProfilePictureSize.toString()
+												)}
 											/>
 										</Box>
 									</>
@@ -423,4 +471,3 @@ const EditUserProfile: React.FC = () => {
 };
 
 export default EditUserProfile;
-
