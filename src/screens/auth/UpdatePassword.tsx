@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     VStack,
@@ -25,6 +25,14 @@ const UpdatePassword: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     const username = localStorage.getItem('pendingUser');
+
+    // Prefill oldPassword from sessionStorage
+    useEffect(() => {
+        const prefillPassword = sessionStorage.getItem('prefill_password');
+        if (prefillPassword) {
+            setOldPassword(prefillPassword);
+        }
+    }, []);
 
     const handleUpdatePassword = async () => {
         if (!oldPassword.trim() || !newPassword.trim() || !confirmPassword.trim()) {
@@ -55,7 +63,21 @@ const UpdatePassword: React.FC = () => {
                 newPassword,
             });
 
-            if (response?.data) {
+            // Check if response contains PASSWORD_UPDATED_SUCCESSFULLY message
+            if (response?.message === 'PASSWORD_UPDATED_SUCCESSFULLY' || response?.data?.message === 'PASSWORD_UPDATED_SUCCESSFULLY') {
+                // Replace prefill_password in sessionStorage with the new password
+                sessionStorage.setItem('prefill_password', newPassword);
+                
+                // Set isFirstTimeLogin flag to true in sessionStorage
+                sessionStorage.setItem('isFirstTimeLogin', 'true');
+
+                toast({
+                    title: t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
+                    status: 'success',
+                    duration: 4000,
+                    isClosable: true,
+                });
+            } else if (response?.data) {
                 toast({
                     title: t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
                     status: 'success',

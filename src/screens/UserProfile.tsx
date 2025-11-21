@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Avatar, Box, Flex, HStack, Text, VStack } from '@chakra-ui/react';
+import { Avatar, Box, Flex, HStack, Text, VStack, Image } from '@chakra-ui/react';
 
 import { getUser, getDocumentsList } from '../services/auth/auth';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 
 const UserProfile: React.FC = () => {
 	const [showIframe, setShowIframe] = useState(true);
-	const { userData, documents, updateUserData } = useContext(AuthContext)!;
+	const { userData, documents, updateUserData } = useContext(AuthContext);
 	const navigate = useNavigate();
 	const { t } = useTranslation();
 	const [userName, setUserName] = useState('');
@@ -61,11 +61,22 @@ const UserProfile: React.FC = () => {
 			}}
 		>
 			<HStack m={5} mt={0} p={0} h={82}>
-				<Avatar
-					variant="solid"
-					name={`${userData?.firstName || ''}  ${userData?.lastName || ''}`}
-					mr={2}
-				/>
+				{userData?.pictureUrl ? (
+					<Image
+						src={userData.pictureUrl}
+						alt="Profile Picture"
+						borderRadius="full"
+						boxSize="60px"
+						objectFit="cover"
+						mr={2}
+					/>
+				) : (
+					<Avatar
+						variant="solid"
+						name={`${userData?.firstName || ''}  ${userData?.lastName || ''}`}
+						mr={2}
+					/>
+				)}
 				<VStack mt={8}>
 					<Text
 						fontSize="16px"
