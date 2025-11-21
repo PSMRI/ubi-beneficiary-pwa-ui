@@ -45,6 +45,9 @@ interface UserData {
 	class?: string;
 	previousYearMarks?: string;
 	phoneNumber?: string;
+	whosePhoneNumber?: string;
+	picture?: string;
+	pictureUrl?: string;
 	fatherName?: string;
 	firstName?: string;
 	lastName?: string;

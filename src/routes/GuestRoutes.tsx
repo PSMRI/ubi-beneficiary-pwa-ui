@@ -5,6 +5,7 @@ const ExploreBenefits = lazy(() => import('../screens/benefit/Benefits'));
 const BenefitsDetails = lazy(() => import('../screens/benefit/Details'));
 const Signup = lazy(() => import('../screens/auth/SignUpWithOtr'));
 const UpdatePassword = lazy(() => import('../screens/auth/UpdatePassword'));
+const EditUserProfile = lazy(() => import('../screens/auth/EditUserProfile'));
 const routes = [
 	{
 		path: '/signup',
@@ -25,6 +26,10 @@ const routes = [
 	{
 		path: '/update-password',
 		component: UpdatePassword,
+	},
+	{
+		path: '/edit-user-profile',
+		component: EditUserProfile,
 	},
 	{
 		path: '*',

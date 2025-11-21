@@ -417,5 +417,15 @@
 	"SCAN_INVALID_FILE_TYPE_TITLE": "अमान्य फ़ाइल प्रकार",
 	"SCAN_PDF_CONVERSION_ERROR": "पीडीएफ रूपांतरण विफल",
 	"SCAN_PDF_CONVERSION_ERROR_DESCRIPTION": "पीडीएफ को छवि में परिवर्तित करने में असमर्थ। कृपया पुनः प्रयास करें या इसके बजाय एक छवि फ़ाइल (JPG, PNG) अपलोड करें।",
-	"SCAN_PROCESSING_PDF": "पीडीएफ दस्तावेज़ संसाधित किया जा रहा है..."
+	"SCAN_PROCESSING_PDF": "पीडीएफ दस्तावेज़ संसाधित किया जा रहा है...",
+	"EDIT_USER_PROFILE_PHONE_NUMBER": "फ़ोन नंबर दर्ज करें",
+	"EDIT_USER_PROFILE_UPLOAD_PICTURE": "प्रोफ़ाइल चित्र अपलोड करें < 5MB",
+	"EDIT_USER_PROFILE_CONTACT_NUMBER_LABEL": "यह फ़ोन नंबर किसका है?",
+	"EDIT_USER_PROFILE_TITLE": "उपयोगकर्ता प्रोफ़ाइल संपादित करें",
+	"SELF": "स्वयं",
+	"FATHER": "पिता",
+	"MOTHER": "माँ",
+	"GUARDIAN": "संरक्षक",
+	"RELATIVE": "रिश्तेदार",
+	"OTHER": "अन्य"
 }

@@ -113,6 +113,50 @@ export const updateUserDetails = async (userId, data) => {
 	}
 };
 
+/**
+ * Updates user profile with phone number, whose phone number, and profile picture
+ * @param {string} phoneNumber - The phone number to update
+ * @param {string} whosePhoneNumber - Whose phone number is this (e.g., 'father', 'self', etc.)
+ * @param {File} picture - The profile picture file to upload
+ * @returns {Promise} - Promise representing the API response
+ */
+export const updateUserProfile = async (
+	phoneNumber: string,
+	whosePhoneNumber: string,
+	picture?: File | null
+) => {
+	const token = localStorage.getItem('authToken');
+	try {
+		const formData = new FormData();
+		formData.append('phoneNumber', phoneNumber);
+		formData.append('whosePhoneNumber', whosePhoneNumber);
+		if (picture) {
+			formData.append('picture', picture);
+		}
+
+		const response = await axios.patch(
+			`${apiBaseUrl}/users/update`,
+			formData,
+			{
+				headers: {
+					'Content-Type': 'multipart/form-data',
+					Accept: 'application/json',
+					Authorization: `Bearer ${token}`,
+				},
+			}
+		);
+
+		console.log('User profile updated successfully:', response.data);
+		return response.data;
+	} catch (error) {
+		console.error(
+			'Error updating user profile:',
+			error.response?.data || error.message
+		);
+		throw error;
+	}
+};
+
 export const deleteDocument = async (id) => {
 	const token = localStorage.getItem('authToken');
 

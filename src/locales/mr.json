@@ -413,5 +413,15 @@
 	"SCAN_INVALID_FILE_TYPE_TITLE": "अवैध फाइल प्रकार",
 	"SCAN_PDF_CONVERSION_ERROR": "पीडीएफ रूपांतरण अयशस्वी",
 	"SCAN_PDF_CONVERSION_ERROR_DESCRIPTION": "पीडीएफ प्रतिमेत रूपांतरित करण्यात अक्षम. कृपया पुन्हा प्रयत्न करा किंवा त्याऐवजी प्रतिमा फाइल (JPG, PNG) अपलोड करा.",
-	"SCAN_PROCESSING_PDF": "पीडीएफ दस्तऐवज प्रक्रिया केला जात आहे..."
+	"SCAN_PROCESSING_PDF": "पीडीएफ दस्तऐवज प्रक्रिया केला जात आहे...",
+	"EDIT_USER_PROFILE_PHONE_NUMBER": "फोन नंबर एंटर करा",
+	"EDIT_USER_PROFILE_UPLOAD_PICTURE": "प्रोफाइल पिक्चर अपलोड करा < 5MB",
+	"EDIT_USER_PROFILE_CONTACT_NUMBER_LABEL": "हा कोणाचा फोन नंबर आहे?",
+	"EDIT_USER_PROFILE_TITLE": "वापरकर्ता प्रोफाइल संपादित करा",
+	"SELF": "स्वतः",
+	"FATHER": "वडील",
+	"MOTHER": "आई",
+	"GUARDIAN": "पालक",
+	"RELATIVE": "नातेवाईक",
+	"OTHER": "इतर"
 }
