@@ -61,7 +61,9 @@ interface FieldProps {
 const Field: React.FC<FieldProps> = ({ label, value }) => (
 	<Box flex={1}>
 		<Text {...labelStyles}>{label}</Text>
-		<Text {...valueStyles}>{value}</Text>
+		<Text textTransform="capitalize" {...valueStyles}>
+			{value}
+		</Text>
 	</Box>
 );
 
