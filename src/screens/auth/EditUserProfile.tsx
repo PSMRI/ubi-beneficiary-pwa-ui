@@ -7,6 +7,8 @@ import {
 	Text,
 	Image,
 	IconButton,
+	HStack,
+	Button,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
 import { CloseIcon } from '@chakra-ui/icons';
@@ -21,6 +23,8 @@ import { getUser, getDocumentsList, getUserConsents, sendConsent, logoutUser } f
 import { getProfilePictureMaxSizeMB } from '../../utils/envUtils';
 import CommonDialogue from '../../components/common/Dialogue';
 import termsAndConditions from '../../assets/termsAndConditions.json';
+import { useCameraCapture } from '../../components/scan/hooks/useCameraCapture';
+import { CapturedImagePreview } from '../../components/scan/CapturedImagePreview';
 
 const EditUserProfile: React.FC = () => {
 	const { t } = useTranslation();
@@ -42,6 +46,24 @@ const EditUserProfile: React.FC = () => {
 	const maxProfilePictureSize = getProfilePictureMaxSizeMB();
 	const [consentSaved, setConsentSaved] = useState(false);
 	const [consentChecked, setConsentChecked] = useState(false);
+
+	// Camera capture hook for profile picture
+	const {
+		isCapturing,
+		capturedImage,
+		capturedFile,
+		isCompressing,
+		originalFileSize,
+		compressedFileSize,
+		showCompressionInfo,
+		cameraError,
+		videoRef,
+		startCaptureCamera,
+		stopCaptureCamera,
+		capturePhoto,
+		handleRetakePhoto,
+		handleCancelCapture,
+	} = useCameraCapture();
 
 	const purpose = 'sign_up_tnc';
 	const purpose_text = 'sign_up_tnc';
@@ -140,6 +162,34 @@ const EditUserProfile: React.FC = () => {
 	const handleRemoveProfilePicture = () => {
 		setProfilePicture(null);
 		setProfilePicturePreview(null);
+		// Also clear any captured image
+		handleCancelCapture();
+	};
+
+	// Handle camera capture for profile picture
+	const handleStartCameraCapture = async () => {
+		// Clear any existing profile picture
+		setProfilePicture(null);
+		setProfilePicturePreview(null);
+		// Start camera
+		await startCaptureCamera();
+	};
+
+	// Handle using captured image as profile picture
+	const handleUseCapturedImage = () => {
+		if (capturedFile && capturedImage) {
+			setProfilePicture(capturedFile);
+			setProfilePicturePreview(capturedImage);
+			// Clear camera capture state
+			handleCancelCapture();
+			toast({
+				title: 'Photo Captured',
+				description: 'Photo has been set as your profile picture.',
+				status: 'success',
+				duration: 3000,
+				isClosable: true,
+			});
+		}
 	};
 
 	const handleSubmit = async () => {
@@ -361,26 +411,9 @@ const EditUserProfile: React.FC = () => {
 							options={contactNumberOptions}
 						/>
 					</FormControl>
+					
 					<FormControl>
 						<Box>
-							<Text
-								fontSize="sm"
-								color="gray.600"
-								mb={2}
-								position="absolute"
-								top="-10px"
-								left="12px"
-								bg="white"
-								px={1}
-								zIndex={100}
-							>
-								{t(
-									'EDIT_USER_PROFILE_UPLOAD_PICTURE'
-								).replaceAll(
-									'{maxSize}',
-									maxProfilePictureSize.toString()
-								)}
-							</Text>
 							<Box
 								mt={4}
 								border="2px dashed"
@@ -390,7 +423,68 @@ const EditUserProfile: React.FC = () => {
 								textAlign="center"
 								position="relative"
 							>
-								{profilePicturePreview ? (
+								{/* Camera capture view */}
+								{isCapturing && (
+									<Box textAlign="center">
+										<Box
+											position="relative"
+											width="100%"
+											bg="black"
+											borderRadius="md"
+											overflow="hidden"
+											mb={3}
+										>
+											<video
+												ref={videoRef}
+												autoPlay
+												playsInline
+												muted
+												aria-label="Camera preview for profile picture"
+												style={{
+													width: '100%',
+													height: 'auto',
+													maxHeight: '300px',
+												}}
+											>
+												<track kind="captions" />
+											</video>
+										</Box>
+										<HStack spacing={2} justifyContent="center">
+											<Button
+												colorScheme="green"
+												size="md"
+												onClick={capturePhoto}
+											>
+												{t('SCAN_CAPTURE_PHOTO')}
+											</Button>
+											<Button
+												colorScheme="gray"
+												size="md"
+												onClick={stopCaptureCamera}
+											>
+												{t('SCAN_CANCEL') || 'Cancel'}
+											</Button>
+										</HStack>
+									</Box>
+								)}
+
+								{/* Preview captured image */}
+								{capturedImage && !isCapturing && (
+									<CapturedImagePreview
+										capturedImage={capturedImage}
+										isCompressing={isCompressing}
+										originalFileSize={originalFileSize}
+										compressedFileSize={compressedFileSize}
+										showCompressionInfo={showCompressionInfo}
+										isUploading={false}
+										onUpload={handleUseCapturedImage}
+										onRetake={handleRetakePhoto}
+										onCancel={handleCancelCapture}
+									/>
+								)}
+
+								{/* Show selected/captured profile picture */}
+								{profilePicturePreview && !isCapturing && !capturedImage && (
 									<Box position="relative">
 										<Image
 											src={profilePicturePreview}
@@ -412,41 +506,77 @@ const EditUserProfile: React.FC = () => {
 											variant="solid"
 										/>
 									</Box>
-								) : (
-									<>
+								)}
+
+								{/* Upload options when no image is selected */}
+								{!profilePicturePreview && !isCapturing && !capturedImage && (
+									<VStack spacing={4}>
 										<input
 											type="file"
 											id="profilePictureInput"
 											accept="image/*"
-											onChange={
-												handleProfilePictureChange
-											}
+											onChange={handleProfilePictureChange}
 											style={{ display: 'none' }}
 										/>
-										<Box
+										
+										{/* Upload from gallery button - GREEN like document scanner */}
+										<Button
+											colorScheme="teal"
+											size="lg"
+											width="100%"
 											onClick={() =>
 												document
-													.getElementById(
-														'profilePictureInput'
-													)
+													.getElementById('profilePictureInput')
 													?.click()
 											}
 										>
-											<CommonButton
-												variant="outline"
-												label={t(
-													'EDIT_USER_PROFILE_UPLOAD_PICTURE'
-												).replaceAll(
-													'{maxSize}',
-													maxProfilePictureSize.toString()
-												)}
-											/>
-										</Box>
-									</>
+											{t('EDIT_USER_PROFILE_UPLOAD_PICTURE').replaceAll(
+												'{maxSize}',
+												maxProfilePictureSize.toString()
+											)}
+										</Button>
+										
+										{/* OR text - GRAY like document scanner */}
+										<Text
+											textAlign="center"
+											fontWeight="normal"
+											color="gray.500"
+											fontSize="sm"
+										>
+											{t('OR')}
+										</Text>
+										
+										{/* Camera capture button - PURPLE like document scanner */}
+										<Button
+											colorScheme="purple"
+											size="lg"
+											width="100%"
+											onClick={handleStartCameraCapture}
+										>
+											{t('SCAN_CAPTURE_PHOTO_CAMERA')}
+										</Button>
+									</VStack>
+								)}
+
+								{/* Camera error */}
+								{cameraError && (
+									<Box bg="red.50" p={2} borderRadius="md" mt={2}>
+										<Text color="red.600" fontSize="sm">
+											{cameraError}
+										</Text>
+									</Box>
 								)}
 							</Box>
 						</Box>
 					</FormControl>
+					<Text
+            textAlign="center"
+            fontWeight="semibold"
+            color="gray.500"
+            my={3}
+        >
+            {t('OR')}
+        </Text>
 					<CommonButton
 						loading={loading}
 						loadingLabel="Saving..."

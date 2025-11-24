@@ -14,7 +14,7 @@ import UploadDocumentEwallet from '../components/common/UploadDocumentEwallet';
 import { isWalletUploadEnabled } from '../utils/envUtils';
 import CommonButton from '../components/common/button/Button';
 import { useTranslation } from 'react-i18next';
-
+import { EditIcon } from '@chakra-ui/icons';
 const UserProfile: React.FC = () => {
 	const [showIframe, setShowIframe] = useState(true);
 	const { userData, documents, updateUserData } = useContext(AuthContext);
@@ -34,6 +34,10 @@ const UserProfile: React.FC = () => {
 			console.error('Error fetching user data or documents:', error);
 		}
 	};
+
+	const redirectToEditProfile = () => {
+		navigate('/edit-user-profile');
+	}
 
 	useEffect(() => {
 		const storedUser = localStorage.getItem('user');
@@ -61,22 +65,54 @@ const UserProfile: React.FC = () => {
 			}}
 		>
 			<HStack m={5} mt={0} p={0} h={82}>
-				{userData?.pictureUrl ? (
-					<Image
-						src={userData.pictureUrl}
-						alt="Profile Picture"
-						borderRadius="full"
-						boxSize="60px"
-						objectFit="cover"
-						mr={2}
-					/>
-				) : (
-					<Avatar
-						variant="solid"
-						name={`${userData?.firstName || ''}  ${userData?.lastName || ''}`}
-						mr={2}
-					/>
-				)}
+				<Box position="relative" display="inline-block" mr={2}>
+  {userData?.pictureUrl ? (
+    <>
+      <Image
+        src={userData.pictureUrl}
+        alt="Profile Picture"
+        borderRadius="full"
+        boxSize="60px"
+        objectFit="cover"
+      />
+
+      {/* Edit Icon Overlay */}
+      <EditIcon
+        boxSize={5}
+        color="white"
+        position="absolute"
+        bottom="10"
+        right="0"
+        bg="gray.700"
+        borderRadius="full"
+        p={1}
+        cursor="pointer"
+		onClick={redirectToEditProfile}
+      />
+    </>
+  ) : (
+    <>
+      <Avatar
+        variant="solid"
+        name={`${userData?.firstName || ''} ${userData?.lastName || ''}`}
+        boxSize="60px"
+      />
+
+      <EditIcon
+        boxSize={5}
+        color="white"
+        position="absolute"
+        bottom="10"
+        right="0"
+        bg="gray.700"
+        borderRadius="full"
+        p={1}
+        cursor="pointer"
+      />
+    </>
+  )}
+</Box>
+
 				<VStack mt={8}>
 					<Text
 						fontSize="16px"
