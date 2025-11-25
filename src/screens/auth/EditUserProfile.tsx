@@ -569,14 +569,6 @@ const EditUserProfile: React.FC = () => {
 							</Box>
 						</Box>
 					</FormControl>
-					<Text
-            textAlign="center"
-            fontWeight="semibold"
-            color="gray.500"
-            my={3}
-        >
-            {t('OR')}
-        </Text>
 					<CommonButton
 						loading={loading}
 						loadingLabel="Saving..."
