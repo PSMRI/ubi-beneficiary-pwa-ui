@@ -1,10 +1,11 @@
 // src/components/ScanOTR.tsx
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Box, VStack, Text, Button, HStack, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { useCameraCapture } from './scan/hooks/useCameraCapture';
 import { CapturedImagePreview } from './scan/CapturedImagePreview';
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_MB } from './scan/scanConfig';
+import { convertPDFToImage } from '../utils/pdfToImage';
 
 interface ScanOTRProps {
     onOTRProcessed: (extractedData: any, file: File) => void;
@@ -15,7 +16,7 @@ interface ScanOTRProps {
 const ScanOTR: React.FC<ScanOTRProps> = ({ onOTRProcessed, onError, isProcessing = false }) => {
     const { t } = useTranslation();
     const toast = useToast();
-
+    const [isConverting, setIsConverting] = useState(false);
     // Camera capture hook (reuse existing)
     const {
         isCapturing,
@@ -61,31 +62,69 @@ const ScanOTR: React.FC<ScanOTRProps> = ({ onOTRProcessed, onError, isProcessing
     }, [t]);
 
     // Handle file selection from input
-    const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+    // Handle file selection
+    const handleFileSelect = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
 
-        if (!file) {
-            return;
-        }
+            let fileToUpload = file;
 
-        const validation = validateFile(file);
-        if (!validation.valid) {
-            toast({
-                title: t('Invalid File'),
-                description: validation.message,
-                status: 'error',
-                duration: 4000,
-                isClosable: true,
-            });
+            // Validate original file
+            const validation = validateFile(file);
+            if (!validation.valid) {
+                toast({
+                    title: t('Invalid File'),
+                    description: validation.message,
+                    status: 'error',
+                    duration: 4000,
+                });
+                event.target.value = '';
+                return;
+            }
+
+            // If PDF → Convert to Image
+            if (file.type === 'application/pdf') {
+                setIsConverting(true);
+
+                try {
+                    fileToUpload = await convertPDFToImage(file, {
+                        scale: 2,
+                        quality: 0.8,
+                        format: 'jpeg',
+                    });
+
+                    // Validate converted image size
+                    const convertedValidation = validateFile(fileToUpload);
+                    if (!convertedValidation.valid) {
+                        throw new Error(convertedValidation.message);
+                    }
+
+                } catch (error) {
+                    console.error('PDF conversion error:', error);
+                    toast({
+                        title: t('SCAN_PDF_CONVERSION_ERROR'),
+                        description: t('SCAN_PDF_CONVERSION_ERROR_DESCRIPTION'),
+                        status: 'error',
+                        duration: 5000,
+                    });
+                    onError?.(error);
+                    event.target.value = '';
+                    setIsConverting(false);
+                    return;
+                }
+
+                toast.closeAll();
+                setIsConverting(false);
+            }
+
+            // Send file to parent
+            onOTRProcessed(null, fileToUpload);
+
             event.target.value = '';
-            return;
-        }
-
-        // Pass file directly to parent for processing
-        onOTRProcessed(null, file);
-        event.target.value = '';
-    }, [validateFile, onOTRProcessed, toast, t]);
-
+        },
+        [validateFile, toast, t, onOTRProcessed, onError]
+    );
     // Handle upload of captured image
     const handleUploadCapturedImage = () => {
         if (!capturedFile) return;
