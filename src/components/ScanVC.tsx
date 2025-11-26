@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Box, VStack, Text, Button, HStack } from '@chakra-ui/react';
 import Layout from './common/layout/Layout';
 import { useTranslation } from 'react-i18next';
+import { isMobile } from '../utils/deviceUtils';
 
 import { useQRScanner } from './scan/hooks/useQRScanner';
 import { useCameraCapture } from './scan/hooks/useCameraCapture';
@@ -131,11 +132,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							size="md"
 							width="full"
 							isLoading={isUploading || isConverting}
-							loadingText={
-								isConverting
-									? t('SCAN_CONVERTING_PDF')
-									: t('SCAN_UPLOADING')
-							}
+							loadingText={t('SCAN_UPLOADING') || 'Uploading...'}
 							isDisabled={isUploading || isConverting}
 							cursor={
 								isUploading || isConverting
@@ -143,10 +140,12 @@ const ScanVC: React.FC<ScanVCProps> = ({
 									: 'pointer'
 							}
 						>
-							<span>
-								{t('UPLOAD_DOCUMENT_FOR_VC')} ({'<'}{' '}
-								{MAX_FILE_SIZE_MB}MB)
-							</span>
+							{!isUploading && !isConverting && (
+								<span>
+									{t('UPLOAD_DOCUMENT_FOR_VC') || 'Upload Document'} ({'<'}{' '}
+									{MAX_FILE_SIZE_MB}MB)
+								</span>
+							)}
 							<input
 								type="file"
 								accept="image/*,application/pdf"
@@ -169,6 +168,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							width="full"
 							onClick={handleStartCaptureCamera}
 							mb={3}
+							isDisabled={isUploading || isConverting}
 						>
 							{t('SCAN_CAPTURE_PHOTO_CAMERA')}
 						</Button>
@@ -194,9 +194,13 @@ const ScanVC: React.FC<ScanVCProps> = ({
 						<Box
 							position="relative"
 							width="100%"
+							height={isMobile() ? '350px' : '400px'}
 							bg="black"
 							borderRadius="md"
 							overflow="hidden"
+							display="flex"
+							justifyContent="center"
+							alignItems="center"
 						>
 							<video
 								ref={videoRef}
@@ -206,8 +210,8 @@ const ScanVC: React.FC<ScanVCProps> = ({
 								aria-label="Camera preview for capturing document"
 								style={{
 									width: '100%',
-									height: 'auto',
-									maxHeight: '60vh',
+									height: '100%',
+									objectFit: 'cover',
 								}}
 							>
 								<track kind="captions" />
@@ -218,6 +222,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 								colorScheme="green"
 								size="md"
 								onClick={capturePhoto}
+								width="120px"
 							>
 								{t('SCAN_CAPTURE_PHOTO')}
 							</Button>
@@ -225,6 +230,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 								colorScheme="gray"
 								size="md"
 								onClick={stopCaptureCamera}
+								width="120px"
 							>
 								{t('SCAN_CANCEL')}
 							</Button>

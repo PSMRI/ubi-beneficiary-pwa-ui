@@ -68,6 +68,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
 				height="60px"
 				mt={4}
 			>
+				<option value="" hidden></option>
 				{options.map((option) => (
 					<option key={option.value} value={option.value}>
 						{option.label}

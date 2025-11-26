@@ -90,14 +90,6 @@ export const useFileUpload = ({
 			let fileToUpload = file;
 			const isPDF = file.type === 'application/pdf';
 
-			// Show single processing toast
-			const toastId = toast({
-				title: isPDF ? t('SCAN_PROCESSING_PDF') : t('SCAN_UPLOADING'),
-				status: 'info',
-				duration: null,
-				isClosable: false,
-			});
-
 			// Convert PDF to image (required for QR code extraction)
 			if (isPDF) {
 				setIsConverting(true);
@@ -109,7 +101,6 @@ export const useFileUpload = ({
 					});
 				} catch (error) {
 					console.error('Error converting PDF to image:', error);
-					toast.close(toastId);
 					toast({
 						title: t('SCAN_PDF_CONVERSION_ERROR'),
 						description: t('SCAN_PDF_CONVERSION_ERROR_DESCRIPTION'),
@@ -166,8 +157,7 @@ export const useFileUpload = ({
 					);
 				}
 
-				// Close processing toast and show success
-				toast.close(toastId);
+				// Show success toast only
 				toast({
 					title: t('SCAN_UPLOAD_SUCCESS'),
 					status: 'success',
@@ -184,7 +174,6 @@ export const useFileUpload = ({
 				return response;
 			} catch (error: any) {
 				console.error('Error during file upload:', error);
-				toast.close(toastId);
 
 				// Extract error message from the error object
 				let errorMessage = t('SCAN_ERROR_UPLOAD_FILE');
