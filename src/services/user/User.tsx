@@ -276,3 +276,31 @@ export const getUserFields = async (
 		throw new Error(errorMessage);
 	}
 };
+
+/**
+ * Fetches user profile fields from the API.
+ * @returns {Promise<Array>} - Promise representing the API response.
+ */
+export const getUserProfileFields = async () => {
+	const token = localStorage.getItem('authToken');
+
+	try {
+		const response = await axios.get(
+			`${apiBaseUrl}/fields?context=USERS&contextType=User`,
+			{
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+			}
+		);
+
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			'Error fetching user profile fields:',
+			error.response?.data || error.message
+		);
+		throw error;
+	}
+};

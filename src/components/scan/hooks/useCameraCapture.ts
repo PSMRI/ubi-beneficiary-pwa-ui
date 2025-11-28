@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { compressImage } from '../../../utils/imageCompression';
@@ -26,6 +26,8 @@ interface UseCameraCaptureReturn {
 	handleRetakePhoto: () => void;
 	handleCancelCapture: () => void;
 	setCameraError: (error: string | null) => void;
+	facingMode: 'user' | 'environment';
+	switchCamera: () => void;
 }
 
 export const useCameraCapture = (): UseCameraCaptureReturn => {
@@ -41,6 +43,9 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 	const [cameraError, setCameraError] = useState<string | null>(null);
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const streamRef = useRef<MediaStream | null>(null);
+	const [facingMode, setFacingMode] = useState<'user' | 'environment'>(
+		isMobile() ? 'environment' : 'user'
+	);
 
 	const startCaptureCamera = useCallback(async () => {
 		setCameraError(null);
@@ -48,16 +53,23 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 		setCapturedImage(null);
 		setCapturedFile(null);
 
+		// Stop existing stream if any before starting new one (for switching camera)
+		if (streamRef.current) {
+			for (const track of streamRef.current.getTracks()) {
+				track.stop();
+			}
+			streamRef.current = null;
+		}
+
 		try {
 			const constraints = {
 				video: {
-					facingMode: { ideal: isMobile() ? 'environment' : 'user' },
+					facingMode: { ideal: facingMode },
 					...CAMERA_CONSTRAINTS,
 				},
 			};
 
-			const stream =
-				await navigator.mediaDevices.getUserMedia(constraints);
+			const stream = await navigator.mediaDevices.getUserMedia(constraints);
 			streamRef.current = stream;
 
 			if (videoRef.current) {
@@ -69,7 +81,7 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 			setCameraError(t('SCAN_CAMERA_PERMISSION_ERROR'));
 			setIsCapturing(false);
 		}
-	}, [t]);
+	}, [t, facingMode]);
 
 	const stopCaptureCamera = useCallback(() => {
 		if (streamRef.current) {
@@ -84,6 +96,17 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 		setIsCapturing(false);
 	}, []);
 
+	const switchCamera = useCallback(() => {
+		setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'));
+	}, []);
+
+	// Restart camera when facing mode changes if already capturing
+	useEffect(() => {
+		if (isCapturing && !capturedImage) {
+			startCaptureCamera();
+		}
+	}, [facingMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
 	const capturePhoto = useCallback(async () => {
 		if (!videoRef.current) return;
 
@@ -93,6 +116,12 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
+
+		// Flip horizontally if using front camera (mirror effect)
+		if (facingMode === 'user') {
+			ctx.translate(canvas.width, 0);
+			ctx.scale(-1, 1);
+		}
 
 		ctx.drawImage(videoRef.current, 0, 0);
 
@@ -193,7 +222,7 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 			'image/jpeg',
 			0.92
 		);
-	}, [stopCaptureCamera, toast, t]);
+	}, [stopCaptureCamera, toast, t, facingMode]);
 
 	const handleRetakePhoto = useCallback(() => {
 		setCapturedImage(null);
@@ -223,5 +252,7 @@ export const useCameraCapture = (): UseCameraCaptureReturn => {
 		handleRetakePhoto,
 		handleCancelCapture,
 		setCameraError,
+		facingMode,
+		switchCamera,
 	};
 };
