@@ -195,7 +195,7 @@ const Home: React.FC = () => {
 		<Layout
 			_heading={{
 				beneficiary: true,
-				heading: `${userData?.firstName || ''} ${userData?.lastName || ''}`,
+				heading: `${userData?.name || ''}`,
 				profileSubHeading: `${userName}`,
 				// label: keycloak.tokenParsed?.preferred_username,
 			}}
