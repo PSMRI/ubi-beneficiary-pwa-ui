@@ -36,6 +36,7 @@ const UserProfile: React.FC = () => {
 	};
 
 	const redirectToEditProfile = () => {
+		console.log('redirectToEditProfile');
 		navigate('/edit-user-profile');
 	}
 
@@ -108,6 +109,7 @@ const UserProfile: React.FC = () => {
 								borderRadius="full"
 								p={1}
 								cursor="pointer"
+								onClick={redirectToEditProfile}
 							/>
 						</>
 					)}
