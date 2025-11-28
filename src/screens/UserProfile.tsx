@@ -73,7 +73,7 @@ const UserProfile: React.FC = () => {
 				) : (
 					<Avatar
 						variant="solid"
-						name={`${userData?.firstName || ''}  ${userData?.lastName || ''}`}
+						name={userData?.name || ''}
 						mr={2}
 					/>
 				)}
@@ -85,8 +85,7 @@ const UserProfile: React.FC = () => {
 						color="#433E3F"
 						textAlign={'start'}
 					>
-						{userData?.firstName || ''} {userData?.middleName || ''}{' '}
-						{userData?.lastName || ''}
+						{userData?.name || ''}
 					</Text>
 					<Text
 						fontSize="12px"
@@ -135,9 +134,7 @@ const UserProfile: React.FC = () => {
 
 				<UserDetails
 					userData={{
-						firstName: userData?.firstName,
-						middleName: userData?.middleName,
-						lastName: userData?.lastName,
+						name: userData?.name,
 						dob: userData?.dob,
 						customFields:
 							userData?.customFields?.map((field) => ({
