@@ -108,7 +108,7 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	const isPendingVerification =
 		result?.matchFound &&
 		issueVC === true &&
-		result?.doc_verified === false &&
+		result?.doc_verified !== true &&
 		result?.imported_from === 'Manual Upload';
 
 	let iconComponent;
