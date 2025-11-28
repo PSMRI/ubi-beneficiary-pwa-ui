@@ -36,6 +36,7 @@ const UserProfile: React.FC = () => {
 	};
 
 	const redirectToEditProfile = () => {
+		console.log('redirectToEditProfile');
 		navigate('/edit-user-profile');
 	}
 
@@ -66,52 +67,53 @@ const UserProfile: React.FC = () => {
 		>
 			<HStack m={5} mt={0} p={0} h={82}>
 				<Box position="relative" display="inline-block" mr={2}>
-  {userData?.pictureUrl ? (
-    <>
-      <Image
-        src={userData.pictureUrl}
-        alt="Profile Picture"
-        borderRadius="full"
-        boxSize="60px"
-        objectFit="cover"
-      />
+					{userData?.pictureUrl ? (
+						<>
+							<Image
+								src={userData.pictureUrl}
+								alt="Profile Picture"
+								borderRadius="full"
+								boxSize="60px"
+								objectFit="cover"
+							/>
 
-      {/* Edit Icon Overlay */}
-      <EditIcon
-        boxSize={5}
-        color="white"
-        position="absolute"
-        bottom="10"
-        right="0"
-        bg="gray.700"
-        borderRadius="full"
-        p={1}
-        cursor="pointer"
-		onClick={redirectToEditProfile}
-      />
-    </>
-  ) : (
-    <>
-      <Avatar
-        variant="solid"
-        name={`${userData?.firstName || ''} ${userData?.lastName || ''}`}
-        boxSize="60px"
-      />
+							{/* Edit Icon Overlay */}
+							<EditIcon
+								boxSize={5}
+								color="white"
+								position="absolute"
+								bottom="10"
+								right="0"
+								bg="gray.700"
+								borderRadius="full"
+								p={1}
+								cursor="pointer"
+								onClick={redirectToEditProfile}
+							/>
+						</>
+					) : (
+						<>
+							<Avatar
+								variant="solid"
+								name={userData?.name || ''}
+								boxSize="60px"
+							/>
 
-      <EditIcon
-        boxSize={5}
-        color="white"
-        position="absolute"
-        bottom="10"
-        right="0"
-        bg="gray.700"
-        borderRadius="full"
-        p={1}
-        cursor="pointer"
-      />
-    </>
-  )}
-</Box>
+							<EditIcon
+								boxSize={5}
+								color="white"
+								position="absolute"
+								bottom="10"
+								right="0"
+								bg="gray.700"
+								borderRadius="full"
+								p={1}
+								cursor="pointer"
+								onClick={redirectToEditProfile}
+							/>
+						</>
+					)}
+				</Box>
 
 				<VStack mt={8}>
 					<Text
@@ -121,8 +123,7 @@ const UserProfile: React.FC = () => {
 						color="#433E3F"
 						textAlign={'start'}
 					>
-						{userData?.firstName || ''} {userData?.middleName || ''}{' '}
-						{userData?.lastName || ''}
+						{userData?.name || ''}
 					</Text>
 					<Text
 						fontSize="12px"
@@ -171,9 +172,7 @@ const UserProfile: React.FC = () => {
 
 				<UserDetails
 					userData={{
-						firstName: userData?.firstName,
-						middleName: userData?.middleName,
-						lastName: userData?.lastName,
+						name: userData?.name,
 						dob: userData?.dob,
 						customFields:
 							userData?.customFields?.map((field) => ({
