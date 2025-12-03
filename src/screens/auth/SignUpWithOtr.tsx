@@ -39,7 +39,7 @@ const SignUpWithOtr: React.FC = () => {
             );
 
             toast({
-                title: 'Registration Successful',
+                title: t('SIGNUP_SUCCESSFUL'),
                 description: apiResponse?.message || 'Your account has been created successfully.',
                 status: 'success',
                 duration: 7000,
@@ -50,7 +50,7 @@ const SignUpWithOtr: React.FC = () => {
         } catch (error: any) {
             console.error('Error in register_with_document:', error?.response?.data?.error);
             toast({
-                title: 'Registration Failed',
+                title: t('SIGNUP_FAILED'),
                 description: error?.response?.data?.error || 'Failed to register user with OTR certificate.',
                 status: 'error',
                 duration: 7000,

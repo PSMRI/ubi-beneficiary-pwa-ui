@@ -320,7 +320,7 @@
 	"SIGNUP_PASSWORD_VALIDATION_MESSAGE": "Password must contain at least one letter, one number, and one special character (@, !, #, $, %).",
 	"SIGNUP_REGISTRATION_SUCCESS_MESSAGE": "Registration successful! Redirecting to login...",
 	"SIGNUP_RESENT_OTP": "Resend OTP",
-	"SIGNUP_SUCCESSFUL": "Register Successfull",
+	"SIGNUP_SUCCESSFUL": "Registration Successful",
 	"SIGNUP_USERNAME_WILL_BE": "Your username will be",
 	"SIGNIN_PASSWORD_UPDATE_REQUIRED_TITLE": "Password Update Required",
 	"SIGNIN_PASSWORD_UPDATE_REQUIRED_DESC": "You must update your password before continuing.",
