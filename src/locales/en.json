@@ -314,6 +314,7 @@
 	"SIGNUP_MOBILE_NUMBER": "Mobile Number",
 	"SIGNUP_OTP_ENTER_OTP_LABEL": "Enter the 6-digit OTP sent via SMS",
 	"SIGNUP_OTP_REQUEST_MESSAGE": "Request to",
+	"SIGN_UP_UPLOAD_OTR": "Please upload your OTR certificate to auto-register your account.",
 	"SIGNUP_PASSWORD_CONFIRM_PASSWORD_IS_REQUIRED": "Both Password and Confirm Password are required.",
 	"SIGNUP_PASSWORD_NOT_MATCHING": "Passwords do not match.",
 	"SIGNUP_PASSWORD_VALIDATION_MESSAGE": "Password must contain at least one letter, one number, and one special character (@, !, #, $, %).",
