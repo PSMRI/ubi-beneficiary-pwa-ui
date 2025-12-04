@@ -432,5 +432,8 @@
 	"MOTHER": "Mother",
 	"GUARDIAN": "Guardian",
 	"RELATIVE": "Relative",
-	"OTHER": "Other"
+	"OTHER": "Other",
+	"HOME": "Home",
+	"SEARCH": "Search",
+	"MY_APPLICATIONS": "My Applications"
 }

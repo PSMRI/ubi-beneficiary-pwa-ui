@@ -430,5 +430,8 @@
 	"MOTHER": "माँ",
 	"GUARDIAN": "संरक्षक",
 	"RELATIVE": "रिश्तेदार",
-	"OTHER": "अन्य"
+	"OTHER": "अन्य",
+	"HOME": "होम",
+	"SEARCH": "खोज",
+	"MY_APPLICATIONS": "मेरे आवेदन"
 }

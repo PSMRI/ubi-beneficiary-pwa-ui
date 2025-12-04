@@ -426,5 +426,8 @@
 	"MOTHER": "आई",
 	"GUARDIAN": "पालक",
 	"RELATIVE": "नातेवाईक",
-	"OTHER": "इतर"
+	"OTHER": "इतर",
+	"HOME": "होम",
+	"SEARCH": "शोध",
+	"MY_APPLICATIONS": "माझे आवेदन"
 }
