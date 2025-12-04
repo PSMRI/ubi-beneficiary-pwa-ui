@@ -1,8 +1,16 @@
-import axios from 'axios';
+import apiClient from '../../config/apiClient';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+/**
+ * Issuer Service
+ * 
+ * Handles issuer-related operations for admin
+ * Uses centralized apiClient with automatic token handling and error management
+ */
 
-// Interface definitions for type safety
+// =============================================
+// Type Definitions
+// =============================================
+
 export interface Issuer {
 	id: string; // Issuer ID like "passport_seva", "digilocker"
 	name: string; // Display name like "Passport Seva", "DigiLocker"
@@ -16,21 +24,18 @@ export interface IssuerMapping {
 	issuerUrl: string;
 }
 
+// =============================================
+// Issuer APIs
+// =============================================
+
 /**
  * Fetch all available issuers from the API
  * @returns Promise<Issuer[]>
  */
 export const getIssuers = async (): Promise<Issuer[]> => {
 	try {
-		const token = localStorage.getItem('authToken');
-		const response = await axios.get(`${BASE_URL}/admin/issuers`, {
-			headers: {
-				Accept: 'application/json',
-				Authorization: `Bearer ${token}`,
-			},
-		});
+		const response = await apiClient.get('/admin/issuers');
 		console.log('---------------', response.data.data.data);
-
 		return response.data.data.data;
 	} catch (error) {
 		console.error('Error fetching issuers:', error);
