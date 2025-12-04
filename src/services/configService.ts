@@ -1,10 +1,23 @@
-import axios from 'axios';
+import apiClient from '../config/apiClient';
 import { VCConfiguration, VCField } from '../types/vc.types';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+/**
+ * Configuration Service
+ * 
+ * Handles VC (Verifiable Credential) configuration management
+ * Uses centralized apiClient with automatic token handling and error management
+ */
+
+// =============================================
+// Constants
+// =============================================
 
 // Constants for metadata field patterns
 const METADATA_FIELD_PATTERNS = ['originalvc', 'original'] as const;
+
+// =============================================
+// Type Definitions
+// =============================================
 
 interface ApiVCConfiguration {
 	name: string;
@@ -17,6 +30,10 @@ interface ApiVCConfiguration {
 	spaceId?: string;
 	issuer?: string;
 }
+
+// =============================================
+// Configuration Service Class
+// =============================================
 
 export class ConfigService {
 	// In-memory cache for VC configurations
@@ -130,15 +147,9 @@ export class ConfigService {
 
 		// Create new promise for loading
 		this.cachePromise = (async () => {
-			const token = localStorage.getItem('authToken');
 			try {
-				const response = await axios.get(
-					`${apiBaseUrl}/admin/config/vcConfiguration`,
-					{
-						headers: {
-							Authorization: `Bearer ${token}`,
-						},
-					}
+				const response = await apiClient.get(
+					'/admin/config/vcConfiguration'
 				);
 
 				const configurations: ApiVCConfiguration[] =
