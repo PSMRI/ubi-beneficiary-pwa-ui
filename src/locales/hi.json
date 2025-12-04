@@ -315,10 +315,11 @@
 	"SIGNUP_MOBILE_NUMBER": "मोबाइल नंबर",
 	"SIGNUP_OTP_ENTER_OTP_LABEL": "एसएमएस द्वारा भेजा गया 6-अंकीय ओटीपी दर्ज करें",
 	"SIGNUP_OTP_REQUEST_MESSAGE": "अनुरोध करें",
+	"SIGN_UP_UPLOAD_OTR": "अपना OTR प्रमाणपत्र अपलोड करें और अपना खाता स्वयं रजिस्टर करें।",
 	"SIGNUP_PASSWORD_CONFIRM_PASSWORD_IS_REQUIRED": "पासवर्ड और पासवर्ड की पुष्टि दोनों आवश्यक हैं।",
 	"SIGNUP_PASSWORD_NOT_MATCHING": "पासवर्ड मेल नहीं खा रहे हैं।",
 	"SIGNUP_PASSWORD_VALIDATION_MESSAGE": "पासवर्ड में कम से कम एक अक्षर, एक संख्या, और एक विशेष वर्ण (@, !, #, $, %) होना चाहिए।",
-	"SIGNUP_REGISTRATION_SUCCESS_MESSAGE": "पंजीकरण सफल! लॉगिन पर पुनर्निर्देशित किया जा रहा है...",
+	"SIGNUP_REGISTRATION_SUCCESS_MESSAGE": "रजिस्टर सफल! अपना खाता स्वयं पंजीकरण करें।",
 	"SIGNUP_RESENT_OTP": "ओटीपी पुनः भेजें",
 	"SIGNUP_SUCCESSFUL": "रजिस्टर सफल",
 	"SIGNUP_USERNAME_WILL_BE": "आपका यूजरनेम होगा",
@@ -429,5 +430,8 @@
 	"MOTHER": "माँ",
 	"GUARDIAN": "संरक्षक",
 	"RELATIVE": "रिश्तेदार",
-	"OTHER": "अन्य"
+	"OTHER": "अन्य",
+	"HOME": "होम",
+	"SEARCH": "खोज",
+	"MY_APPLICATIONS": "मेरे आवेदन"
 }

@@ -1,22 +1,26 @@
-import axios from 'axios';
+import dhiwayClient from '../../config/dhiwayClient';
 import { uploadUserDocuments } from '../user/User';
 
-const BASE_URI = import.meta.env.VITE_DHIWAY_API_URL;
-const token = import.meta.env.VITE_DHIWAY_TOKEN;
+/**
+ * Dhiway Service
+ * 
+ * Handles integration with Dhiway API for DigiLocker and Aadhaar operations
+ * Uses separate dhiwayClient with Dhiway-specific authentication
+ */
+
+// =============================================
+// DigiLocker APIs
+// =============================================
+
+/**
+ * Get DigiLocker request URL
+ * @returns DigiLocker request data
+ */
 export const getDigiLockerRequest = async () => {
-	const url = `${BASE_URI}/digilocker-request`;
-	// Replace with your actual token
-
 	try {
-		const response = await axios.get(url, {
-			headers: {
-				Accept: 'application/json',
-				Authorization: `Bearer ${token}`,
-			},
-		});
-
+		const response = await dhiwayClient.get('/digilocker-request');
 		return response.data;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error fetching DigiLocker request:',
 			error.response?.data || error.message
@@ -25,6 +29,51 @@ export const getDigiLockerRequest = async () => {
 	}
 };
 
+/**
+ * Authenticate with DigiLocker and fetch Aadhaar data
+ * @param code - Authorization code from DigiLocker
+ * @param userId - User ID to associate the document with
+ * @returns Uploaded document data
+ */
+export const getAadhar = async (code: string, userId: string) => {
+	try {
+		const response = await dhiwayClient.post(
+			'/digilocker-auth',
+			{
+				code,
+				doctype: 'aadhaar',
+			}
+		);
+
+		const payload = generatePayload(
+			response.data.data,
+			{
+				doc_name: 'Aadhaar Card',
+				doc_type: 'idProof',
+				doc_subtype: 'aadhaar',
+			},
+			userId
+		);
+
+		const uploadToApp = await uploadUserDocuments(payload);
+		return uploadToApp.data;
+	} catch (error) {
+		console.error('Error sending code to DigiLocker API:', error);
+		throw error;
+	}
+};
+
+// =============================================
+// Helper Functions
+// =============================================
+
+/**
+ * Generate payload for document upload
+ * @param data - Document data from Dhiway
+ * @param options - Document metadata options
+ * @param userId - User ID
+ * @returns Formatted payload for upload
+ */
 export const generatePayload = (
 	data: any,
 	options?: Partial<{
@@ -54,37 +103,4 @@ export const generatePayload = (
 	];
 
 	return payload;
-};
-export const getAadhar = async (code: string, userId: string) => {
-	try {
-		const response = await axios.post(
-			`${BASE_URI}/digilocker-auth`,
-			{
-				code,
-				doctype: 'aadhaar',
-			},
-			{
-				headers: {
-					Accept: 'application/json',
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		);
-
-		const payload = generatePayload(
-			response.data.data,
-			{
-				doc_name: 'Aadhaar Card',
-				doc_type: 'idProof',
-				doc_subtype: 'aadhaar',
-			},
-			userId
-		);
-		const uploadToApp = await uploadUserDocuments(payload);
-		return uploadToApp.data;
-	} catch (error) {
-		console.error('Error sending code to DigiLocker API:', error);
-		throw error;
-	}
 };

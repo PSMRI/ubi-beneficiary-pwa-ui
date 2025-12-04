@@ -311,6 +311,7 @@
 	"SIGNUP_MOBILE_NUMBER": "मोबाईल नंबर",
 	"SIGNUP_OTP_ENTER_OTP_LABEL": "एसएमएसने पाठवलेला 6-अंकी ओटीपी प्रविष्ट करा",
 	"SIGNUP_OTP_REQUEST_MESSAGE": "विनंती करा",
+	"SIGN_UP_UPLOAD_OTR": "अपना OTR प्रमाणपत्र अपलोड करा आणि अपना खाता स्वयं रजिस्टर करा.",
 	"SIGNUP_PASSWORD_CONFIRM_PASSWORD_IS_REQUIRED": "पासवर्ड आणि पुष्टी दोन्ही आवश्यक आहेत.",
 	"SIGNUP_PASSWORD_NOT_MATCHING": "पासवर्ड जुळत नाहीत.",
 	"SIGNUP_PASSWORD_VALIDATION_MESSAGE": "पासवर्डमध्ये किमान एक अक्षर, एक संख्या, आणि एक विशेष वर्ण (@, !, #, $, %) असणे आवश्यक आहे.",
@@ -425,5 +426,8 @@
 	"MOTHER": "आई",
 	"GUARDIAN": "पालक",
 	"RELATIVE": "नातेवाईक",
-	"OTHER": "इतर"
+	"OTHER": "इतर",
+	"HOME": "होम",
+	"SEARCH": "शोध",
+	"MY_APPLICATIONS": "माझे आवेदन"
 }

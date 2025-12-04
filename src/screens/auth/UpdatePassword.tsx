@@ -67,35 +67,38 @@ const UpdatePassword: React.FC = () => {
             if (response?.message === 'PASSWORD_UPDATED_SUCCESSFULLY' || response?.data?.message === 'PASSWORD_UPDATED_SUCCESSFULLY') {
                 // Replace prefill_password in sessionStorage with the new password
                 sessionStorage.setItem('prefill_password', newPassword);
-                
+
                 // Set isFirstTimeLogin flag to true in sessionStorage
                 sessionStorage.setItem('isFirstTimeLogin', 'true');
 
                 toast({
-                    title: t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
+                    title: response?.message || t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
                     status: 'success',
                     duration: 4000,
                     isClosable: true,
                 });
-            } else if (response?.data) {
+            } else if (response?.message) {
                 toast({
-                    title: t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
+                    title: response?.message || t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
                     status: 'success',
                     duration: 4000,
                     isClosable: true,
                 });
             }
+            console.log('response<insert>', response.message);
 
             // Clear pending user & redirect to login
             localStorage.removeItem('pendingUser');
             navigate('/signin');
 
         } catch (error: any) {
+            console.log('error+++', error);
 
             if (error?.statusCode === 401) {
+                console.log('error+++', error);
                 toast({
                     title: t('UPDATE_PASSWORD_FAILED') || 'Password update failed',
-                    description: t('UPDATE_PASSWORD_INVALID_OLD_PASSWORD_MESSAGE') || 'Invalid old password',
+                    description: error?.message || t('UPDATE_PASSWORD_INVALID_OLD_PASSWORD_MESSAGE') || 'Invalid old password',
                     status: 'error',
                     duration: 3000,
                     isClosable: true,
@@ -105,9 +108,7 @@ const UpdatePassword: React.FC = () => {
             toast({
                 title: t('UPDATE_PASSWORD_FAILED') || 'Password update failed',
                 description:
-                    error?.response?.data?.message ||
-                    error?.message ||
-                    'Please try again later.',
+                    error?.message || error?.error || 'Please try again later.',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
