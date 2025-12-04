@@ -6,6 +6,7 @@ import { initReactI18next } from 'react-i18next';
 import en from './locales/en.json';
 import hi from './locales/hi.json';
 import mr from './locales/mr.json';
+
 i18n.use(initReactI18next).init({
 	resources: {
 		en: {
@@ -18,7 +19,7 @@ i18n.use(initReactI18next).init({
 			translation: mr,
 		},
 	},
-	lng: 'en', // default language
+	lng: localStorage.getItem('i18nextLng') || 'en', // Read from localStorage or default to 'en'
 	fallbackLng: 'en', // fallback language
 	interpolation: {
 		escapeValue: false, // React already escapes content
