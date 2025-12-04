@@ -1,6 +1,11 @@
-import axios from 'axios';
+import apiClient from '../config/apiClient';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+/**
+ * VC (Verifiable Credential) Service
+ * 
+ * Handles VC creation and retrieval operations
+ * Uses centralized apiClient with automatic token handling and error management
+ */
 
 export class VCService {
 	/**
@@ -29,14 +34,14 @@ export class VCService {
 		};
 	}
 
+	/**
+	 * Get VC (Verifiable Credential) by ID
+	 * @param vcId - VC ID
+	 * @returns VC data
+	 */
 	static async getVCById(vcId: string) {
-		const token = localStorage.getItem('authToken');
 		try {
-			const response = await axios.get(`${apiBaseUrl}/vc/${vcId}`, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			});
+			const response = await apiClient.get(`/vc/${vcId}`);
 			return response.data.data;
 		} catch (error) {
 			console.error('Failed to fetch VC:', error);
