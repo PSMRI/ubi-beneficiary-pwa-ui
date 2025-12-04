@@ -1,5 +1,15 @@
-import axios from 'axios';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+import apiClient from '../../config/apiClient';
+
+/**
+ * User Service
+ * 
+ * All API calls related to user management, document uploads, and profile updates
+ * Uses centralized apiClient with automatic token handling and error management
+ */
+
+// =============================================
+// Document Upload APIs
+// =============================================
 
 /**
  * Uploads a document file to the server
@@ -19,8 +29,6 @@ export const uploadDocument = async (
 	importedFrom: string = 'Manual Upload',
 	issuer?: string
 ) => {
-	const token = localStorage.getItem('authToken');
-
 	try {
 		const formData = new FormData();
 		formData.append('file', file);
@@ -32,15 +40,10 @@ export const uploadDocument = async (
 			formData.append('issuer', issuer);
 		}
 
-		const response = await axios.post(
-			`${apiBaseUrl}/users/upload-document`,
-			formData,
-			{
-				headers: {
-					'Content-Type': 'multipart/form-data',
-					Authorization: `Bearer ${token}`,
-				},
-			}
+		const response = await apiClient.post(
+			'/users/upload-document',
+			formData
+			// Note: Content-Type is automatically handled by interceptor for FormData
 		);
 
 		console.log('Document uploaded successfully:', response.data);
@@ -55,38 +58,32 @@ export const uploadDocument = async (
 		let errorMessage = 'Failed to upload document. Please try again.';
 
 		if (error.response?.data?.message) {
-			// API returned a specific error message
 			errorMessage = error.response.data.message;
 		} else if (error.response?.data?.error) {
-			// Alternative error field
 			errorMessage = error.response.data.error;
 		} else if (error.message) {
-			// Use axios error message
 			errorMessage = error.message;
 		}
 
 		// Throw error with the extracted message
 		const enhancedError = new Error(errorMessage);
-		(enhancedError as any).response = error.response; // Preserve original response for debugging
+		(enhancedError as any).response = error.response;
 		throw enhancedError;
 	}
 };
 
-export const uploadUserDocuments = async (documents) => {
-	const token = localStorage.getItem('authToken');
+/**
+ * Upload user documents (batch upload)
+ * @param documents - Documents data to upload
+ * @returns Response data
+ */
+export const uploadUserDocuments = async (documents: any) => {
 	try {
-		const response = await axios.post(
-			`${apiBaseUrl}/users/wallet/user_docs`,
-			documents,
-			{
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-			}
+		const response = await apiClient.post(
+			'/users/wallet/user_docs',
+			documents
 		);
 
-		// Return response data
 		return response.data;
 	} catch (error: any) {
 		console.error(
@@ -110,30 +107,58 @@ export const uploadUserDocuments = async (documents) => {
 };
 
 /**
+ * Delete a document by ID
+ * @param id - Document ID
+ * @returns Response data
+ */
+export const deleteDocument = async (id: string | number) => {
+	try {
+		const response = await apiClient.delete(`/users/delete-doc/${id}`);
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			'Error in Deleting Document:',
+			error.response?.data || error.message
+		);
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to delete document. Please try again.';
+
+		if (error.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		throw new Error(errorMessage);
+	}
+};
+
+// =============================================
+// User Update APIs
+// =============================================
+
+/**
  * Updates user details via API call.
  * @param {string} userId - The ID of the user to update.
  * @param {Object} data - The payload containing user details.
- * @param {string} token - The authorization token.
  * @returns {Promise} - Promise representing the API response.
  */
-export const updateUserDetails = async (userId, data) => {
-	const token = localStorage.getItem('authToken');
+export const updateUserDetails = async (
+	userId: string | number, 
+	data: any
+) => {
 	console.log('UserID', userId, data);
 	try {
-		const response = await axios.put(
-			`${apiBaseUrl}/users/update/${userId}`,
-			data,
-			{
-				headers: {
-					Accept: '*/*',
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			}
+		const response = await apiClient.put(
+			`/users/update/${userId}`,
+			data
 		);
 
 		console.log('User updated successfully:', response.data);
-		return response.data; // Return response for further handling
+		return response.data;
 	} catch (error: any) {
 		console.error(
 			'Error updating user:',
@@ -167,7 +192,6 @@ export const updateUserProfile = async (
 	whosePhoneNumber: string,
 	picture?: File | null
 ) => {
-	const token = localStorage.getItem('authToken');
 	try {
 		const formData = new FormData();
 		formData.append('phoneNumber', phoneNumber);
@@ -176,21 +200,15 @@ export const updateUserProfile = async (
 			formData.append('picture', picture);
 		}
 
-		const response = await axios.patch(
-			`${apiBaseUrl}/users/update`,
-			formData,
-			{
-				headers: {
-					'Content-Type': 'multipart/form-data',
-					Accept: 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-			}
+		const response = await apiClient.patch(
+			'/users/update',
+			formData
+			// Note: Content-Type is automatically handled by interceptor for FormData
 		);
 
 		console.log('User profile updated successfully:', response.data);
 		return response.data;
-	} catch (error) {
+	} catch (error: any) {
 		console.error(
 			'Error updating user profile:',
 			error.response?.data || error.message
@@ -199,38 +217,9 @@ export const updateUserProfile = async (
 	}
 };
 
-export const deleteDocument = async (id) => {
-	const token = localStorage.getItem('authToken');
-
-	try {
-		const url = `${apiBaseUrl}/users/delete-doc/${id}`;
-		const headers = {
-			Authorization: `Bearer ${token}`,
-		};
-
-		const response = await axios.delete(url, { headers });
-
-		return response.data;
-	} catch (error: any) {
-		console.error(
-			'Error in Deleteing Document:',
-			error.response?.data || error.message
-		);
-
-		// Extract error message from API response
-		let errorMessage = 'Failed to delete document. Please try again.';
-
-		if (error.response?.data?.message) {
-			errorMessage = error.response.data.message;
-		} else if (error.response?.data?.error) {
-			errorMessage = error.response.data.error;
-		} else if (error.message) {
-			errorMessage = error.message;
-		}
-
-		throw new Error(errorMessage);
-	}
-};
+// =============================================
+// User Fields APIs
+// =============================================
 
 /**
  * Fetches fields from the API based on context and filter criteria.
@@ -242,17 +231,9 @@ export const getUserFields = async (
 	context = 'USERS',
 	filterDataFields = 'name,label'
 ) => {
-	const token = localStorage.getItem('authToken');
-
 	try {
-		const response = await axios.get(
-			`${apiBaseUrl}/fields?context=${context}&filterDataFields=${filterDataFields}`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			}
+		const response = await apiClient.get(
+			`/fields?context=${context}&filterDataFields=${filterDataFields}`
 		);
 
 		return response.data;
@@ -282,17 +263,9 @@ export const getUserFields = async (
  * @returns {Promise<Array>} - Promise representing the API response.
  */
 export const getUserProfileFields = async () => {
-	const token = localStorage.getItem('authToken');
-
 	try {
-		const response = await axios.get(
-			`${apiBaseUrl}/fields?context=USERS&contextType=User`,
-			{
-				headers: {
-					Authorization: `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			}
+		const response = await apiClient.get(
+			'/fields?context=USERS&contextType=User'
 		);
 
 		return response.data;

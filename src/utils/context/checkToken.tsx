@@ -101,6 +101,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 	};
 	const selectLanguage = (lang: string) => {
 		setLanguage({ name: lang });
+		// Explicitly save to localStorage for API client
+		localStorage.setItem('i18nextLng', lang);
 	};
 	useEffect(() => {
 		checkToken();
