@@ -56,19 +56,9 @@ const createDhiwayClient = (): AxiosInstance => {
 				config.headers.Authorization = `Bearer ${DHIWAY_TOKEN}`;
 			}
 
-			// Log request in development mode
-			if (import.meta.env.DEV) {
-				console.log('🚀 Dhiway API Request:', {
-					method: config.method?.toUpperCase(),
-					url: config.url,
-					hasAuth: !!config.headers.Authorization,
-				});
-			}
-
 			return config;
 		},
 		(error: AxiosError) => {
-			console.error('❌ Dhiway Request Interceptor Error:', error);
 			return Promise.reject(error);
 		}
 	);
@@ -78,26 +68,9 @@ const createDhiwayClient = (): AxiosInstance => {
 	// =============================================
 	instance.interceptors.response.use(
 		(response: AxiosResponse) => {
-			// Log successful response in development mode
-			if (import.meta.env.DEV) {
-				console.log('✅ Dhiway API Response:', {
-					url: response.config.url,
-					status: response.status,
-				});
-			}
-
 			return response;
 		},
 		(error: AxiosError) => {
-			// Log error in development mode
-			if (import.meta.env.DEV) {
-				console.error('❌ Dhiway API Error:', {
-					url: error.config?.url,
-					status: error.response?.status,
-					message: extractErrorMessage(error),
-				});
-			}
-
 			// Handle errors
 			if (error.response) {
 				const status = error.response.status;

@@ -161,20 +161,9 @@ const createApiClient = (): AxiosInstance => {
                 delete config.headers['Content-Type'];
             }
 
-            // 4. Log request in development mode
-            if (import.meta.env.DEV) {
-                console.log('🚀 API Request:', {
-                    method: config.method?.toUpperCase(),
-                    url: config.url,
-                    hasAuth: !!config.headers.Authorization,
-                    language: acceptLanguage,
-                });
-            }
-
             return config;
         },
         (error: AxiosError) => {
-            console.error('❌ Request Interceptor Error:', error);
             return Promise.reject(error);
         }
     );
@@ -184,27 +173,11 @@ const createApiClient = (): AxiosInstance => {
     // =============================================
     instance.interceptors.response.use(
         (response: AxiosResponse) => {
-            // Log successful response in development mode
-            if (import.meta.env.DEV) {
-                console.log('✅ API Response:', {
-                    url: response.config.url,
-                    status: response.status,
-                });
-            }
 
             // Return the full response (let services handle data extraction)
             return response;
         },
         async (error: AxiosError) => {
-            // Log error in development mode
-            if (import.meta.env.DEV) {
-                console.error('❌ API Error:', {
-                    url: error.config?.url,
-                    status: error.response?.status,
-                    message: extractErrorMessage(error),
-                });
-            }
-
             // Handle different error scenarios
             if (error.response) {
                 const status = error.response.status;
