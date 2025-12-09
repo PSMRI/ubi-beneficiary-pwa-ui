@@ -122,11 +122,22 @@ export const getAll = async (
 			strictCheck: userData.strictCheck ?? false,
 		};
 
-		// Note: For public searches (sendToken=false), the interceptor will skip auth
-		// For authenticated searches, token will be added automatically
+		// ✅ Build headers dynamically
+		const headers: any = {};
+
+		if (sendToken) {
+			const token = localStorage.getItem('authToken');
+			if (token) {
+				headers.Authorization = `Bearer ${token}`;
+			}
+		}
+
 		const response = await apiClient.post(
 			'/content/search',
-			finalPayload
+			finalPayload,
+			{
+				headers,
+			}
 		);
 
 		return response.data;
@@ -134,6 +145,7 @@ export const getAll = async (
 		handleError(error);
 	}
 };
+
 
 /**
  * Get detailed information about a specific benefit
