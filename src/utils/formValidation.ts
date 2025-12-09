@@ -104,3 +104,64 @@ export const validateFormData = (
     return errors;
 };
 
+/**
+ * Simplified and efficient mobile number validation
+ * @param phoneNumber - The phone number to validate
+ * @returns Object with isValid boolean and error key
+ */
+export const validateMobileNumber = (phoneNumber: string): {
+    isValid: boolean;
+    errorKey: string;
+} => {
+    // Allow empty (optional field)
+    const trimmedNumber = phoneNumber.trim();
+    if (!trimmedNumber) {
+        return { isValid: true, errorKey: '' };
+    }
+
+    // 1. Basic format: exactly 10 digits
+    if (!/^\d{10}$/.test(trimmedNumber)) {
+        return { isValid: false, errorKey: 'EDITPROFILE_MOBILE_INVALID_FORMAT' };
+    }
+
+    // 2. Indian mobile pattern: must start with 6-9
+    if (!/^[6-9]/.test(trimmedNumber)) {
+        return { isValid: false, errorKey: 'EDITPROFILE_MOBILE_INVALID_PATTERN' };
+    }
+
+    // 3. Block obvious invalid patterns
+    if (isObviouslyInvalid(trimmedNumber)) {
+        return { isValid: false, errorKey: 'EDITPROFILE_MOBILE_INVALID_PATTERN' };
+    }
+
+    return { isValid: true, errorKey: '' };
+};
+
+/**
+ * Check for obviously invalid mobile number patterns
+ * Focuses only on the most common and problematic patterns
+ */
+const isObviouslyInvalid = (phone: string): boolean => {
+    // 1. All zeros
+    if (phone === '0000000000') return true;
+    
+    // 2. All same digits (1111111111, 2222222222, etc.)
+    if (/^(\d)\1{9}$/.test(phone)) return true;
+    
+    // 3. Simple sequential patterns
+    const sequences = [
+        '1234567890', '0123456789', '9876543210', 
+        '0987654321', '1234512345'
+    ];
+    if (sequences.includes(phone)) return true;
+    
+    // 4. Simple alternating patterns (only the most obvious)
+    if (/^(\d)(\d)\1\2\1\2\1\2\1\2$/.test(phone)) return true; // 1212121212
+    
+    // 5. Too many consecutive identical digits (more than 4 in a row)
+    if (/(\d)\1{4,}/.test(phone)) return true; // 11111, 222222, etc.
+    
+    return false;
+};
+
+

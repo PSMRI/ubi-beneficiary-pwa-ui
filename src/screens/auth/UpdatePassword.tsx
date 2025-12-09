@@ -63,28 +63,19 @@ const UpdatePassword: React.FC = () => {
                 newPassword,
             });
 
-            // Check if response contains PASSWORD_UPDATED_SUCCESSFULLY message
-            if (response?.message === 'PASSWORD_UPDATED_SUCCESSFULLY' || response?.data?.message === 'PASSWORD_UPDATED_SUCCESSFULLY') {
-                // Replace prefill_password in sessionStorage with the new password
-                sessionStorage.setItem('prefill_password', newPassword);
+            // If we reach here, the update was successful
+            // Replace prefill_password in sessionStorage with the new password
+            sessionStorage.setItem('prefill_password', newPassword);
 
-                // Set isFirstTimeLogin flag to true in sessionStorage
-                sessionStorage.setItem('isFirstTimeLogin', 'true');
+            // Set isFirstTimeLogin flag to true in sessionStorage
+            sessionStorage.setItem('isFirstTimeLogin', 'true');
 
-                toast({
-                    title: response?.message || t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
-                    status: 'success',
-                    duration: 4000,
-                    isClosable: true,
-                });
-            } else if (response?.message) {
-                toast({
-                    title: response?.message || t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
-                    status: 'success',
-                    duration: 4000,
-                    isClosable: true,
-                });
-            }
+            toast({
+                title: response?.message || t('UPDATE_PASSWORD_SUCCESS') || 'Password updated successfully!',
+                status: 'success',
+                duration: 4000,
+                isClosable: true,
+            });
             console.log('response<insert>', response.message);
 
             // Clear pending user & redirect to login
