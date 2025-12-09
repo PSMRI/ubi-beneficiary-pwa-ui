@@ -260,9 +260,9 @@ const EditUserProfile: React.FC = () => {
 			});
 
 			// Redirect to userprofile page after profile update (for both first-time and regular updates)
-			// Using React Router navigation for SPA behavior
+			// Using window.location.href to avoid authentication issues with React navigation
 			setTimeout(() => {
-				navigate('/userprofile');
+				window.location.href = '/userprofile';
 			}, 1500);
 		} catch (error: any) {
 			toast({
