@@ -249,29 +249,12 @@ const EditUserProfile: React.FC = () => {
 			await updateUserProfile(phoneNumber, contactNumber, profilePicture);
 
 			toast({
-				title: 'Profile Updated',
-				description: 'Your profile has been updated successfully.',
+				title: t('EDITPROFILE_PROFILE_UPDATED_TITLE') || 'Profile Updated',
+				description: t('EDITPROFILE_PROFILE_UPDATED_DESCRIPTION') || 'Your profile has been updated successfully.',
 				status: 'success',
 				duration: 3000,
 				isClosable: true,
 			});
-
-			// Check if this was a first-time login flow
-			const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
-			if (isFirstTimeLogin === 'true') {
-				// Set isFirstTimeLogin to false first
-				sessionStorage.setItem('isFirstTimeLogin', 'false');
-
-				// Show success message for setup completion
-				toast({
-					title: 'Setup Complete!',
-					description:
-						'Your profile has been set up successfully. Redirecting to sign in...',
-					status: 'success',
-					duration: 3000,
-					isClosable: true,
-				});
-			}
 
 			// Redirect to userprofile page after profile update (for both first-time and regular updates)
 			// Using window.location.href to avoid authentication issues with React navigation
@@ -280,11 +263,11 @@ const EditUserProfile: React.FC = () => {
 			}, 1500);
 		} catch (error: any) {
 			toast({
-				title: 'Update Failed',
+				title: t('EDITPROFILE_UPDATE_FAILED_TITLE') || 'Update Failed',
 				description:
 					error?.response?.data?.message ||
 					error?.message ||
-					'Failed to update profile. Please try again.',
+					t('EDITPROFILE_UPDATE_ERROR') || 'Failed to update profile. Please try again.',
 				status: 'error',
 				duration: 3000,
 				isClosable: true,
