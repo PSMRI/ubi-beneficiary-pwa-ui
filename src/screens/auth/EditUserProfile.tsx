@@ -36,6 +36,7 @@ import CommonDialogue from '../../components/common/Dialogue';
 import termsAndConditions from '../../assets/termsAndConditions.json';
 import { useCameraCapture } from '../../components/scan/hooks/useCameraCapture';
 import { CapturedImagePreview } from '../../components/scan/CapturedImagePreview';
+import { validateMobileNumber } from '../../utils/formValidation';
 
 const EditUserProfile: React.FC = () => {
 	const { t } = useTranslation();
@@ -46,6 +47,7 @@ const EditUserProfile: React.FC = () => {
 	const updateUserData = authContext?.updateUserData;
 
 	const [phoneNumber, setPhoneNumber] = useState<string>('');
+	const [phoneNumberError, setPhoneNumberError] = useState<string>('');
 	const [profilePicture, setProfilePicture] = useState<File | null>(null);
 	const [profilePicturePreview, setProfilePicturePreview] = useState<
 		string | null
@@ -229,19 +231,20 @@ const EditUserProfile: React.FC = () => {
 		}
 	};
 
-	const handleSubmit = async () => {
-		// Validate phone number if provided
-		if (phoneNumber.trim() && !/^\d{10}$/.test(phoneNumber.trim())) {
-			toast({
-				title: 'Validation Error',
-				description: 'Phone number must be exactly 10 digits.',
-				status: 'error',
-				duration: 3000,
-				isClosable: true,
-			});
-			return;
+	// Real-time phone number validation
+	const handlePhoneNumberChange = (value: string) => {
+		setPhoneNumber(value);
+		
+		// Validate phone number in real-time
+		const mobileValidation = validateMobileNumber(value);
+		if (!mobileValidation.isValid && value.trim() !== '') {
+			setPhoneNumberError(t(mobileValidation.errorKey) || 'Please enter a valid mobile number.');
+		} else {
+			setPhoneNumberError('');
 		}
+	};
 
+	const handleSubmit = async () => {
 		try {
 			setLoading(true);
 
@@ -430,20 +433,12 @@ const EditUserProfile: React.FC = () => {
 									''
 								); // Remove non-digits
 								if (value.length <= 10) {
-									setPhoneNumber(value);
+									handlePhoneNumberChange(value);
 								}
 							}}
 							name="phoneNumber"
-							isInvalid={
-								phoneNumber.trim() !== '' &&
-								!/^\d{10}$/.test(phoneNumber.trim())
-							}
-							errorMessage={
-								phoneNumber.trim() !== '' &&
-								!/^\d{10}$/.test(phoneNumber.trim())
-									? 'Phone number must be exactly 10 digits'
-									: ''
-							}
+							isInvalid={phoneNumberError !== ''}
+							errorMessage={phoneNumberError}
 						/>
 					</FormControl>
 					<FormControl>
@@ -666,7 +661,7 @@ const EditUserProfile: React.FC = () => {
 						loadingLabel="Saving..."
 						onClick={handleSubmit}
 						label={t('COMMON_BUTTON_SUBMIT_LABEL')}
-						isDisabled={false}
+						isDisabled={phoneNumberError !== ''}
 					/>
 				</VStack>
 			</Box>
