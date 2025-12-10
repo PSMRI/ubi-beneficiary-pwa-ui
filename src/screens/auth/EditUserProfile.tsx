@@ -259,6 +259,13 @@ const EditUserProfile: React.FC = () => {
 				isClosable: true,
 			});
 
+			// Check if this was a first-time login flow
+			const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
+			if (isFirstTimeLogin === 'true') {
+				// Set isFirstTimeLogin to false first
+				sessionStorage.setItem('isFirstTimeLogin', 'false');
+			}
+
 			// Redirect to userprofile page after profile update (for both first-time and regular updates)
 			// Using window.location.href to avoid authentication issues with React navigation
 			setTimeout(() => {
