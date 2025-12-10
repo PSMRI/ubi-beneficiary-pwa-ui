@@ -22,7 +22,7 @@ const UserProfile: React.FC = () => {
 	const { t } = useTranslation();
 	const [userName, setUserName] = useState('');
 	const handleBack = () => {
-		navigate('/');
+		navigate(-2);
 	};
 	// Function to fetch user data and documents
 	const init = async () => {
