@@ -48,10 +48,10 @@ const SignUpWithOtr: React.FC = () => {
 
             navigate('/signin');
         } catch (error: any) {
-            console.error('Error in register_with_document:', error?.response?.data?.error);
+            console.error('Error in register_with_document:', error);
             toast({
                 title: t('SIGNUP_FAILED'),
-                description: error?.response?.data?.error || 'Failed to register user with OTR certificate.',
+                description: error?.error || error?.message || error?.response?.data?.error || 'Failed to register user with OTR certificate.',
                 status: 'error',
                 duration: 7000,
                 isClosable: true,

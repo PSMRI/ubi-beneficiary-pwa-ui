@@ -315,28 +315,37 @@ export const registerWithDocument = async (
 	formData.append('importedFrom', importedFrom);
 	formData.append('file', file);
 
-	const response = await apiClient.post(
-		'/auth/register_with_document',
-		formData
-		// Note: Content-Type header is automatically set for FormData by interceptor
-	);
-
-	console.log(response.data, 'response');
-
-	// Store credentials for prefilling login form if available
-	if (
-		response?.data?.data?.user?.userName &&
-		response?.data?.data?.password
-	) {
-		sessionStorage.setItem(
-			'prefill_username',
-			response.data.data.user.userName
+	try {
+		const response = await apiClient.post(
+			'/auth/register_with_document',
+			formData
+			// Content-Type header is auto-set for FormData
 		);
-		sessionStorage.setItem(
-			'prefill_password',
-			response.data?.data?.password
-		);
+
+		console.log(response.data, 'response');
+
+		// Store credentials for prefilling login form if available
+		if (
+			response?.data?.data?.user?.userName &&
+			response?.data?.data?.password
+		) {
+			sessionStorage.setItem(
+				'prefill_username',
+				response.data.data.user.userName
+			);
+			sessionStorage.setItem(
+				'prefill_password',
+				response.data?.data?.password
+			);
+		}
+
+		return response.data;
+	} catch (error: any) {
+		// Always throw a normalized error
+		throw {
+			error: error?.response?.data?.error || error?.error || error?.message || 'Registration failed!',
+			statusCode: error?.response?.data?.statusCode || error?.status || 500,
+			full: error,
+		};
 	}
-
-	return response.data;
 };
