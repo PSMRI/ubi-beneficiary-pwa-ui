@@ -34,6 +34,7 @@ interface DocumentConfig {
 	docQRContains?: string;
 	issuer?: string; // Issuer ID (e.g., "passport_seva")
 	spaceId?: string;
+	ocrMappingPrompt?: string;
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -206,6 +207,7 @@ const DocumentConfig = () => {
 							docQRContains: item.docQRContains || '',
 							issuer: item.issuer || '',
 							spaceId: item.spaceId || '',
+							ocrMappingPrompt: item.ocrMappingPrompt || item.OCR_MAPPING_PROMPT_TEMPLATE || '',
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -223,6 +225,7 @@ const DocumentConfig = () => {
 							docQRContains: '',
 							issuer: '',
 							spaceId: '',
+							ocrMappingPrompt: '',
 						},
 					]);
 				}
@@ -361,6 +364,7 @@ const DocumentConfig = () => {
 				docQRContains: '',
 				issuer: '',
 				spaceId: '',
+				ocrMappingPrompt: '',
 			},
 		]);
 	};
@@ -460,6 +464,7 @@ const DocumentConfig = () => {
 				docQRContains: doc.docQRContains,
 				issuer: doc.issuer,
 				spaceId: doc.spaceId,
+				ocrMappingPrompt: doc.ocrMappingPrompt || '',
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 
@@ -1219,6 +1224,68 @@ const DocumentConfig = () => {
 											/>
 											<FormErrorMessage fontSize="xs">
 												{errors[`vcFields_${index}`]}
+											</FormErrorMessage>
+										</FormControl>
+										<FormControl
+											isInvalid={
+												!!errors[`ocrMappingPrompt_${index}`]
+											}
+										>
+											<FormLabel
+												fontSize="md"
+												fontWeight="bold"
+												color="#06164B"
+											>
+												{t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_LABEL'
+												)}
+											</FormLabel>
+											<Text
+												color="#06164B"
+												fontSize={12}
+												mb={2}
+												fontWeight="normal"
+											>
+												{t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_DESCRIPTION'
+												)}
+											</Text>
+											<Text
+												color="blue.600"
+												fontSize={11}
+												mb={3}
+												fontStyle="italic"
+											>
+												{t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDERS_INFO'
+												)}
+											</Text>
+											<Textarea
+												value={doc.ocrMappingPrompt || ''}
+												onChange={(e) =>
+													handleChange(
+														index,
+														'ocrMappingPrompt',
+														e.target.value
+													)
+												}
+												placeholder={t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDER'
+												)}
+												resize="vertical"
+												minH="150px"
+												bg="white"
+												size="lg"
+												borderWidth="2px"
+												borderRadius="md"
+												_focus={{
+													borderColor: 'blue.400',
+													boxShadow:
+														'0 0 0 2px #06164B33',
+												}}
+											/>
+											<FormErrorMessage fontSize="xs">
+												{errors[`ocrMappingPrompt_${index}`]}
 											</FormErrorMessage>
 										</FormControl>
 									</VStack>
