@@ -107,6 +107,69 @@ export const uploadUserDocuments = async (documents: any) => {
 };
 
 /**
+ * Upload document via QR code scan
+ * Uploads document directly using QR content without requiring file upload
+ * @param {Object} payload - QR document upload payload
+ * @param {string} payload.docType - Type of document (e.g., 'casteProof')
+ * @param {string} payload.docSubType - Sub-type of document (e.g., 'casteCertificate')
+ * @param {string} payload.docName - Name of the document (e.g., 'Caste Certificate')
+ * @param {string} payload.importedFrom - Source of upload (default: 'QR Code')
+ * @param {string} payload.qrContent - The QR code content extracted from scan
+ * @param {string} [payload.issuer] - Optional issuer identifier
+ * @returns {Promise} - Promise representing the API response
+ */
+export const uploadDocumentQR = async (payload: {
+	docType: string;
+	docSubType: string;
+	docName: string;
+	importedFrom: string;
+	qrContent: string;
+	issuer?: string;
+}) => {
+	try {
+		const formData = new FormData();
+		formData.append('docType', payload.docType);
+		formData.append('docSubType', payload.docSubType);
+		formData.append('docName', payload.docName);
+		formData.append('importedFrom', payload.importedFrom);
+		formData.append('qrContent', payload.qrContent);
+		if (payload.issuer) {
+			formData.append('issuer', payload.issuer);
+		}
+
+		const response = await apiClient.post(
+			'/users/upload-document-qr',
+			formData
+			// Note: Content-Type is automatically handled by interceptor for FormData
+		);
+
+		console.log('QR document uploaded successfully:', response.data);
+		return response.data;
+	} catch (error: any) {
+		console.error(
+			'Error uploading QR document:',
+			error.response?.data || error.message
+		);
+
+		// Extract error message from API response
+		let errorMessage = 'Failed to upload document via QR. Please try again.';
+
+		if (error.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error.response?.data?.error) {
+			errorMessage = error.response.data.error;
+		} else if (error.message) {
+			errorMessage = error.message;
+		}
+
+		// Throw error with the extracted message and preserve response
+		const enhancedError = new Error(errorMessage);
+		(enhancedError as any).response = error.response;
+		throw enhancedError;
+	}
+};
+
+/**
  * Delete a document by ID
  * @param id - Document ID
  * @returns Response data
