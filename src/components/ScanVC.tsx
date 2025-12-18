@@ -18,8 +18,10 @@ interface ScanVCProps {
 		documentSubType: string;
 		label: string;
 		name: string;
+		docHasORCode?: string;
 	};
 	onUploadSuccess?: (response?: any, uploadedFile?: File) => void;
+	onQRScanSuccess?: (qrContent: string) => void;
 }
 
 const ScanVC: React.FC<ScanVCProps> = ({
@@ -27,10 +29,11 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	showHeader = true,
 	documentConfig,
 	onUploadSuccess,
+	onQRScanSuccess,
 }) => {
 	const { t } = useTranslation();
 
-	// QR Scanner hook
+	// QR Scanner hook for legacy VC flow (uses fetch-vc-json)
 	const {
 		scanning,
 		isCameraStarting,
@@ -38,6 +41,21 @@ const ScanVC: React.FC<ScanVCProps> = ({
 		startCamera,
 		stopCamera,
 	} = useQRScanner({ onScanResult });
+
+	// QR Scanner hook for new direct upload flow (uses upload-document-qr)
+	const {
+		scanning: scanningForUpload,
+		isCameraStarting: isCameraStartingForUpload,
+		cameraError: qrCameraErrorForUpload,
+		startCamera: startCameraForUpload,
+		stopCamera: stopCameraForUpload,
+	} = useQRScanner({ 
+		onScanResult: (result) => {
+			if (onQRScanSuccess) {
+				onQRScanSuccess(result);
+			}
+		}
+	});
 
 	// Camera capture hook
 	const {
@@ -73,25 +91,28 @@ const ScanVC: React.FC<ScanVCProps> = ({
 			},
 		});
 
-	// Combined camera error from both hooks
-	const cameraError = qrCameraError || captureCameraError;
+	// Combined camera error from all hooks
+	const cameraError = qrCameraError || qrCameraErrorForUpload || captureCameraError;
 
 	// Stop cameras on unmount
 	useEffect(() => {
 		return () => {
 			stopCamera();
+			stopCameraForUpload();
 			stopCaptureCamera();
 		};
-	}, [stopCamera, stopCaptureCamera]);
+	}, [stopCamera, stopCameraForUpload, stopCaptureCamera]);
 
 	// Handle camera coordination
-	const handleStartQRScanner = async () => {
+	const handleStartQRScannerForUpload = async () => {
 		stopCaptureCamera();
-		await startCamera();
+		stopCamera();
+		await startCameraForUpload();
 	};
 
 	const handleStartCaptureCamera = async () => {
 		stopCamera();
+		stopCameraForUpload();
 		await startCaptureCamera();
 	};
 
@@ -104,8 +125,9 @@ const ScanVC: React.FC<ScanVCProps> = ({
 		<Box px={3} py={1} height="100%">
 			<VStack spacing={2} align="stretch" width="100%" height="100%">
 				{/* Show buttons when not scanning or capturing */}
-				{!scanning && !isCapturing && !capturedImage && (
+				{!scanning && !scanningForUpload && !isCapturing && !capturedImage && (
 					<Box textAlign="center" py={1}>
+						{/* LEGACY: Scan VC QR Code button (uses fetch-vc-json) - COMMENTED OUT */}
 						{/* <Button
 							colorScheme="blue"
 							size="md"
@@ -113,11 +135,12 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							onClick={handleStartQRScanner}
 							isLoading={isCameraStarting}
 							loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
+							mb={3}
 						>
-							{t('SCAN_START_CAMERA_BUTTON')}
-						</Button> */}
+							{t('SCAN_START_CAMERA_BUTTON') || 'Scan VC QR Code'}
+						</Button>
 
-						{/* <Text
+						<Text
 							textAlign="center"
 							fontWeight="semibold"
 							color="gray.500"
@@ -163,7 +186,7 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							{t('OR')}
 						</Text>
 						<Button
-							colorScheme="purple"
+							colorScheme="green"
 							size="md"
 							width="full"
 							onClick={handleStartCaptureCamera}
@@ -172,16 +195,54 @@ const ScanVC: React.FC<ScanVCProps> = ({
 						>
 							{t('SCAN_CAPTURE_PHOTO_CAMERA')}
 						</Button>
+
+						{/* NEW: Scan QR Code button for direct QR upload (only if docHasORCode is "yes") */}
+						{documentConfig?.docHasORCode === 'yes' && (
+							<>
+								<Text
+									textAlign="center"
+									fontWeight="semibold"
+									color="gray.500"
+									my={3}
+								>
+									{t('OR')}
+								</Text>
+								<Button
+									colorScheme="purple"
+									size="md"
+									width="full"
+									onClick={handleStartQRScannerForUpload}
+									isLoading={isCameraStartingForUpload}
+									loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
+									mb={3}
+								>
+									{t('SCAN_QR_CODE_UPLOAD_BUTTON') || 'Scan QR Code for Upload'}
+								</Button>
+							</>
+						)}
 					</Box>
 				)}
 
-				{/* QR Scanner controls */}
+				{/* QR Scanner controls for legacy flow */}
 				{scanning && (
 					<Box textAlign="center" pb={1}>
 						<Button
 							colorScheme="red"
 							size="sm"
 							onClick={stopCamera}
+						>
+							{t('SCAN_STOP_SCANNING_BUTTON')}
+						</Button>
+					</Box>
+				)}
+
+				{/* QR Scanner controls for new upload flow */}
+				{scanningForUpload && (
+					<Box textAlign="center" pb={1}>
+						<Button
+							colorScheme="red"
+							size="sm"
+							onClick={stopCameraForUpload}
 						>
 							{t('SCAN_STOP_SCANNING_BUTTON')}
 						</Button>
@@ -265,8 +326,8 @@ const ScanVC: React.FC<ScanVCProps> = ({
 				<Box
 					id={SCANNER_CONTAINER_ID}
 					width="100%"
-					flex={scanning ? '1' : 'initial'}
-					minHeight={scanning ? '0' : 'initial'}
+					flex={scanning || scanningForUpload ? '1' : 'initial'}
+					minHeight={scanning || scanningForUpload ? '0' : 'initial'}
 				/>
 			</VStack>
 

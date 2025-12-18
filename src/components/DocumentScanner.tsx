@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from './common/layout/Layout';
 import ScanVC from './ScanVC';
 import { getDocumentsList, getUser } from '../services/auth/auth';
-import { uploadUserDocuments } from '../services/user/User';
+import { uploadUserDocuments, uploadDocumentQR } from '../services/user/User';
 import { findDocumentStatus, getExpiryDate } from '../utils/jsHelper/helper';
 import { AuthContext } from '../utils/context/checkToken';
 import { fetchVCJson } from '../services/benefit/benefits';
@@ -35,6 +35,7 @@ interface Document {
 	documentSubType: string;
 	docType: string;
 	issuer?: string;
+	docHasORCode?: string;
 }
 
 interface UserDocument {
@@ -199,6 +200,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isUploadingQR, setIsUploadingQR] = useState(false);
 	const [pendingVerificationDocs, setPendingVerificationDocs] = useState<
 		Set<string>
 	>(new Set());
@@ -235,6 +237,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						documentSubType: doc.documentSubType,
 						docType: doc.docType,
 						issuer: doc.issuer,
+						docHasORCode: doc.docHasORCode,
 					}));
 				setDocuments(formattedDocuments);
 			} catch (error) {
@@ -299,6 +302,94 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 		checkPendingVerification();
 	}, [documents, userData]);
+
+	// NEW: Handle QR scan success - Direct upload to /upload-document-qr
+	const handleQRScanSuccess = async (qrContent: string) => {
+		if (!selectedDocument) return;
+
+		setIsUploadingQR(true);
+		setIsLoading(true);
+
+		try {
+			const docConfig = documents.find(
+				(doc) => doc.name === selectedDocument.name
+			);
+			if (!docConfig) {
+				throw new Error(t('DOCUMENT_SCANNER_ERROR_INVALID_TYPE'));
+			}
+
+			console.log('QR Content scanned:', qrContent);
+
+			// Call the new QR upload API
+			const response = await uploadDocumentQR({
+				docType: docConfig.docType,
+				docSubType: docConfig.documentSubType,
+				docName: selectedDocument.name,
+				importedFrom: 'QR Code',
+				qrContent: qrContent,
+				issuer: docConfig.issuer,
+			});
+
+			console.log('QR document uploaded successfully:', response);
+
+			// Refresh user data to update the UI
+			const userResult = await getUser();
+			const docsResult = await getDocumentsList();
+			updateUserData(userResult?.data, docsResult.data.value);
+
+			toast({
+				title: t('DOCUMENT_SCANNER_SUCCESS_TITLE'),
+				description: t('DOCUMENT_SCANNER_QR_SUCCESS') || 'Document uploaded successfully via QR code',
+				status: 'success',
+				duration: 3000,
+				isClosable: true,
+			});
+
+			// Navigate to home page after successful upload
+			navigate('/');
+		} catch (error) {
+			console.error('Error uploading QR document:', error);
+
+			const apiErrors = error?.response?.data?.errors;
+			if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+				const errorMessages =
+					apiErrors.length === 1
+						? (apiErrors[0].error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
+						: apiErrors
+								.map(
+									(errObj, idx) =>
+										`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
+								)
+								.join('\n');
+				toast({
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
+					description: (
+						<Box as="span" whiteSpace="pre-line">
+							{errorMessages}
+						</Box>
+					),
+					status: 'error',
+					duration: 10000,
+					isClosable: true,
+				});
+			} else {
+				toast({
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
+					description:
+						error?.response?.data?.message ??
+						(error instanceof Error
+							? error.message
+							: t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')),
+					status: 'error',
+					duration: 10000,
+					isClosable: true,
+				});
+			}
+		} finally {
+			setIsUploadingQR(false);
+			setIsLoading(false);
+		}
+	};
 
 	const handleScanResult = async (result: string) => {
 		if (!selectedDocument) return;
@@ -544,8 +635,10 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						documentSubType: selectedDocument.documentSubType,
 						label: selectedDocument.label,
 						name: selectedDocument.name,
+						docHasORCode: selectedDocument.docHasORCode,
 					}}
 					onUploadSuccess={handleUploadSuccess}
+					onQRScanSuccess={handleQRScanSuccess}
 				/>
 			</Layout>
 		);
