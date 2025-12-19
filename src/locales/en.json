@@ -293,7 +293,7 @@
 	"SCAN_DOCUMENTS_TITLE": "Scan Documents",
 	"SCAN_QR_CODE_SCANNER_TITLE": "QR Code Scanner",
 	"SCAN_START_CAMERA_BUTTON": "Scan VC QR Code",
-	"SCAN_QR_CODE_UPLOAD_BUTTON": "Scan QR Code for Upload",
+	"SCAN_QR_CODE_UPLOAD_BUTTON": "Scan QR Code",
 	"SCAN_STARTING_CAMERA_LOADING": "Starting Camera...",
 	"SCAN_STOP_SCANNING_BUTTON": "Stop Scanning",
 	"SCAN_UPLOAD_DOCUMENT": "Scan & Upload Documents",
