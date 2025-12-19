@@ -149,56 +149,49 @@ const ScanVC: React.FC<ScanVCProps> = ({
 							{t('OR')}
 						</Text> */}
 
-						<Button
-							as="label"
-							colorScheme="teal"
-							size="md"
-							width="full"
-							isLoading={isUploading || isConverting}
-							loadingText={t('SCAN_UPLOADING') || 'Uploading...'}
-							isDisabled={isUploading || isConverting}
-							cursor={
-								isUploading || isConverting
-									? 'not-allowed'
-									: 'pointer'
-							}
-						>
-							{!isUploading && !isConverting && (
-								<span>
-									{t('UPLOAD_DOCUMENT_FOR_VC') || 'Upload Document'} ({'<'}{' '}
-									{MAX_FILE_SIZE_MB}MB)
-								</span>
-							)}
-							<input
-								type="file"
-								accept="image/*,application/pdf"
-								onChange={handleFileSelect}
-								hidden
-								disabled={isUploading || isConverting}
-							/>
-						</Button>
-						<Text
-							textAlign="center"
-							fontWeight="semibold"
-							color="gray.500"
-							my={3}
-						>
-							{t('OR')}
-						</Text>
-						<Button
-							colorScheme="green"
-							size="md"
-							width="full"
-							onClick={handleStartCaptureCamera}
-							mb={3}
-							isDisabled={isUploading || isConverting}
-						>
-							{t('SCAN_CAPTURE_PHOTO_CAMERA')}
-						</Button>
-
-						{/* NEW: Scan QR Code button for direct QR upload (only if docHasORCode is "yes") */}
-						{documentConfig?.docHasORCode === 'yes' && (
+						{/* Show only QR Code scanner if docHasORCode is "yes" */}
+						{documentConfig?.docHasORCode === 'yes' ? (
+							<Button
+								colorScheme="purple"
+								size="md"
+								width="full"
+								onClick={handleStartQRScannerForUpload}
+								isLoading={isCameraStartingForUpload}
+								loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
+								mb={3}
+							>
+								{t('SCAN_QR_CODE_UPLOAD_BUTTON') || 'Scan QR Code'}
+							</Button>
+						) : (
 							<>
+								<Button
+									as="label"
+									colorScheme="teal"
+									size="md"
+									width="full"
+									isLoading={isUploading || isConverting}
+									loadingText={t('SCAN_UPLOADING') || 'Uploading...'}
+									isDisabled={isUploading || isConverting}
+									cursor={
+										isUploading || isConverting
+											? 'not-allowed'
+											: 'pointer'
+									}
+								>
+									{!isUploading && !isConverting && (
+										<span>
+											{t('UPLOAD_DOCUMENT_FOR_VC') || 'Upload Document'} ({'<'}{' '}
+											{MAX_FILE_SIZE_MB}MB)
+										</span>
+									)}
+									<input
+										type="file"
+										accept="image/*,application/pdf"
+										onChange={handleFileSelect}
+										hidden
+										disabled={isUploading || isConverting}
+									/>
+								</Button>
 								<Text
 									textAlign="center"
 									fontWeight="semibold"
@@ -208,15 +201,14 @@ const ScanVC: React.FC<ScanVCProps> = ({
 									{t('OR')}
 								</Text>
 								<Button
-									colorScheme="purple"
+									colorScheme="green"
 									size="md"
 									width="full"
-									onClick={handleStartQRScannerForUpload}
-									isLoading={isCameraStartingForUpload}
-									loadingText={t('SCAN_STARTING_CAMERA_LOADING')}
+									onClick={handleStartCaptureCamera}
 									mb={3}
+									isDisabled={isUploading || isConverting}
 								>
-									{t('SCAN_QR_CODE_UPLOAD_BUTTON') || 'Scan QR Code for Upload'}
+									{t('SCAN_CAPTURE_PHOTO_CAMERA')}
 								</Button>
 							</>
 						)}
