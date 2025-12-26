@@ -27,41 +27,54 @@ function App() {
 	const token = localStorage.getItem('authToken');
 
 	useEffect(() => {
-		if (token) {
-			const decoded = jwtDecode(token) as DecodedToken;
-			// Check for roles in resource_access
-			const resourceAccess = decoded.resource_access || {};
-			const beneficiaryRoles =
-				resourceAccess['beneficiary-app']?.roles || [];
+		const updateRoutes = () => {
+			const token = localStorage.getItem('authToken');
+			if (token) {
+				const decoded = jwtDecode(token) as DecodedToken;
+				// Check for roles in resource_access
+				const resourceAccess = decoded.resource_access || {};
+				const beneficiaryRoles =
+					resourceAccess['beneficiary-app']?.roles || [];
 
-			const isAdmin = beneficiaryRoles.includes('admin');
-			const isBeneficiary = beneficiaryRoles.includes('beneficiary');
-			if (isAdmin) {
-				setRoutes(adminRoutes);
-				const redirectUrl = localStorage.getItem('redirectUrl');
-				if (redirectUrl) {
-					window.location.href = redirectUrl;
-					localStorage.removeItem('redirectUrl');
-				}
-			} else if (isBeneficiary) {
-				setRoutes(authRoutes);
-				const redirectUrl = localStorage.getItem('redirectUrl');
-				if (redirectUrl) {
-					window.location.href = redirectUrl;
-					localStorage.removeItem('redirectUrl');
+				const isAdmin = beneficiaryRoles.includes('admin');
+				const isBeneficiary = beneficiaryRoles.includes('beneficiary');
+				if (isAdmin) {
+					setRoutes(adminRoutes);
+					const redirectUrl = localStorage.getItem('redirectUrl');
+					if (redirectUrl) {
+						window.location.href = redirectUrl;
+						localStorage.removeItem('redirectUrl');
+					}
+				} else if (isBeneficiary) {
+					setRoutes(authRoutes);
+					const redirectUrl = localStorage.getItem('redirectUrl');
+					if (redirectUrl) {
+						window.location.href = redirectUrl;
+						localStorage.removeItem('redirectUrl');
+					}
+				} else {
+					// Role not recognized (not admin or beneficiary)
+					setRoutes(guestRoutes);
+					console.warn(
+						'Unauthorized role, falling back to guest routes.'
+					);
 				}
 			} else {
-				// Role not recognized (not admin or beneficiary)
 				setRoutes(guestRoutes);
-				console.warn(
-					'Unauthorized role, falling back to guest routes.'
-				);
 			}
-		} else {
-			setRoutes(guestRoutes);
-		}
-		setLoading(false);
-	}, [token]);
+			setLoading(false);
+		};
+
+		updateRoutes();
+
+		window.addEventListener('authTokenUpdated', updateRoutes);
+		window.addEventListener('storage', updateRoutes);
+
+		return () => {
+			window.removeEventListener('authTokenUpdated', updateRoutes);
+			window.removeEventListener('storage', updateRoutes);
+		};
+	}, []);
 
 	if (loading) {
 		return (

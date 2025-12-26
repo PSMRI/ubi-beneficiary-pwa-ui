@@ -87,11 +87,13 @@ const SignIn: React.FC = () => {
 				const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
 				if (isFirstTimeLogin === 'true') {
 					// Redirect to edit-user-profile page for first-time login
+					window.dispatchEvent(new Event('authTokenUpdated'));
 					navigate('/edit-user-profile');
 					return;
 				}
 
-				navigate(0);
+				window.dispatchEvent(new Event('authTokenUpdated'));
+				navigate('/');
 				return;
 			}
 

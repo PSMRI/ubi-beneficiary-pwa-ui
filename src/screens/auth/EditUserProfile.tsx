@@ -234,7 +234,7 @@ const EditUserProfile: React.FC = () => {
 	// Real-time phone number validation
 	const handlePhoneNumberChange = (value: string) => {
 		setPhoneNumber(value);
-		
+
 		// Validate phone number in real-time
 		const mobileValidation = validateMobileNumber(value);
 		if (!mobileValidation.isValid && value.trim() !== '') {
@@ -267,10 +267,14 @@ const EditUserProfile: React.FC = () => {
 			}
 
 			// Redirect to userprofile page after profile update (for both first-time and regular updates)
-			// Using window.location.href to avoid authentication issues with React navigation
-			setTimeout(() => {
-				window.location.href = '/userprofile';
-			}, 1500);
+
+			// Refresh user data before specific navigation
+			await init();
+
+			// Notify App.tsx to update routes (if we were in guest mode)
+			window.dispatchEvent(new Event('authTokenUpdated'));
+
+			navigate('/userprofile');
 		} catch (error: any) {
 			toast({
 				title: t('EDITPROFILE_UPDATE_FAILED_TITLE') || 'Update Failed',
