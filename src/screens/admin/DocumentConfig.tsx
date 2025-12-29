@@ -1198,6 +1198,18 @@ const DocumentConfig = () => {
 													)}
 												</Text>
 											</FormLabel>
+											{doc.issueVC === 'no' && (
+												<Text
+													color="blue.600"
+													fontSize={11}
+													mb={3}
+													fontStyle="italic"
+												>
+													{t(
+														'DOCUMENTCONFIG_VC_FIELDS_VALID_UNTIL_NOTE'
+													)}
+												</Text>
+											)}
 											<Textarea
 												value={doc.vcFields || ''}
 												onChange={(e) =>
