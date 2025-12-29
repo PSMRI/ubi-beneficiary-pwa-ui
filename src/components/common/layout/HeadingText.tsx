@@ -5,6 +5,7 @@ import FilterDialog from './Filters';
 import { useContext } from 'react';
 import { AuthContext } from '../../../utils/context/checkToken';
 
+
 interface HeadingTextProps {
 	beneficiary?: boolean;
 	heading?: string;
@@ -20,6 +21,9 @@ interface HeadingTextProps {
 	setFilter?: React.Dispatch<React.SetStateAction<unknown>>;
 	profileSubHeading?: string;
 }
+
+
+
 
 const BackIcon: React.FC<{ onClick: () => void; iconSize?: number }> = ({
 	onClick,
@@ -48,6 +52,8 @@ const HeadingText: React.FC<HeadingTextProps> = ({
 	profileSubHeading,
 }) => {
 	const { userData } = useContext(AuthContext) || {};
+
+
 	return (
 		<Box
 			display="flex"
@@ -61,20 +67,32 @@ const HeadingText: React.FC<HeadingTextProps> = ({
 				<VStack align="start">
 					{(handleBack || heading) && (
 						<Box display="flex" alignItems="center" width="100%">
-							{beneficiary && heading && (
-								userData?.pictureUrl ? (
-									<Image
-										src={userData.pictureUrl}
-										alt="Profile Picture"
-										borderRadius="full"
-										boxSize="40px"
-										objectFit="cover"
-										mr={2}
-									/>
-								) : (
-									<Avatar variant="solid" name={heading} mr={2} />
-								)
-							)}
+							<Box position="relative" display="inline-block" mr={2}>
+								{beneficiary && heading && (
+									<>
+										{userData?.pictureUrl ? (
+											<>
+												<Image
+													src={userData.pictureUrl}
+													alt="Profile Picture"
+													borderRadius="full"
+													boxSize="40px"
+													objectFit="cover"
+													mr={2}
+												/>
+
+
+
+											</>
+										) : (
+											<>
+												<Avatar variant="solid" name={heading} mr={2} boxSize="40px" />
+											</>
+										)}
+									</>
+								)}
+							</Box>
+
 							{handleBack && <BackIcon onClick={handleBack} />}
 							{heading && (
 								<Box>

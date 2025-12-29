@@ -72,12 +72,23 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 		documentStatus?.docSubtype,
 	]);
 
-	// Check if document is pending verification
-	const isPendingVerification =
+	// Determine button states based on issueVC, vc_status, and doc_verified
+	const vcStatus = documentStatus?.vc_status;
+	
+	// Disable preview buttons when:
+	// 1. issueVc: yes, vc_status: pending
+	// 2. issueVc: yes, vc_status: deleted
+	const isPreviewDisabled = 
 		documentStatus?.matchFound &&
 		issueVC === true &&
-		documentStatus?.doc_verified === false &&
-		documentStatus?.imported_from === 'Manual Upload';
+		(vcStatus === 'pending' || vcStatus === 'deleted');
+	
+	// Disable delete button when:
+	// 1. issueVc: yes, vc_status: pending
+	const isDeleteDisabled = 
+		documentStatus?.matchFound &&
+		issueVC === true &&
+		vcStatus === 'pending';
 
 	const init = async () => {
 		try {
@@ -188,7 +199,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 						size="sm"
 						color={'grey'}
 						onClick={() => handlepreview()}
-						isDisabled={isPendingVerification}
+						isDisabled={isPreviewDisabled || isLoadingVC}
 					/>
 					<IconButton
 						icon={<VscPreview />}
@@ -196,7 +207,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 						size="sm"
 						color="grey"
 						onClick={handleImagePreview}
-						isDisabled={isPendingVerification}
+						isDisabled={isPreviewDisabled || isLoadingVC}
 					/>
 					{isDelete && (
 						<IconButton
@@ -205,6 +216,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 							size="sm"
 							color={'grey'}
 							onClick={() => handleOpneConfirmation()}
+							isDisabled={isDeleteDisabled || isLoadingVC}
 						/>
 					)}
 				</Box>

@@ -1,6 +1,16 @@
-import axios from 'axios';
+import apiClient from '../../config/apiClient';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+/**
+ * Authentication Service
+ * 
+ * All API calls related to user authentication, registration, and user data
+ * Uses centralized apiClient with automatic token handling and error management
+ */
+
+// =============================================
+// Type Definitions
+// =============================================
+
 interface UserData {
 	firstName?: string;
 	lastName?: string;
@@ -12,124 +22,58 @@ interface MobileData {
 	otp: number;
 	token: string;
 }
-function handleClientError(error): never {
-	const errorMessage =
-		error.response.data?.message ||
-		error.response.data?.error ||
-		`Client Error: ${error.message}`;
 
-	switch (error.response.status) {
-		case 400:
-			throw new Error(`Bad Request: ${errorMessage}`, { cause: error });
-		case 401:
-			localStorage.removeItem('authToken');
-			localStorage.removeItem('refreshToken');
-			window.location.href = '/';
-			throw new Error(`Unauthorized: ${errorMessage}`, { cause: error });
-		case 403:
-			throw new Error(`Forbidden: ${errorMessage}`, { cause: error });
-		case 404:
-			throw new Error(`Not Found: ${errorMessage}`, { cause: error });
-		default:
-			throw new Error(
-				`Client Error (${error.response.status}): ${errorMessage}`,
-				{
-					cause: error,
-				}
-			);
-	}
-}
+// =============================================
+// Authentication APIs
+// =============================================
 
-function handleServerError(error): never {
-	const errorMessage =
-		error.response.data?.message ||
-		`Server Error: ${error.response.statusText}`;
-
-	switch (error.response.status) {
-		case 500:
-			throw new Error(`Internal Server Error: ${errorMessage}`, {
-				cause: error,
-			});
-		case 502:
-			throw new Error(`Bad Gateway: ${errorMessage}`, { cause: error });
-		case 503:
-			throw new Error(`Service Unavailable: ${errorMessage}`, {
-				cause: error,
-			});
-		case 504:
-			throw new Error(`Gateway Timeout: ${errorMessage}`, {
-				cause: error,
-			});
-		default:
-			throw new Error(
-				`Server Error (${error.response.status}): ${errorMessage}`,
-				{
-					cause: error,
-				}
-			);
-	}
-}
-
-function handleError(error: unknown): never {
-	if (axios.isAxiosError(error)) {
-		if (error.response) {
-			if (error.response.status >= 400 && error.response.status < 500) {
-				handleClientError(error);
-			} else if (
-				error.response.status >= 500 &&
-				error.response.status < 600
-			) {
-				handleServerError(error);
-			}
-		} else if (error.request) {
-			throw new Error('Network Error - No response received', {
-				cause: error,
-			});
-		}
-	}
-
-	// Fallback for non-Axios errors or unexpected error types
-	throw error instanceof Error
-		? error
-		: new Error('An unexpected error occurred', { cause: error });
-}
-
+/**
+ * Login user with credentials
+ * @param loginData - Object containing login credentials (username/phoneNumber and password)
+ * @returns User data with access and refresh tokens
+ */
 export const loginUser = async (loginData: object) => {
 	try {
-		const response = await axios.post(
-			`${apiBaseUrl}/auth/login`,
-			loginData,
-			{
-				headers: {
-					'Content-Type': 'application/json',
-				},
-			}
-		);
-
+		const response = await apiClient.post('/auth/login', loginData);
 		return response.data;
-	} catch (error) {
-		if (error.response) {
-			// Re-throw the whole Axios error so frontend can inspect status and data
-			throw error;
-		}
-
-		// ❌ If no server response (network failure, timeout, etc.)
-		throw new Error('Network error, please try again later.');
+	} catch (error: any) {
+		// Preserve the full error structure for proper error handling
+		throw error;
 	}
 };
 
-export const updatePassword = async (data: { username: string; oldPassword: string; newPassword: string }) => {
+/**
+ * Update user password
+ * @param data - Object containing username, oldPassword, and newPassword
+ * @returns Response data
+ */
+export const updatePassword = async (data: {
+	username: string;
+	oldPassword: string;
+	newPassword: string;
+}) => {
 	try {
-		const response = await axios.post(`${apiBaseUrl}/auth/update-password`, data, {
-			headers: { 'Content-Type': 'application/json' },
-		});
+		const response = await apiClient.post('/auth/update-password', data);
 		return response.data;
-	} catch (error) {
-		if (error.response) throw error.response.data;
-		throw new Error('Network error');
+	} catch (error: any) {
+		// Preserve the error structure with proper message
+		const errorResponse = error?.response?.data || {};
+
+		throw {
+			statusCode: errorResponse.statusCode || error?.status || 500,
+			message: errorResponse.message || error?.message || errorResponse.error || 'An error occurred',
+			error: errorResponse.error,
+			response: error?.response,
+			...errorResponse
+		};
 	}
 };
 
+
+/**
+ * Logout user and invalidate tokens
+ * @returns Success response
+ */
 export const logoutUser = async () => {
 	const accessToken = localStorage.getItem('authToken');
 	const refreshToken = localStorage.getItem('refreshToken');
@@ -137,225 +81,226 @@ export const logoutUser = async () => {
 	if (!accessToken || !refreshToken) {
 		throw new Error('No active session found');
 	}
+
+	const response = await apiClient.post('/auth/logout', {
+		access_token: accessToken,
+		refresh_token: refreshToken,
+	});
+
+	if (response) {
+		localStorage.clear();
+	}
+
+	return response.data as { success: boolean; message: string };
+};
+
+/**
+ * Set required action for a user (e.g., UPDATE_PASSWORD)
+ * @param username - Username
+ * @param actions - Array of required actions (default: ['UPDATE_PASSWORD'])
+ * @returns Response data
+ */
+export const setUserRequiredAction = async (
+	username: string,
+	actions: string[] = ['UPDATE_PASSWORD']
+) => {
 	try {
-		const response = await axios.post(
-			`${apiBaseUrl}/auth/logout`,
-			{
-				access_token: accessToken,
-				refresh_token: refreshToken,
-			},
-			{
-				headers: {
-					'Content-Type': 'application/json',
-				},
+		const response = await apiClient.post('/auth/set-required-action', {
+			username,
+			actions,
+		});
+		return response.data;
+	} catch (error: unknown) {
+		console.error('Error setting required action:', error);
+		throw (
+			(error as { response?: { data?: unknown } })?.response?.data || {
+				message: 'Failed to set required action',
 			}
 		);
-		if (response) {
-			localStorage.clear();
-		}
-
-		return response.data as { success: boolean; message: string };
-	} catch (error) {
-		handleError(error);
 	}
 };
 
+// =============================================
+// User Data APIs
+// =============================================
+
+/**
+ * Get current logged-in user details
+ * @returns User data
+ */
 export const getUser = async () => {
-	const token = localStorage.getItem('authToken');
-	try {
-		const response = await axios.get(
-			`${apiBaseUrl}/users/get_one/?decryptData=true`,
-			{
-				headers: {
-					Accept: 'application/json', // 'application/json' is more specific and commonly used for APIs
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		);
+	const response = await apiClient.get('/users/get_one/?decryptData=true');
+	return response.data;
+};
 
-		return response.data;
-	} catch (error) {
-		handleError(error);
-	}
-};
+/**
+ * Get user consents
+ * @returns User consents data
+ */
 export const getUserConsents = async () => {
-	try {
-		const token = localStorage.getItem('authToken');
-		const response = await axios.get(
-			`${apiBaseUrl}/users/get_my_consents`,
-			{
-				headers: {
-					Accept: '*/*',
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		);
-		return response.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.get('/users/get_my_consents');
+	return response.data;
 };
+
+/**
+ * Send user consent
+ * @param user_id - User ID
+ * @param purpose - Purpose of consent (optional)
+ * @param purpose_text - Purpose text (optional)
+ * @returns Response data
+ */
 export const sendConsent = async (
 	user_id: string | number,
 	purpose?: string,
 	purpose_text?: string
 ) => {
-	const token = localStorage.getItem('authToken');
 	const data = {
 		user_id: user_id,
 		purpose: purpose,
 		purpose_text: purpose_text,
 		accepted: true,
 	};
-	const headers = {
-		Accept: '*/*',
-		'Content-Type': 'application/json',
-		Authorization: `Bearer ${token}`,
-	};
 
-	try {
-		const response = await axios.post(`${apiBaseUrl}/users/consent`, data, {
-			headers,
-		});
-		return response.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.post('/users/consent', data);
+	return response.data;
 };
+
+// =============================================
+// Document Configuration APIs
+// =============================================
+
+/**
+ * Get list of available documents
+ * @returns Documents list
+ */
 export const getDocumentsList = async () => {
-	try {
-		const token = localStorage.getItem('authToken');
-		const response = await axios.get(
-			`${apiBaseUrl}/admin/config/vcConfiguration`,
-			{
-				headers: {
-					Accept: '*/*',
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		);
-
-		// Return the documents list data
-		return response.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.get('/admin/config/vcConfiguration');
+	return response.data;
 };
+
+// =============================================
+// Application APIs
+// =============================================
+
+/**
+ * Get list of user applications
+ * @param searchText - Search query string
+ * @param user_id - User ID
+ * @returns Application list
+ */
 export const getApplicationList = async (
 	searchText: string,
 	user_id: string | number
 ) => {
-	try {
-		const requestBody =
-			searchText !== ''
-				? {
-					filters: {
-						user_id: user_id, // Correct: 3 tabs
-					},
-					search: searchText,
-				}
-				: {
-					filters: {
-						user_id: user_id, // Correct: 3 tabs
-					},
-				};
-
-		// Send the dynamically created requestBody in the axios post request
-		const token = localStorage.getItem('authToken');
-		const response = await axios.post(
-			`${apiBaseUrl}/users/user_applications_list`,
-			requestBody, // Use the dynamically created requestBody
-			{
-				headers: {
-					Accept: '*/*',
-					Authorization: `Bearer ${token}`,
+	const requestBody =
+		searchText !== ''
+			? {
+				filters: {
+					user_id: user_id,
 				},
+				search: searchText,
 			}
-		);
+			: {
+				filters: {
+					user_id: user_id,
+				},
+			};
 
-		return response.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.post(
+		'/users/user_applications_list',
+		requestBody
+	);
+
+	return response.data;
 };
 
+/**
+ * Get application details by ID
+ * @param applicationId - Application ID
+ * @returns Application details
+ */
 export const getApplicationDetails = async (applicationId: string | number) => {
-	try {
-		const token = localStorage.getItem('authToken');
-		if (token) {
-			const response = await axios.get(
-				`${apiBaseUrl}/users/user_application/${applicationId}`,
-				{
-					headers: {
-						Accept: '*/*',
-						Authorization: `Bearer ${token}`,
-					},
-				}
-			);
-			return response.data;
-		} else {
-			console.error('Token not found');
-		}
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.get(
+		`/users/user_application/${applicationId}`
+	);
+	return response.data;
 };
+
+// =============================================
+// OTP APIs (Public - No Auth Required)
+// =============================================
+
+/**
+ * Send OTP to mobile number
+ * @param mobileNumber - Mobile number
+ * @returns OTP data
+ */
 export const sendOTP = async (mobileNumber: string) => {
-	try {
-		const payload = {
-			phoneNumber: mobileNumber,
-		};
-		const response = await axios.post(
-			`${apiBaseUrl}/otp/send_otp`,
-			payload
-		);
-		return response?.data?.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const payload = {
+		phoneNumber: mobileNumber,
+	};
+	const response = await apiClient.post('/otp/send_otp', payload);
+	return response?.data?.data;
 };
+
+/**
+ * Verify OTP
+ * @param payload - OTP verification data (phoneNumber, otp, token)
+ * @returns Verification response
+ */
 export const verifyOTP = async (payload: MobileData) => {
-	try {
-		const response = await axios.post(
-			`${apiBaseUrl}/otp/verify_otp`,
-			payload
-		);
-		console.log(response);
-		return response?.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.post('/otp/verify_otp', payload);
+	console.log(response);
+	return response?.data;
 };
+
+// =============================================
+// Registration APIs (Public - No Auth Required)
+// =============================================
+
+/**
+ * Register user (legacy method)
+ * @param userData - User registration data
+ * @returns Registration response
+ */
 export const registerUser = async (userData: UserData) => {
-	try {
-		const response = await axios.post(
-			`${apiBaseUrl}/auth/register_with_password`,
-			userData
-		);
-
-		return response?.data;
-	} catch (error) {
-		handleError(error);
-	}
+	const response = await apiClient.post(
+		'/auth/register_with_password',
+		userData
+	);
+	return response?.data;
 };
-export const registerWithPassword = async (userData) => {
+
+/**
+ * Register user with password
+ * @param userData - User registration data
+ * @returns Registration response
+ */
+export const registerWithPassword = async (userData: any) => {
 	try {
-		const response = await axios.post(
-			`${apiBaseUrl}/auth/register_with_password`,
+		const response = await apiClient.post(
+			'/auth/register_with_password',
 			userData
 		);
-
-		return response.data; // Handle the response data
+		return response.data;
 	} catch (error) {
 		console.error(
 			'Error during registration:',
-			error.response?.data?.message?.[0] || ''
+			(error as any).response?.data?.message?.[0] || ''
 		);
-		throw error.response;
+		throw (error as any).response;
 	}
 };
 
+/**
+ * Register user with document upload
+ * @param file - Document file
+ * @param docType - Document type
+ * @param docSubType - Document sub-type
+ * @param docName - Document name
+ * @param importedFrom - Source of import
+ * @returns Registration response
+ */
 export const registerWithDocument = async (
 	file: File,
 	docType: string,
@@ -370,49 +315,37 @@ export const registerWithDocument = async (
 	formData.append('importedFrom', importedFrom);
 	formData.append('file', file);
 
-	const response = await axios.post(
-		`${apiBaseUrl}/auth/register_with_document`,
-		formData,
-		{
-			headers: {
-				'Content-Type': 'multipart/form-data',
-			},
-		}
-	);
-
-	console.log(response.data, 'response');
-
-	// Store credentials for prefilling login form if available
-	if (
-		response?.data?.data?.user?.userName &&
-		response?.data?.data?.password
-	) {
-		sessionStorage.setItem(
-			'prefill_username',
-			response.data.data.user.userName
-		);
-		sessionStorage.setItem(
-			'prefill_password',
-			response.data?.data?.password
-		);
-	}
-
-	return response.data;
-};
-
-export const setUserRequiredAction = async (username: string, actions: string[] = ['UPDATE_PASSWORD']) => {
 	try {
-		const response = await axios.post(`${apiBaseUrl}/auth/set-required-action`, {
-			username,
-			actions,
-		});
-		return response.data;
-	} catch (error: unknown) {
-		console.error('Error setting required action:', error);
-		throw (
-			(error as { response?: { data?: unknown } })?.response?.data || {
-				message: 'Failed to set required action',
-			}
+		const response = await apiClient.post(
+			'/auth/register_with_document',
+			formData
+			// Content-Type header is auto-set for FormData
 		);
+
+		console.log(response.data, 'response');
+
+		// Store credentials for prefilling login form if available
+		if (
+			response?.data?.data?.user?.userName &&
+			response?.data?.data?.password
+		) {
+			sessionStorage.setItem(
+				'prefill_username',
+				response.data.data.user.userName
+			);
+			sessionStorage.setItem(
+				'prefill_password',
+				response.data?.data?.password
+			);
+		}
+
+		return response.data;
+	} catch (error: any) {
+		// Always throw a normalized error
+		throw {
+			error: error?.response?.data?.error || error?.error || error?.message || 'Registration failed!',
+			statusCode: error?.response?.data?.statusCode || error?.status || 500,
+			full: error,
+		};
 	}
 };

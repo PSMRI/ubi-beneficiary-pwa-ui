@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { MdHome } from 'react-icons/md';
 import { HiDocumentSearch } from 'react-icons/hi';
 import useDeviceSize from './useDeviceSize';
+import { useTranslation } from 'react-i18next';
 
 interface FooterProps {
 	setRef?: (ref: HTMLDivElement | null) => void;
@@ -12,7 +13,7 @@ interface FooterProps {
 const BottomBar: React.FC<FooterProps> = ({ setRef, ...props }) => {
 	const { width } = useDeviceSize();
 	const navigate = useNavigate();
-
+	const { t } = useTranslation();
 	const handleNavigation = (path: string) => {
 		navigate(path);
 	};
@@ -56,7 +57,7 @@ const BottomBar: React.FC<FooterProps> = ({ setRef, ...props }) => {
 						color={getTabColor(['/home'])}
 					/>
 					<Text fontSize="xs" color={getTabColor(['/home'])}>
-						Home
+						{t('HOME')}
 					</Text>
 				</Box>
 
@@ -78,7 +79,7 @@ const BottomBar: React.FC<FooterProps> = ({ setRef, ...props }) => {
 						fontSize="xs"
 						color={getTabColor(['/explorebenefits', '/benefits'])}
 					>
-						Search
+						{t('SEARCH')}
 					</Text>
 				</Box>
 
@@ -106,7 +107,7 @@ const BottomBar: React.FC<FooterProps> = ({ setRef, ...props }) => {
 							'/previewapplication',
 						])}
 					>
-						My Applications
+						{t('MY_APPLICATIONS')}
 					</Text>
 				</Box>
 			</HStack>

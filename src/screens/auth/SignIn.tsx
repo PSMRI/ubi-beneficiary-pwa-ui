@@ -87,11 +87,13 @@ const SignIn: React.FC = () => {
 				const isFirstTimeLogin = sessionStorage.getItem('isFirstTimeLogin');
 				if (isFirstTimeLogin === 'true') {
 					// Redirect to edit-user-profile page for first-time login
+					window.dispatchEvent(new Event('authTokenUpdated'));
 					navigate('/edit-user-profile');
 					return;
 				}
 
-				navigate(0);
+				window.dispatchEvent(new Event('authTokenUpdated'));
+				navigate('/');
 				return;
 			}
 
@@ -106,9 +108,8 @@ const SignIn: React.FC = () => {
 			) {
 				toast({
 					title: t('SIGNIN_PASSWORD_UPDATE_REQUIRED_TITLE') || 'Password Update Required',
-					description:
-						t('SIGNIN_PASSWORD_UPDATE_REQUIRED_DESC') ||
-						'You must update your password before continuing.',
+					description: error?.response?.data?.message ||
+						t('SIGNIN_PASSWORD_UPDATE_REQUIRED_DESC'),
 					status: 'warning',
 					duration: 3000,
 					isClosable: true,

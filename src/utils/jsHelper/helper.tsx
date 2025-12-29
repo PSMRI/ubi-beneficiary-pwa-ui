@@ -203,6 +203,7 @@ export interface DocumentStatus {
 	docType?: string;
 	docSubtype?: string;
 	imported_from?: string;
+	vc_status?: string;
 }
 export function findDocumentStatus(documents, status): DocumentStatus {
 	// Iterate through the documents array
@@ -221,6 +222,7 @@ export function findDocumentStatus(documents, status): DocumentStatus {
 				docType: doc.doc_type,
 				docSubtype: doc.doc_subtype,
 				imported_from: doc.imported_from,
+				vc_status: doc.vc_status,
 			};
 		}
 	}
@@ -236,6 +238,7 @@ export function findDocumentStatus(documents, status): DocumentStatus {
 		docType: '',
 		docSubtype: '',
 		imported_from: '',
+		vc_status: undefined,
 	};
 }
 export const convertToEditPayload = (formData) => {

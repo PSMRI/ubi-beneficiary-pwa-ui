@@ -16,12 +16,13 @@ import { useNavigate } from 'react-router-dom';
 import Layout from './common/layout/Layout';
 import ScanVC from './ScanVC';
 import { getDocumentsList, getUser } from '../services/auth/auth';
-import { uploadUserDocuments } from '../services/user/User';
+import { uploadUserDocuments, uploadDocumentQR } from '../services/user/User';
 import { findDocumentStatus, getExpiryDate } from '../utils/jsHelper/helper';
 import { AuthContext } from '../utils/context/checkToken';
 import { fetchVCJson } from '../services/benefit/benefits';
 import Loader from '../components/common/Loader';
 import { AiFillCloseCircle } from 'react-icons/ai';
+import { FaTrashAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { ConfigService } from '../services/configService';
 // NOSONAR - VCFormWrapper import commented out: Backend does not support VC creation yet
@@ -34,6 +35,7 @@ interface Document {
 	documentSubType: string;
 	docType: string;
 	issuer?: string;
+	docHasORCode?: string;
 }
 
 interface UserDocument {
@@ -50,6 +52,7 @@ interface UserDocument {
 	uploaded_at: string;
 	is_uploaded: boolean;
 	doc_data_link: string;
+	vc_status?: string;
 }
 
 interface DocumentScannerProps {
@@ -104,26 +107,59 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 
 	const documentExpired = success && isExpired;
 
-	// Check if document is pending verification
-	const isPendingVerification =
-		result?.matchFound &&
-		issueVC === true &&
-		result?.doc_verified === false &&
-		result?.imported_from === 'Manual Upload';
-
 	let iconComponent;
 	let iconColor;
+	let statusText;
 
 	if (documentExpired) {
 		iconComponent = AiFillCloseCircle;
 		iconColor = '#C03744';
-	} else if (isPendingVerification) {
-		// Show pending icon for documents with issueVC: yes and doc_verified: false
-		iconComponent = TimeIcon;
-		iconColor = '#FF9800'; // Orange color for pending
+		statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
+	} else if (result?.matchFound && issueVC === true) {
+		// Handle VC-related statuses
+		const vcStatus = result?.vc_status;
+		
+		if (vcStatus === 'pending') {
+			// issueVc: yes, vc_status: pending
+			iconComponent = TimeIcon;
+			iconColor = '#FF9800'; // Orange color for pending
+			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
+		} else if (vcStatus === 'revoked') {
+			// issueVc: yes, vc_status: revoked
+			iconComponent = AiFillCloseCircle;
+			iconColor = '#C03744'; // Red color for revoked
+			statusText = t('DOCUMENT_LIST_STATUS_REVOKED');
+		} else if (vcStatus === 'deleted') {
+			// issueVc: yes, vc_status: deleted
+			iconComponent = FaTrashAlt;
+			iconColor = '#C03744'; // Red color for deleted
+			statusText = t('DOCUMENT_LIST_STATUS_DELETED');
+		} else if (
+			result?.doc_verified === true &&
+			vcStatus !== 'pending' &&
+			vcStatus !== 'revoked' &&
+			vcStatus !== 'deleted'
+		) {
+			// issueVc: yes, vc_status: issued (or any other non-error status), doc_verified: true
+			iconComponent = CheckCircleIcon;
+			iconColor = '#0B7B69'; // Green color for verified
+			statusText = t('DOCUMENT_LIST_STATUS_ISSUED');
+		} else {
+			// Default verified state
+			iconComponent = CheckCircleIcon;
+			iconColor = '#0B7B69';
+			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
+		}
+	} else if (result?.matchFound && issueVC === false && result?.doc_verified === true) {
+		// issueVc: no, doc_verified: true
+		iconComponent = CheckCircleIcon;
+		iconColor = '#0B7B69'; // Green color for verified
+		statusText = t('DOCUMENT_LIST_STATUS_VERIFIED');
 	} else if (result?.matchFound) {
+		// Document found but not verified
 		iconComponent = CheckCircleIcon;
 		iconColor = '#0B7B69';
+		statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
 	}
 
 	let label;
@@ -131,16 +167,6 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	if (ariaLabel) {
 		label = ariaLabel;
 	} else {
-		let statusText;
-
-		if (isExpired) {
-			statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
-		} else if (isPendingVerification) {
-			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
-		} else if (result?.matchFound) {
-			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
-		}
-
 		label = `${t('DOCUMENT_LIST_STATUS_PREFIX')}: ${statusText}`;
 	}
 
@@ -174,6 +200,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	const [showScanner, setShowScanner] = useState(false);
 	const [documents, setDocuments] = useState<Document[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isUploadingQR, setIsUploadingQR] = useState(false);
 	const [pendingVerificationDocs, setPendingVerificationDocs] = useState<
 		Set<string>
 	>(new Set());
@@ -210,6 +237,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						documentSubType: doc.documentSubType,
 						docType: doc.docType,
 						issuer: doc.issuer,
+						docHasORCode: doc.docHasORCode,
 					}));
 				setDocuments(formattedDocuments);
 			} catch (error) {
@@ -230,6 +258,7 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 	}, []);
 
 	// Check pending verification status for all documents
+	// Disable re-upload button when: issueVc: yes, vc_status: pending
 	useEffect(() => {
 		const checkPendingVerification = async () => {
 			if (documents.length === 0 || userData.length === 0) {
@@ -251,10 +280,10 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 							documentStatus.docSubtype
 						);
 
+						// Disable re-upload when vc_status is pending
 						const isPending =
 							vcConfig?.issue_vc === true &&
-							documentStatus.doc_verified === false &&
-							documentStatus.imported_from === 'Manual Upload';
+							documentStatus.vc_status === 'pending';
 
 						if (isPending) {
 							pendingSet.add(document.documentSubType);
@@ -273,6 +302,94 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 
 		checkPendingVerification();
 	}, [documents, userData]);
+
+	// NEW: Handle QR scan success - Direct upload to /upload-document-qr
+	const handleQRScanSuccess = async (qrContent: string) => {
+		if (!selectedDocument) return;
+
+		setIsUploadingQR(true);
+		setIsLoading(true);
+
+		try {
+			const docConfig = documents.find(
+				(doc) => doc.name === selectedDocument.name
+			);
+			if (!docConfig) {
+				throw new Error(t('DOCUMENT_SCANNER_ERROR_INVALID_TYPE'));
+			}
+
+			console.log('QR Content scanned:', qrContent);
+
+			// Call the new QR upload API
+			const response = await uploadDocumentQR({
+				docType: docConfig.docType,
+				docSubType: docConfig.documentSubType,
+				docName: selectedDocument.name,
+				importedFrom: 'QR Code',
+				qrContent: qrContent,
+				issuer: docConfig.issuer,
+			});
+
+			console.log('QR document uploaded successfully:', response);
+
+			// Refresh user data to update the UI
+			const userResult = await getUser();
+			const docsResult = await getDocumentsList();
+			updateUserData(userResult?.data, docsResult.data.value);
+
+			toast({
+				title: t('DOCUMENT_SCANNER_SUCCESS_TITLE'),
+				description: t('DOCUMENT_SCANNER_QR_SUCCESS') || 'Document uploaded successfully via QR code',
+				status: 'success',
+				duration: 3000,
+				isClosable: true,
+			});
+
+			// Navigate to home page after successful upload
+			navigate('/');
+		} catch (error) {
+			console.error('Error uploading QR document:', error);
+
+			const apiErrors = error?.response?.data?.errors;
+			if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+				const errorMessages =
+					apiErrors.length === 1
+						? (apiErrors[0].error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
+						: apiErrors
+								.map(
+									(errObj, idx) =>
+										`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
+								)
+								.join('\n');
+				toast({
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
+					description: (
+						<Box as="span" whiteSpace="pre-line">
+							{errorMessages}
+						</Box>
+					),
+					status: 'error',
+					duration: 10000,
+					isClosable: true,
+				});
+			} else {
+				toast({
+					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
+					description:
+						error?.response?.data?.message ??
+						(error instanceof Error
+							? error.message
+							: t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')),
+					status: 'error',
+					duration: 10000,
+					isClosable: true,
+				});
+			}
+		} finally {
+			setIsUploadingQR(false);
+			setIsLoading(false);
+		}
+	};
 
 	const handleScanResult = async (result: string) => {
 		if (!selectedDocument) return;
@@ -518,8 +635,10 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						documentSubType: selectedDocument.documentSubType,
 						label: selectedDocument.label,
 						name: selectedDocument.name,
+						docHasORCode: selectedDocument.docHasORCode,
 					}}
 					onUploadSuccess={handleUploadSuccess}
+					onQRScanSuccess={handleQRScanSuccess}
 				/>
 			</Layout>
 		);

@@ -30,9 +30,11 @@ interface DocumentConfig {
 	docType: string;
 	vcFields: string;
 	issueVC: string;
+	docHasORCode?: string;
 	docQRContains?: string;
 	issuer?: string; // Issuer ID (e.g., "passport_seva")
 	spaceId?: string;
+	ocrMappingPrompt?: string;
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -201,9 +203,11 @@ const DocumentConfig = () => {
 							docType: item.docType || '',
 							vcFields: vcFieldsString,
 							issueVC: item.issueVC || '',
+							docHasORCode: item.docHasORCode || '',
 							docQRContains: item.docQRContains || '',
 							issuer: item.issuer || '',
 							spaceId: item.spaceId || '',
+							ocrMappingPrompt: item.ocrMappingPrompt || item.OCR_MAPPING_PROMPT_TEMPLATE || '',
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -217,9 +221,11 @@ const DocumentConfig = () => {
 							docType: '',
 							vcFields: '',
 							issueVC: '',
+							docHasORCode: '',
 							docQRContains: '',
 							issuer: '',
 							spaceId: '',
+							ocrMappingPrompt: '',
 						},
 					]);
 				}
@@ -275,8 +281,9 @@ const DocumentConfig = () => {
 		const updated = [...documentConfigs];
 		updated[index][field] = value;
 
-		// If issueVC changes to "yes", clear docQRContains
+		// If issueVC changes to "yes", clear docHasORCode and docQRContains
 		if (field === 'issueVC' && value === 'yes') {
+			updated[index].docHasORCode = '';
 			updated[index].docQRContains = '';
 		}
 
@@ -285,15 +292,26 @@ const DocumentConfig = () => {
 			updated[index].spaceId = '';
 		}
 
+		// If docHasORCode changes to "no", clear docQRContains
+		if (field === 'docHasORCode' && value === 'no') {
+			updated[index].docQRContains = '';
+		}
+
 		setDocumentConfigs(updated);
 
 		const newErrors = { ...errors };
 		delete newErrors[`${field}_${index}`];
 
-		// If issueVC changes, clear docQRContains and spaceId errors
+		// If issueVC changes, clear docHasORCode, docQRContains and spaceId errors
 		if (field === 'issueVC') {
+			delete newErrors[`docHasORCode_${index}`];
 			delete newErrors[`docQRContains_${index}`];
 			delete newErrors[`spaceId_${index}`];
+		}
+
+		// If docHasORCode changes, clear docQRContains error
+		if (field === 'docHasORCode') {
+			delete newErrors[`docQRContains_${index}`];
 		}
 
 		// If docType changes, clear issuer error
@@ -342,9 +360,11 @@ const DocumentConfig = () => {
 				docType: '',
 				vcFields: '',
 				issueVC: '',
+				docHasORCode: '',
 				docQRContains: '',
 				issuer: '',
 				spaceId: '',
+				ocrMappingPrompt: '',
 			},
 		]);
 	};
@@ -389,8 +409,15 @@ const DocumentConfig = () => {
 					hasError = true;
 				}
 			});
-			// Validate docQRContains is required when issueVC is "no"
-			if (doc.issueVC === 'no' && !doc.docQRContains) {
+			// Validate docHasORCode is required when issueVC is "no"
+			if (doc.issueVC === 'no' && !doc.docHasORCode) {
+				newErrors[`docHasORCode_${index}`] = t(
+					'DOCUMENTCONFIG_FIELD_REQUIRED'
+				);
+				hasError = true;
+			}
+			// Validate docQRContains is required when issueVC is "no" AND docHasORCode is "yes"
+			if (doc.issueVC === 'no' && doc.docHasORCode === 'yes' && !doc.docQRContains) {
 				newErrors[`docQRContains_${index}`] = t(
 					'DOCUMENTCONFIG_FIELD_REQUIRED'
 				);
@@ -433,9 +460,11 @@ const DocumentConfig = () => {
 				docType: doc.docType,
 				vcFields: doc.vcFields,
 				issueVC: doc.issueVC,
+				docHasORCode: doc.docHasORCode,
 				docQRContains: doc.docQRContains,
 				issuer: doc.issuer,
 				spaceId: doc.spaceId,
+				ocrMappingPrompt: doc.ocrMappingPrompt || '',
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 
@@ -712,7 +741,7 @@ const DocumentConfig = () => {
 											<FormControl
 												isInvalid={
 													!!errors[
-														`documentSubType_${index}`
+													`documentSubType_${index}`
 													]
 												}
 												flex={1}
@@ -754,7 +783,7 @@ const DocumentConfig = () => {
 												<FormErrorMessage fontSize="xs">
 													{
 														errors[
-															`documentSubType_${index}`
+														`documentSubType_${index}`
 														]
 													}
 												</FormErrorMessage>
@@ -818,20 +847,20 @@ const DocumentConfig = () => {
 													placeholder={
 														isLoadingIssuers
 															? t(
-																	'DOCUMENTCONFIG_LOADING_ISSUERS'
-																)
+																'DOCUMENTCONFIG_LOADING_ISSUERS'
+															)
 															: issuersFetchFailed
 																? t(
-																		'DOCUMENTCONFIG_ISSUERS_FAILED'
-																	)
+																	'DOCUMENTCONFIG_ISSUERS_FAILED'
+																)
 																: allIssuers.length ===
-																	  0
+																	0
 																	? t(
-																			'DOCUMENTCONFIG_NO_ISSUERS_AVAILABLE'
-																		)
+																		'DOCUMENTCONFIG_NO_ISSUERS_AVAILABLE'
+																	)
 																	: t(
-																			'DOCUMENTCONFIG_SELECT_ISSUER'
-																		)
+																		'DOCUMENTCONFIG_SELECT_ISSUER'
+																	)
 													}
 												>
 													{allIssuers.map(
@@ -879,8 +908,8 @@ const DocumentConfig = () => {
 															index,
 															'issueVC',
 															e.target.value as
-																| 'yes'
-																| 'no'
+															| 'yes'
+															| 'no'
 														)
 													}
 													borderWidth="2px"
@@ -931,7 +960,7 @@ const DocumentConfig = () => {
 												<FormControl
 													isInvalid={
 														!!errors[
-															`spaceId_${index}`
+														`spaceId_${index}`
 														]
 													}
 													flex={1}
@@ -977,88 +1006,171 @@ const DocumentConfig = () => {
 													<FormErrorMessage fontSize="xs">
 														{
 															errors[
-																`spaceId_${index}`
+															`spaceId_${index}`
 															]
 														}
 													</FormErrorMessage>
 												</FormControl>
 											)}
 											{doc.issueVC === 'no' && (
-												<FormControl
-													isInvalid={
-														!!errors[
-															`docQRContains_${index}`
-														]
-													}
-													flex={1}
-												>
-													<FormLabel
-														fontSize="md"
-														fontWeight="bold"
-														color="#06164B"
-													>
-														{t(
-															'DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL'
-														)}
-														<Text
-															as="span"
-															color="red.500"
-														>
-															*
-														</Text>
-													</FormLabel>
-													<Select
-														value={
-															doc.docQRContains ||
-															''
-														}
-														onChange={(e) =>
-															handleChange(
-																index,
-																'docQRContains',
-																e.target
-																	.value as DocumentConfig['docQRContains']
-															)
-														}
-														borderWidth="2px"
-														bg="white"
-														size="lg"
-														borderRadius="md"
-														_focus={{
-															borderColor:
-																'blue.400',
-															boxShadow:
-																'0 0 0 2px #06164B33',
-														}}
-														placeholder={t(
-															'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
-														)}
-													>
-														{DOC_QR_CONTAINS_OPTIONS.map(
-															(option) => (
-																<option
-																	key={
-																		option.value
-																	}
-																	value={
-																		option.value
-																	}
-																>
-																	{
-																		option.label
-																	}
-																</option>
-															)
-														)}
-													</Select>
-													<FormErrorMessage fontSize="xs">
-														{
-															errors[
-																`docQRContains_${index}`
+												<>
+													<FormControl
+														isInvalid={
+															!!errors[
+															`docHasORCode_${index}`
 															]
 														}
-													</FormErrorMessage>
-												</FormControl>
+														flex={1}
+													>
+														<FormLabel
+															fontSize="md"
+															fontWeight="bold"
+															color="#06164B"
+														>
+															{t(
+																'DOCUMENTCONFIG_DOCUMENT_HAS_OR_CODE_LABEL'
+															)}
+															<Text
+																as="span"
+																color="red.500"
+															>
+																*
+															</Text>
+														</FormLabel>
+														<Select
+															value={
+																doc.docHasORCode ||
+																''
+															}
+															onChange={(e) =>
+																handleChange(
+																	index,
+																	'docHasORCode',
+																	e.target
+																		.value as
+																	| 'yes'
+																	| 'no'
+																)
+															}
+															borderWidth="2px"
+															bg="white"
+															size="lg"
+															borderRadius="md"
+															_focus={{
+																borderColor:
+																	'blue.400',
+																boxShadow:
+																	'0 0 0 2px #06164B33',
+															}}
+															placeholder={t(
+																'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
+															)}
+														>
+															{ISSUE_VC_OPTIONS.map(
+																(option) => (
+																	<option
+																		key={
+																			option.value
+																		}
+																		value={
+																			option.value
+																		}
+																	>
+																		{
+																			option.label
+																		}
+																	</option>
+																)
+															)}
+														</Select>
+														<FormErrorMessage fontSize="xs">
+															{
+																errors[
+																`docHasORCode_${index}`
+																]
+															}
+														</FormErrorMessage>
+													</FormControl>
+													{doc.docHasORCode === 'yes' ? (
+														<FormControl
+															isInvalid={
+																!!errors[
+																`docQRContains_${index}`
+																]
+															}
+															flex={1}
+														>
+															<FormLabel
+																fontSize="md"
+																fontWeight="bold"
+																color="#06164B"
+															>
+																{t(
+																	'DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL'
+																)}
+																<Text
+																	as="span"
+																	color="red.500"
+																>
+																	*
+																</Text>
+															</FormLabel>
+															<Select
+																value={
+																	doc.docQRContains ||
+																	''
+																}
+																onChange={(e) =>
+																	handleChange(
+																		index,
+																		'docQRContains',
+																		e.target
+																			.value as DocumentConfig['docQRContains']
+																	)
+																}
+																borderWidth="2px"
+																bg="white"
+																size="lg"
+																borderRadius="md"
+																_focus={{
+																	borderColor:
+																		'blue.400',
+																	boxShadow:
+																		'0 0 0 2px #06164B33',
+																}}
+																placeholder={t(
+																	'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
+																)}
+															>
+																{DOC_QR_CONTAINS_OPTIONS.map(
+																	(option) => (
+																		<option
+																			key={
+																				option.value
+																			}
+																			value={
+																				option.value
+																			}
+																		>
+																			{
+																				option.label
+																			}
+																		</option>
+																	)
+																)}
+															</Select>
+															<FormErrorMessage fontSize="xs">
+																{
+																	errors[
+																	`docQRContains_${index}`
+																	]
+																}
+															</FormErrorMessage>
+														</FormControl>
+													) : (
+														<Box flex={1} />
+													)}
+												</>
 											)}
 										</HStack>
 										<FormControl
@@ -1112,6 +1224,68 @@ const DocumentConfig = () => {
 											/>
 											<FormErrorMessage fontSize="xs">
 												{errors[`vcFields_${index}`]}
+											</FormErrorMessage>
+										</FormControl>
+										<FormControl
+											isInvalid={
+												!!errors[`ocrMappingPrompt_${index}`]
+											}
+										>
+											<FormLabel
+												fontSize="md"
+												fontWeight="bold"
+												color="#06164B"
+											>
+												{t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_LABEL'
+												)}
+											</FormLabel>
+											<Text
+												color="#06164B"
+												fontSize={12}
+												mb={2}
+												fontWeight="normal"
+											>
+												{t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_DESCRIPTION'
+												)}
+											</Text>
+											<Text
+												color="blue.600"
+												fontSize={11}
+												mb={3}
+												fontStyle="italic"
+											>
+												{t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDERS_INFO'
+												)}
+											</Text>
+											<Textarea
+												value={doc.ocrMappingPrompt || ''}
+												onChange={(e) =>
+													handleChange(
+														index,
+														'ocrMappingPrompt',
+														e.target.value
+													)
+												}
+												placeholder={t(
+													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDER'
+												)}
+												resize="vertical"
+												minH="150px"
+												bg="white"
+												size="lg"
+												borderWidth="2px"
+												borderRadius="md"
+												_focus={{
+													borderColor: 'blue.400',
+													boxShadow:
+														'0 0 0 2px #06164B33',
+												}}
+											/>
+											<FormErrorMessage fontSize="xs">
+												{errors[`ocrMappingPrompt_${index}`]}
 											</FormErrorMessage>
 										</FormControl>
 									</VStack>

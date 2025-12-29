@@ -13,6 +13,7 @@ import { CheckCircleIcon, WarningIcon, TimeIcon } from '@chakra-ui/icons';
 import Loader from './common/Loader';
 import { findDocumentStatus, getExpiryDate } from '../utils/jsHelper/helper';
 import { AiFillCloseCircle } from 'react-icons/ai';
+import { FaTrashAlt } from 'react-icons/fa';
 import DocumentActions from './DocumentActions';
 import DocumentExpiry from './DocumentExpiry';
 import { useTranslation } from 'react-i18next';
@@ -41,6 +42,7 @@ interface UserDocument {
 	doc_verified: boolean;
 	uploaded_at: string;
 	is_uploaded: boolean;
+	vc_status?: string;
 }
 interface DocumentListProps {
 	documents: Document[] | string[];
@@ -85,29 +87,64 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 		fetchVCConfig();
 	}, [result?.matchFound, result?.docType, result?.docSubtype]);
 
-	// Check if document is pending verification
-	const isPendingVerification =
-		result?.matchFound &&
-		issueVC === true &&
-		result?.doc_verified === false &&
-		result?.imported_from === 'Manual Upload';
-
 	let iconComponent;
 	let iconColor;
+	let statusText;
 
 	if (documentExpired) {
 		iconComponent = AiFillCloseCircle;
 		iconColor = '#C03744';
-	} else if (isPendingVerification) {
-		// Show pending icon for documents with issueVC: yes and doc_verified: false
-		iconComponent = TimeIcon;
-		iconColor = '#FF9800'; // Orange color for pending
+		statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
+	} else if (result?.matchFound && issueVC === true) {
+		// Handle VC-related statuses
+		const vcStatus = result?.vc_status;
+		
+		if (vcStatus === 'pending') {
+			// issueVc: yes, vc_status: pending
+			iconComponent = TimeIcon;
+			iconColor = '#FF9800'; // Orange color for pending
+			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
+		} else if (vcStatus === 'revoked') {
+			// issueVc: yes, vc_status: revoked
+			iconComponent = AiFillCloseCircle;
+			iconColor = '#C03744'; // Red color for revoked
+			statusText = t('DOCUMENT_LIST_STATUS_REVOKED');
+		} else if (vcStatus === 'deleted') {
+			// issueVc: yes, vc_status: deleted
+			iconComponent = FaTrashAlt;
+			iconColor = '#C03744'; // Red color for deleted
+			statusText = t('DOCUMENT_LIST_STATUS_DELETED');
+		} else if (
+			result?.doc_verified === true &&
+			vcStatus !== 'pending' &&
+			vcStatus !== 'revoked' &&
+			vcStatus !== 'deleted'
+		) {
+			// issueVc: yes, vc_status: issued (or any other non-error status), doc_verified: true
+			iconComponent = CheckCircleIcon;
+			iconColor = '#0B7B69'; // Green color for verified
+			statusText = t('DOCUMENT_LIST_STATUS_ISSUED');
+		} else {
+			// Default verified state
+			iconComponent = CheckCircleIcon;
+			iconColor = '#0B7B69';
+			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
+		}
+	} else if (result?.matchFound && issueVC === false && result?.doc_verified === true) {
+		// issueVc: no, doc_verified: true
+		iconComponent = CheckCircleIcon;
+		iconColor = '#0B7B69'; // Green color for verified
+		statusText = t('DOCUMENT_LIST_STATUS_VERIFIED');
 	} else if (result?.matchFound) {
+		// Document found but not verified
 		iconComponent = CheckCircleIcon;
 		iconColor = '#0B7B69';
+		statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
 	} else {
+		// Document not found
 		iconComponent = WarningIcon;
 		iconColor = '#EDA145';
+		statusText = t('DOCUMENT_LIST_STATUS_INCOMPLETE');
 	}
 
 	let label;
@@ -115,18 +152,6 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	if (ariaLabel) {
 		label = ariaLabel;
 	} else {
-		let statusText;
-
-		if (isExpired) {
-			statusText = t('DOCUMENT_LIST_STATUS_EXPIRED');
-		} else if (isPendingVerification) {
-			statusText = t('DOCUMENT_LIST_STATUS_PENDING_VERIFICATION');
-		} else if (result?.matchFound) {
-			statusText = t('DOCUMENT_LIST_STATUS_AVAILABLE');
-		} else {
-			statusText = t('DOCUMENT_LIST_STATUS_INCOMPLETE');
-		}
-
 		label = `${t('DOCUMENT_LIST_STATUS_PREFIX')}: ${statusText}`;
 	}
 
