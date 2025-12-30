@@ -145,7 +145,7 @@ const ScanOTR: React.FC<ScanOTRProps> = ({ onOTRProcessed, onError, isProcessing
                             size="md"
                             width="full"
                             isLoading={isProcessing}
-                            loadingText={t('Registering...')}
+                            loadingText={t('SIGNUP_REGISTERING')}
                             isDisabled={isProcessing}
                             cursor={isProcessing ? 'not-allowed' : 'pointer'}
                         >

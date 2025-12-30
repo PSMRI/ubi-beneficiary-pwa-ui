@@ -1,4 +1,6 @@
+import { t } from 'i18next';
 import { IncomeRange } from '../../assets/mockdata/FilterData';
+
 interface DocumentItem {
 	descriptor?: {
 		code?: string;
@@ -499,8 +501,8 @@ export function checkEligibilityCriteria({
 		typeof conditionValues === 'string'
 			? [conditionValues.toLowerCase()]
 			: (conditionValues as (string | number)[]).map((cv) =>
-					cv?.toString().toLowerCase()
-				);
+				cv?.toString().toLowerCase()
+			);
 
 	// Evaluate the condition
 	switch (condition.trim()) {
@@ -714,9 +716,8 @@ export function getExpiredRequiredDocsMessage(
 
 	if (expiredLabels.length === 0) return null;
 
-	return `⚠️ ${expiredLabels.join(', ')} ${
-		expiredLabels.length === 1 ? 'has' : 'have'
-	} expired and no valid alternatives found. Please upload valid documents to proceed further.`;
+	return `⚠️ ${expiredLabels.join(', ')} ${expiredLabels.length === 1 ? 'has' : 'have'
+		} expired and no valid alternatives found. Please upload valid documents to proceed further.`;
 }
 /**
  * Utility function to format a user-readable label for a document.
@@ -909,7 +910,7 @@ export const validateRequiredDocuments = (
 		if (missingDocuments.length > 0) {
 			return {
 				isValid: false,
-				errorMessage: `⚠️ Please upload the following required documents to proceed: ${missingDocuments.join(', ')}`,
+				errorMessage: `⚠️ ${t('USER_PROFILE_UPLOAD_MISSING_DOCUMENTS_DESC')} ${missingDocuments.join(', ')}`,
 				missingDocuments,
 			};
 		}

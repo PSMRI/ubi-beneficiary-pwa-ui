@@ -402,8 +402,8 @@ const EditUserProfile: React.FC = () => {
 			await sendConsent(userId, purpose, purpose_text);
 			setConsentSaved(false);
 			toast({
-				title: 'Consent Saved',
-				description: 'Your consent has been saved successfully.',
+				title: t('HOME_CONSENT_SAVED_TITLE'),
+				description: t('HOME_CONSENT_SAVED_DESCRIPTION'),
 				status: 'success',
 				duration: 3000,
 				isClosable: true,
@@ -411,8 +411,8 @@ const EditUserProfile: React.FC = () => {
 		} catch (error) {
 			console.log(t('HOME_CONSENT_SEND_ERROR'), error);
 			toast({
-				title: 'Consent Error',
-				description: `Failed to save consent: ${error.message}`,
+				title: t('HOME_CONSENT_ERROR_TITLE'),
+				description: t('HOME_CONSENT_ERROR_DESCRIPTION'),
 				status: 'error',
 				duration: 5000,
 				isClosable: true,
@@ -669,7 +669,7 @@ const EditUserProfile: React.FC = () => {
 					</FormControl>
 					<CommonButton
 						loading={loading}
-						loadingLabel="Saving..."
+						loadingLabel={t('COMMON_BUTTON_SAVING_LABEL')}
 						onClick={handleSubmit}
 						label={t('COMMON_BUTTON_SUBMIT_LABEL')}
 						isDisabled={phoneNumberError !== ''}

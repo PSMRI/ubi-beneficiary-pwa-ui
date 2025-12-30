@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Text, Progress } from '@chakra-ui/react';
+import { t } from 'i18next';
 
 // Define props interface
 interface ProgressWithLabelProps {
@@ -13,7 +14,7 @@ interface ProgressWithLabelProps {
 const ProgressWithLabel: React.FC<ProgressWithLabelProps> = ({
 	totalDocuments,
 	presentDocuments,
-	label = 'Profile Completion', // Default label
+	label = 'USER_PROFILE_PROGRESS_LABEL', // Default label
 	colorScheme = 'teal', // Default color scheme
 	height = 86, // Default height
 }) => {
@@ -32,7 +33,7 @@ const ProgressWithLabel: React.FC<ProgressWithLabelProps> = ({
 			pt={2}
 			h={height} // Dynamic height
 		>
-			<Text>{label}</Text>
+			<Text>{t(label)}</Text>
 			<Progress
 				value={value}
 				max={100}

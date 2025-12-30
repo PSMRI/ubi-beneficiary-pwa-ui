@@ -27,7 +27,6 @@ import { useAuth } from '../../../utils/context/checkToken';
 const options = [
 	{ label: 'EN', value: 'en' },
 	{ label: 'HI', value: 'hi' },
-	{ label: 'MR', value: 'mr' },
 ];
 const Navbar: React.FC<{ isMenu?: boolean }> = ({ isMenu = true }) => {
 	const [success] = useState<string>('');
