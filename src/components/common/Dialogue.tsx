@@ -311,7 +311,7 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 														key={index + 100}
 													>
 														{index + 1}.{' '}
-														{item.description}
+														{t(item.description || '')}
 													</Text>
 												)
 											)}
