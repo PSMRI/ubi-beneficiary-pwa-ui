@@ -98,7 +98,7 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	} else if (result?.matchFound && issueVC === true) {
 		// Handle VC-related statuses
 		const vcStatus = result?.vc_status;
-		
+
 		if (vcStatus === 'pending') {
 			// issueVc: yes, vc_status: pending
 			iconComponent = TimeIcon;
@@ -188,7 +188,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
 		>
 			{documents.map((document) => (
 				<HStack
-					key={document.docType}
+					key={document.documentSubType}
 					borderBottomWidth="1px"
 					borderBottomColor={theme.colors.border}
 					paddingY={3}

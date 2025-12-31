@@ -51,7 +51,7 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 }) => {
 	const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 	const [userFields, setUserFields] = useState([]);
-	
+
 	const handleAccordionChange = (expandedIndex) => {
 		setIsAccordionOpen(expandedIndex.length > 0);
 	};
@@ -237,24 +237,24 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 				<ModalHeader className="border-bottom">
 					{termsAndConditions ? (
 						<>
-							<Box className="heading">Terms and Conditions</Box>
+							<Box className="heading">{t('DIALOGUE_T&C')}</Box>
 							<Box
 								color="gray.600"
 								fontWeight="300"
 								fontSize="18px"
 							>
-								Confirmation
+								{t('DIALOGUE_CONFIRMATION_TITLE')}
 							</Box>
 						</>
 					) : (
 						<>
-							<Box className="heading">Application Submited</Box>
+							<Box className="heading">{t('DIALOGUE_APPLICATION_SUBMITTED_TITLE')}</Box>
 							<Box
 								color="gray.600"
 								fontWeight="300"
 								fontSize="18px"
 							>
-								Confirmation
+								{t('DIALOGUE_CONFIRMATION_TITLE')}
 							</Box>
 						</>
 					)}
@@ -311,11 +311,11 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 														key={index + 100}
 													>
 														{index + 1}.{' '}
-														{item.description}
+														{t(item.description || '')}
 													</Text>
 												)
 											)}
-											
+
 											{/* New terms and conditions item for user information collection */}
 											{userFields.length > 0 && (
 												<>

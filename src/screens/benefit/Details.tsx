@@ -828,7 +828,7 @@ const BenefitsDetails: React.FC = () => {
 							}}
 							label={getActionLabel(applicationStatus, t)}
 							loading={validationLoading}
-							loadingLabel="Validating..."
+							loadingLabel={t('BENEFIT_DETAILS_VALIDATING')}
 							isDisabled={(() => {
 								const isDisabled =
 									validationLoading ||

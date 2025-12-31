@@ -183,7 +183,7 @@ const SignIn: React.FC = () => {
 					<CommonButton
 						isDisabled={!isFormValid}
 						loading={loading}
-						loadingLabel="Signing in..."
+						loadingLabel={t('SIGNIN_SIGNING_IN')}
 						onClick={() => handleLogin()}
 						label={t('LOGIN_BUTTON')}
 					/>

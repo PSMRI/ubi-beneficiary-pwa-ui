@@ -141,7 +141,7 @@ const UpdatePassword: React.FC = () => {
 
                     <CommonButton
                         loading={loading}
-                        loadingLabel="Updating..."
+                        loadingLabel={t('UPDATE_PASSWORD_UPDATING') || 'Updating...'}
                         onClick={handleUpdatePassword}
                         label={t('UPDATE_PASSWORD_BUTTON') || 'Update Password'}
                     />

@@ -2,7 +2,7 @@ import {
 	Flex,
 	FormControl,
 	FormHelperText,
-	FormLabel, 
+	FormLabel,
 	Image,
 	Stack,
 	Box,
@@ -14,26 +14,25 @@ import '../../assets/styles/App.css';
 import CommonButton from '../../components/common/button/Button';
 import frameImage from '../../assets/images/frame.png';
 import { changeLanguage } from 'i18next';
-import {ChangeEvent} from 'react'; 
+import { ChangeEvent } from 'react';
 import FloatingSelect from '../../components/common/input/FloatingSelect';
 import { useAuth } from '../../utils/context/checkToken';
 const Splash: React.FC = () => {
 	const navigate = useNavigate();
 	const { t } = useTranslation();
-	
-	
+
+
 	const { language, selectLanguage } = useAuth();
 	const options = [
 		{ label: t('LOGIN_ENGLISH'), value: 'en' },
 		{ label: t('LOGIN_HINDI'), value: 'hi' },
-		{ label: t('LOGIN_MARATHI'), value: 'mr' },
 	];
 
 	const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
 		const { value } = e.target;
 		selectLanguage(e.target.value);
 		changeLanguage(value);
-	}; 
+	};
 
 	const handleRedirect = () => {
 		navigate('/SignUp');
@@ -85,7 +84,7 @@ const Splash: React.FC = () => {
 								{t('LOGIN_CHANGE_LATER')}
 							</FormHelperText>
 						</FormControl>
-					</form> 
+					</form>
 					<CommonButton
 						onClick={handleRedirect}
 						label={t('LOGIN_REGISTER_BUTTON')}
