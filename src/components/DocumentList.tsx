@@ -179,6 +179,15 @@ const DocumentList: React.FC<DocumentListProps> = ({
 }) => {
 	const theme = useTheme();
 
+	const sortedDocuments = React.useMemo(() => {
+		if (!documents) return [];
+		return [...documents].sort((a: any, b: any) => {
+			const nameA = a?.name || '';
+			const nameB = b?.name || '';
+			return nameA.localeCompare(nameB);
+		});
+	}, [documents]);
+
 	return documents && documents.length > 0 ? (
 		<VStack
 			align="stretch"
@@ -186,7 +195,8 @@ const DocumentList: React.FC<DocumentListProps> = ({
 			padding={0}
 			spacing={0}
 		>
-			{documents.map((document) => (
+			{sortedDocuments.map((document: any) => (
+
 				<HStack
 					key={document.documentSubType}
 					borderBottomWidth="1px"
