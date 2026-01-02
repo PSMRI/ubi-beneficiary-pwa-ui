@@ -118,7 +118,7 @@ const StatusIcon: React.FC<StatusIconProps> = ({
 	} else if (result?.matchFound && issueVC === true) {
 		// Handle VC-related statuses
 		const vcStatus = result?.vc_status;
-		
+
 		if (vcStatus === 'pending') {
 			// issueVc: yes, vc_status: pending
 			iconComponent = TimeIcon;
@@ -238,7 +238,12 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						docType: doc.docType,
 						issuer: doc.issuer,
 						docHasORCode: doc.docHasORCode,
-					}));
+					}))
+					.sort((a: any, b: any) => {
+						const nameA = a?.name || '';
+						const nameB = b?.name || '';
+						return nameA.localeCompare(nameB);
+					});
 				setDocuments(formattedDocuments);
 			} catch (error) {
 				console.error('Error fetching documents:', error);
@@ -356,11 +361,11 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 					apiErrors.length === 1
 						? (apiErrors[0].error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
 						: apiErrors
-								.map(
-									(errObj, idx) =>
-										`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
-								)
-								.join('\n');
+							.map(
+								(errObj, idx) =>
+									`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
+							)
+							.join('\n');
 				toast({
 					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
 					description: (
@@ -466,11 +471,11 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 						? (apiErrors[0].error ??
 							t('DOCUMENT_SCANNER_ERROR_UNEXPECTED'))
 						: apiErrors
-								.map(
-									(errObj, idx) =>
-										`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
-								)
-								.join('\n');
+							.map(
+								(errObj, idx) =>
+									`${idx + 1}. ${errObj.error ?? t('DOCUMENT_SCANNER_ERROR_UNEXPECTED')}`
+							)
+							.join('\n');
 				toast({
 					title: t('DOCUMENT_SCANNER_ERROR_TITLE'),
 					description: (
@@ -691,11 +696,11 @@ const DocumentScanner: React.FC<DocumentScannerProps> = ({
 										>
 											{documentStatus.matchFound
 												? t(
-														'DOCUMENT_SCANNER_REUPLOAD_BUTTON'
-													)
+													'DOCUMENT_SCANNER_REUPLOAD_BUTTON'
+												)
 												: t(
-														'DOCUMENT_SCANNER_UPLOAD_BUTTON'
-													)}
+													'DOCUMENT_SCANNER_UPLOAD_BUTTON'
+												)}
 										</Button>
 									</HStack>
 								</ListItem>
