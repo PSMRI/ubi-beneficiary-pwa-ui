@@ -47,7 +47,7 @@ const UpdatePassword: React.FC = () => {
 
         if (newPassword !== confirmPassword) {
             toast({
-                title: t('PASSWORD_MISMATCH') || 'Passwords do not match.',
+                title: t('UPDATE_PASSWORD_MISMATCH') || 'Passwords do not match.',
                 status: 'error',
                 duration: 2000,
                 isClosable: true,
