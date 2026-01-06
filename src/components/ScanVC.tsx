@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Box, VStack, Text, Button, HStack } from '@chakra-ui/react';
+import React, { useEffect, useRef } from 'react';
+import { Box, VStack, Text, Button, HStack, useToast } from '@chakra-ui/react';
 import Layout from './common/layout/Layout';
 import { useTranslation } from 'react-i18next';
 import { isMobile } from '../utils/deviceUtils';
@@ -33,6 +33,9 @@ const ScanVC: React.FC<ScanVCProps> = ({
 }) => {
 	const { t } = useTranslation();
 
+	const toast = useToast();
+	const scannerTimeoutRef = useRef<any>(null);
+
 	// QR Scanner hook for legacy VC flow (uses fetch-vc-json)
 	const {
 		scanning,
@@ -49,8 +52,12 @@ const ScanVC: React.FC<ScanVCProps> = ({
 		cameraError: qrCameraErrorForUpload,
 		startCamera: startCameraForUpload,
 		stopCamera: stopCameraForUpload,
-	} = useQRScanner({ 
+	} = useQRScanner({
 		onScanResult: (result) => {
+			if (scannerTimeoutRef.current) {
+				clearTimeout(scannerTimeoutRef.current);
+				scannerTimeoutRef.current = null;
+			}
 			if (onQRScanSuccess) {
 				onQRScanSuccess(result);
 			}
@@ -97,6 +104,9 @@ const ScanVC: React.FC<ScanVCProps> = ({
 	// Stop cameras on unmount
 	useEffect(() => {
 		return () => {
+			if (scannerTimeoutRef.current) {
+				clearTimeout(scannerTimeoutRef.current);
+			}
 			stopCamera();
 			stopCameraForUpload();
 			stopCaptureCamera();
@@ -108,6 +118,20 @@ const ScanVC: React.FC<ScanVCProps> = ({
 		stopCaptureCamera();
 		stopCamera();
 		await startCameraForUpload();
+
+		// Set 20s timeout
+		if (scannerTimeoutRef.current) {
+			clearTimeout(scannerTimeoutRef.current);
+		}
+		scannerTimeoutRef.current = setTimeout(() => {
+			stopCameraForUpload();
+			toast({
+				title: t('UNABLE_TO_DETECT_QR_CODE') || 'Unable to detect QR code',
+				status: 'error',
+				duration: 3000,
+				isClosable: true,
+			});
+		}, 15000);
 	};
 
 	const handleStartCaptureCamera = async () => {
