@@ -298,6 +298,7 @@
 	"PROGRESSBAR_DEFAULT_LABEL": "Profile Completion",
 	"REGISTER_BUTTON": "Register",
 	"REGISTER_VERIFY_BUTTON": "Verify OTP",
+	"UNABLE_TO_DETECT_QR_CODE": "Unable to detect QR code",
 	"SCAN_DOCUMENTS_TITLE": "Scan Documents",
 	"SCAN_QR_CODE_SCANNER_TITLE": "QR Code Scanner",
 	"SCAN_START_CAMERA_BUTTON": "Scan VC QR Code",
