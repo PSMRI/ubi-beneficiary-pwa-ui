@@ -121,7 +121,7 @@ const UserProfile: React.FC = () => {
 						fontWeight="500"
 						lineHeight="24px"
 						color="#433E3F"
-						textAlign={'start'}
+						alignSelf={'flex-start'}
 					>
 						{userData?.name || ''}
 					</Text>
@@ -143,7 +143,7 @@ const UserProfile: React.FC = () => {
 					>
 						{userData?.phoneNumber
 							? ` +91 ${userData?.phoneNumber}`
-							: t('USER_PROFILE_PHONE_NUMBER')}
+							: ''}
 					</Text>
 				</VStack>
 			</HStack>
