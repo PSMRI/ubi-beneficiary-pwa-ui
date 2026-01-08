@@ -20,6 +20,7 @@ import { getMapping, updateMapping } from '../../services/admin/admin';
 import { getIssuers, type Issuer } from '../../services/admin/issuer';
 import { ConfigService } from '../../services/configService';
 import Layout from '../../components/common/admin/Layout';
+import TagInput from '../../components/common/input/TagInput';
 import { useTranslation } from 'react-i18next';
 
 interface DocumentConfig {
@@ -35,6 +36,9 @@ interface DocumentConfig {
 	issuer?: string; // Issuer ID (e.g., "passport_seva")
 	spaceId?: string;
 	ocrMappingPrompt?: string;
+	preValidationEnabled?: string;
+	preValidationRequiredKeywords?: string[];
+	preValidationExclusionKeywords?: string[];
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -56,6 +60,9 @@ const DOC_QR_CONTAINS_OPTIONS = [
 	{ label: 'JSON', value: 'JSON' },
 	{ label: 'XML', value: 'XML' },
 ];
+
+
+
 const DocumentConfig = () => {
 	const toast = useToast();
 	const { t } = useTranslation();
@@ -207,7 +214,17 @@ const DocumentConfig = () => {
 							docQRContains: item.docQRContains || '',
 							issuer: item.issuer || '',
 							spaceId: item.spaceId || '',
+
 							ocrMappingPrompt: item.ocrMappingPrompt || item.OCR_MAPPING_PROMPT_TEMPLATE || '',
+							preValidationEnabled: item.preValidationEnabled || '',
+							preValidationRequiredKeywords:
+								Array.isArray(item.preValidationRequiredKeywords)
+									? item.preValidationRequiredKeywords
+									: [],
+							preValidationExclusionKeywords:
+								Array.isArray(item.preValidationExclusionKeywords)
+									? item.preValidationExclusionKeywords
+									: [],
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -226,6 +243,9 @@ const DocumentConfig = () => {
 							issuer: '',
 							spaceId: '',
 							ocrMappingPrompt: '',
+							preValidationEnabled: '',
+							preValidationRequiredKeywords: [],
+							preValidationExclusionKeywords: [],
 						},
 					]);
 				}
@@ -365,6 +385,9 @@ const DocumentConfig = () => {
 				issuer: '',
 				spaceId: '',
 				ocrMappingPrompt: '',
+				preValidationEnabled: '',
+				preValidationRequiredKeywords: [],
+				preValidationExclusionKeywords: [],
 			},
 		]);
 	};
@@ -401,6 +424,7 @@ const DocumentConfig = () => {
 				'vcFields',
 				'issueVC',
 				'issuer',
+				'preValidationEnabled',
 			].forEach((field) => {
 				if (!doc[field]) {
 					newErrors[`${field}_${index}`] = `${field} ${t(
@@ -465,6 +489,9 @@ const DocumentConfig = () => {
 				issuer: doc.issuer,
 				spaceId: doc.spaceId,
 				ocrMappingPrompt: doc.ocrMappingPrompt || '',
+				preValidationEnabled: doc.preValidationEnabled,
+				preValidationRequiredKeywords: doc.preValidationRequiredKeywords,
+				preValidationExclusionKeywords: doc.preValidationExclusionKeywords,
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 
@@ -1173,6 +1200,84 @@ const DocumentConfig = () => {
 												</>
 											)}
 										</HStack>
+
+										<HStack spacing={6} align="flex-start">
+											{/* Enable Pre-Validations */}
+											<FormControl
+												isInvalid={!!errors[`preValidationEnabled_${index}`]}
+												width={{ base: '100%', md: '50%' }}
+											>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													Enable Pre-Validations
+													<Text as="span" color="red.500">*</Text>
+												</FormLabel>
+
+												<Select
+													value={doc.preValidationEnabled || ''}
+													onChange={(e) =>
+														handleChange(index, 'preValidationEnabled', e.target.value)
+													}
+													borderWidth="2px"
+													bg="white"
+													size="lg"
+													borderRadius="md"
+													placeholder="Select option"
+													_focus={{
+														borderColor: 'blue.400',
+														boxShadow: '0 0 0 2px #06164B33',
+													}}
+												>
+													<option value="yes">Yes</option>
+													<option value="no">No</option>
+												</Select>
+
+												<FormErrorMessage fontSize="xs">
+													{errors[`preValidationEnabled_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+
+											{/* Pre-Validation Required Keywords (same row, conditional) */}
+
+											<FormControl width={{ base: '100%', md: '50%' }}>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													Pre-Validation Required Keywords
+												</FormLabel>
+
+												<TagInput
+													tags={doc.preValidationRequiredKeywords || []}
+													onTagsChange={(newTags) =>
+														handleChange(
+															index,
+															'preValidationRequiredKeywords',
+															newTags
+														)
+													}
+													placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_REQUIRED_KEYWORDS')}
+												/>
+											</FormControl>
+
+										</HStack>
+
+										{/* Row 2 */}
+
+
+										<FormControl width={{ base: '100%', md: '50%' }}>
+											<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+												Pre-Validation Exclusion Keywords
+											</FormLabel>
+
+											<TagInput
+												tags={doc.preValidationExclusionKeywords || []}
+												onTagsChange={(newTags) =>
+													handleChange(
+														index,
+														'preValidationExclusionKeywords',
+														newTags
+													)
+												}
+												placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS')}
+											/>
+										</FormControl>
 										<FormControl
 											isInvalid={
 												!!errors[`vcFields_${index}`]
@@ -1300,6 +1405,7 @@ const DocumentConfig = () => {
 												{errors[`ocrMappingPrompt_${index}`]}
 											</FormErrorMessage>
 										</FormControl>
+
 									</VStack>
 								</Box>
 							))}
@@ -1360,9 +1466,9 @@ const DocumentConfig = () => {
 							{t('DOCUMENTCONFIG_SAVE_ALL_BUTTON')}
 						</Button>
 					</HStack>
-				</VStack>
-			</Layout>
-		</Box>
+				</VStack >
+			</Layout >
+		</Box >
 	);
 };
 
