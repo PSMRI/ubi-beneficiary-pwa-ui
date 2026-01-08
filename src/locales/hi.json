@@ -167,6 +167,8 @@
 	"DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_DESCRIPTION": "(वैकल्पिक लेकिन अनुशंसित) OCR डेटा को JSON संरचना में मैप करने के लिए प्रॉम्प्ट टेम्प्लेट",
 	"DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDERS_INFO": "{extractedText}, {schema}, और {expectedDocumentName} शामिल करें - प्रसंस्करण के दौरान स्वचालित रूप से इंजेक्ट किए जाते हैं।",
 	"DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDER": "फ़ील्ड मैपिंग प्रॉम्प्ट टेम्प्लेट दर्ज करें...",
+	"DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_REQUIRED_KEYWORDS": "आवश्यक कीवर्ड जोड़ें और एंटर दबाएँ",
+	"DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS": "बहिष्कृत कीवर्ड जोड़ें और एंटर दबाएँ",
 	"EDITPROFILE_ANNUAL_INCOME_LABEL": "वार्षिक आय",
 	"EDITPROFILE_BANK_ACCOUNT_HOLDER_NAME_LABEL": "बैंक खाता धारक का नाम",
 	"EDITPROFILE_BANK_ACCOUNT_NUMBER_HELP": "वैध 9-18 अंकीय खाता संख्या दर्ज करें",

@@ -168,6 +168,8 @@
 	"DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_DESCRIPTION": "(Optional but Recommended) Prompt template for mapping OCR data to JSON structure",
 	"DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDERS_INFO": "Must include {extractedText}, {schema}, and {expectedDocumentName} - injected automatically during processing.",
 	"DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_PLACEHOLDER": "Enter the field mapping prompt template...",
+	"DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_REQUIRED_KEYWORDS": "Add required keywords and press enter",
+	"DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS": "Add excluded keywords and press enter",
 	"EDITPROFILE_ANNUAL_INCOME_LABEL": "Annual Income",
 	"EDITPROFILE_BANK_ACCOUNT_HOLDER_NAME_LABEL": "Bank Account Holder Name",
 	"EDITPROFILE_BANK_ACCOUNT_NUMBER_HELP": "Enter valid 9-18 digit account number",
