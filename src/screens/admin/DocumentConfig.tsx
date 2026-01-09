@@ -11,16 +11,18 @@ import {
 	FormErrorMessage,
 	useToast,
 	Divider,
-	Textarea,
-	Text,
 	Select,
+	Text,
+	Textarea,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon, InfoOutlineIcon } from '@chakra-ui/icons';
 import { getMapping, updateMapping } from '../../services/admin/admin';
 import { getIssuers, type Issuer } from '../../services/admin/issuer';
 import { ConfigService } from '../../services/configService';
 import Layout from '../../components/common/admin/Layout';
+import TagInput from '../../components/common/input/TagInput';
 import { useTranslation } from 'react-i18next';
+import ClickableTooltip from '../../components/ClickableTooltip';
 
 interface DocumentConfig {
 	id: number;
@@ -35,6 +37,9 @@ interface DocumentConfig {
 	issuer?: string; // Issuer ID (e.g., "passport_seva")
 	spaceId?: string;
 	ocrMappingPrompt?: string;
+	preValidationEnabled?: string;
+	preValidationRequiredKeywords?: string[];
+	preValidationExclusionKeywords?: string[];
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -56,7 +61,11 @@ const DOC_QR_CONTAINS_OPTIONS = [
 	{ label: 'JSON', value: 'JSON' },
 	{ label: 'XML', value: 'XML' },
 ];
+
+
+
 const DocumentConfig = () => {
+	const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 	const toast = useToast();
 	const { t } = useTranslation();
 
@@ -207,7 +216,17 @@ const DocumentConfig = () => {
 							docQRContains: item.docQRContains || '',
 							issuer: item.issuer || '',
 							spaceId: item.spaceId || '',
+
 							ocrMappingPrompt: item.ocrMappingPrompt || item.OCR_MAPPING_PROMPT_TEMPLATE || '',
+							preValidationEnabled: item.preValidationEnabled || '',
+							preValidationRequiredKeywords:
+								Array.isArray(item.preValidationRequiredKeywords)
+									? item.preValidationRequiredKeywords
+									: [],
+							preValidationExclusionKeywords:
+								Array.isArray(item.preValidationExclusionKeywords)
+									? item.preValidationExclusionKeywords
+									: [],
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -226,6 +245,9 @@ const DocumentConfig = () => {
 							issuer: '',
 							spaceId: '',
 							ocrMappingPrompt: '',
+							preValidationEnabled: '',
+							preValidationRequiredKeywords: [],
+							preValidationExclusionKeywords: [],
 						},
 					]);
 				}
@@ -365,6 +387,9 @@ const DocumentConfig = () => {
 				issuer: '',
 				spaceId: '',
 				ocrMappingPrompt: '',
+				preValidationEnabled: '',
+				preValidationRequiredKeywords: [],
+				preValidationExclusionKeywords: [],
 			},
 		]);
 	};
@@ -401,6 +426,7 @@ const DocumentConfig = () => {
 				'vcFields',
 				'issueVC',
 				'issuer',
+				'preValidationEnabled',
 			].forEach((field) => {
 				if (!doc[field]) {
 					newErrors[`${field}_${index}`] = `${field} ${t(
@@ -465,6 +491,9 @@ const DocumentConfig = () => {
 				issuer: doc.issuer,
 				spaceId: doc.spaceId,
 				ocrMappingPrompt: doc.ocrMappingPrompt || '',
+				preValidationEnabled: doc.preValidationEnabled,
+				preValidationRequiredKeywords: doc.preValidationRequiredKeywords,
+				preValidationExclusionKeywords: doc.preValidationExclusionKeywords,
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 
@@ -501,7 +530,7 @@ const DocumentConfig = () => {
 	};
 
 	return (
-		<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
+		<Box ref={scrollContainerRef} bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
 			<Layout
 				showMenu={true}
 				title={t('DOCUMENTCONFIG_TITLE')}
@@ -598,6 +627,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_NAME'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Input
 													value={doc.name}
@@ -642,6 +686,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_LABEL'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Input
 													value={doc.label}
@@ -698,6 +757,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_TYPE'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Select
 													value={doc.docType}
@@ -760,6 +834,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_SUBTYPE'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Input
 													value={doc.documentSubType}
@@ -820,6 +909,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_ISSUER'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Select
 													value={doc.issuer || ''}
@@ -900,6 +1004,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_ISSUE_VC'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Select
 													value={doc.issueVC}
@@ -979,6 +1098,21 @@ const DocumentConfig = () => {
 														>
 															*
 														</Text>
+														<ClickableTooltip
+															label={t(
+																'DOCUMENTCONFIG_INFO_SPACE_ID'
+															)}
+															fontSize="md"
+															placement="right"
+															closeOnScroll={true}
+															zIndex={1100}
+														>
+															<InfoOutlineIcon
+																ml={2}
+																color="gray.500"
+																cursor="pointer"
+															/>
+														</ClickableTooltip>
 													</FormLabel>
 													<Input
 														value={
@@ -1026,6 +1160,8 @@ const DocumentConfig = () => {
 															fontSize="md"
 															fontWeight="bold"
 															color="#06164B"
+															alignItems="center"
+															display="flex"
 														>
 															{t(
 																'DOCUMENTCONFIG_DOCUMENT_HAS_OR_CODE_LABEL'
@@ -1033,9 +1169,24 @@ const DocumentConfig = () => {
 															<Text
 																as="span"
 																color="red.500"
+																mx={1}
 															>
 																*
 															</Text>
+															<ClickableTooltip
+																label={t(
+																	'DOCUMENTCONFIG_INFO_HAS_QR'
+																)}
+																fontSize="md"
+																placement="right"
+																closeOnScroll={true}
+																zIndex={1100}
+															>
+																<InfoOutlineIcon
+																	color="gray.500"
+																	cursor="pointer"
+																/>
+															</ClickableTooltip>
 														</FormLabel>
 														<Select
 															value={
@@ -1114,6 +1265,21 @@ const DocumentConfig = () => {
 																>
 																	*
 																</Text>
+																<ClickableTooltip
+																	label={t(
+																		'DOCUMENTCONFIG_INFO_QR_CONTAINS'
+																	)}
+																	fontSize="md"
+																	placement="right"
+																	closeOnScroll={true}
+																	zIndex={1100}
+																>
+																	<InfoOutlineIcon
+																		ml={2}
+																		color="gray.500"
+																		cursor="pointer"
+																	/>
+																</ClickableTooltip>
 															</FormLabel>
 															<Select
 																value={
@@ -1173,6 +1339,131 @@ const DocumentConfig = () => {
 												</>
 											)}
 										</HStack>
+
+										<HStack spacing={6} align="flex-start">
+											{/* Enable Pre-Validations */}
+											<FormControl
+												isInvalid={!!errors[`preValidationEnabled_${index}`]}
+												width={{ base: '100%', md: '50%' }}
+											>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													{t('DOCUMENTCONFIG_PREVAL_ENABLED_LABEL')}
+													<Text as="span" color="red.500">*</Text>
+
+
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_PREVAL_ENABLED'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
+												</FormLabel>
+
+												<Select
+													value={doc.preValidationEnabled || ''}
+													onChange={(e) =>
+														handleChange(index, 'preValidationEnabled', e.target.value)
+													}
+													borderWidth="2px"
+													bg="white"
+													size="lg"
+													borderRadius="md"
+													placeholder="Select option"
+													_focus={{
+														borderColor: 'blue.400',
+														boxShadow: '0 0 0 2px #06164B33',
+													}}
+												>
+													<option value="yes">Yes</option>
+													<option value="no">No</option>
+												</Select>
+
+												<FormErrorMessage fontSize="xs">
+													{errors[`preValidationEnabled_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+
+											{/* Pre-Validation Required Keywords (same row, conditional) */}
+
+											<FormControl width={{ base: '100%', md: '50%' }}>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													{t('DOCUMENTCONFIG_PREVAL_REQUIRED_LABEL')}
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_PREVAL_REQUIRED'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
+												</FormLabel>
+
+												<TagInput
+													tags={doc.preValidationRequiredKeywords || []}
+													onTagsChange={(newTags) =>
+														handleChange(
+															index,
+															'preValidationRequiredKeywords',
+															newTags
+														)
+													}
+													placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_REQUIRED_KEYWORDS')}
+												/>
+											</FormControl>
+
+										</HStack>
+
+										{/* Row 2 */}
+
+
+										<FormControl width={{ base: '100%', md: '50%' }}>
+											<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+												{t('DOCUMENTCONFIG_PREVAL_EXCLUDED_LABEL')}
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_PREVAL_EXCLUDED'
+													)}
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
+											</FormLabel>
+
+											<TagInput
+												tags={doc.preValidationExclusionKeywords || []}
+												onTagsChange={(newTags) =>
+													handleChange(
+														index,
+														'preValidationExclusionKeywords',
+														newTags
+													)
+												}
+												placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS')}
+											/>
+										</FormControl>
 										<FormControl
 											isInvalid={
 												!!errors[`vcFields_${index}`]
@@ -1182,21 +1473,31 @@ const DocumentConfig = () => {
 												fontSize="md"
 												fontWeight="bold"
 												color="#06164B"
+												alignItems="center"
+												display="flex"
 											>
 												{t(
 													'DOCUMENTCONFIG_VC_FIELDS_LABEL'
 												)}
-												<Text as="span" color="red.500">
+												<Text as="span" color="red.500" mx={1}>
 													*
 												</Text>{' '}
-												<Text
-													color="#06164B"
-													fontSize={12}
-												>
-													{t(
-														'DOCUMENTCONFIG_VC_FIELDS_DESCRIPTION'
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_VC_FIELDS'
 													)}
-												</Text>
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
+
 											</FormLabel>
 											{doc.issueVC === 'no' && (
 												<Text
@@ -1251,6 +1552,21 @@ const DocumentConfig = () => {
 												{t(
 													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_LABEL'
 												)}
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_MAPPING_PROMPT'
+													)}
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
 											</FormLabel>
 											<Text
 												color="#06164B"
@@ -1300,6 +1616,7 @@ const DocumentConfig = () => {
 												{errors[`ocrMappingPrompt_${index}`]}
 											</FormErrorMessage>
 										</FormControl>
+
 									</VStack>
 								</Box>
 							))}
@@ -1360,9 +1677,9 @@ const DocumentConfig = () => {
 							{t('DOCUMENTCONFIG_SAVE_ALL_BUTTON')}
 						</Button>
 					</HStack>
-				</VStack>
-			</Layout>
-		</Box>
+				</VStack >
+			</Layout >
+		</Box >
 	);
 };
 
