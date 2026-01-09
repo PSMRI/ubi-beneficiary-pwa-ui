@@ -225,7 +225,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
 								fontWeight="400"
 								color={theme.colors.text}
 							>
-								{document.name}
+								{document.label}
 							</Text>
 							<DocumentExpiry
 								status={document.documentSubType}
