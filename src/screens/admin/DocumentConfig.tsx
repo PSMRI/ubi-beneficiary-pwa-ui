@@ -11,17 +11,18 @@ import {
 	FormErrorMessage,
 	useToast,
 	Divider,
-	Textarea,
-	Text,
 	Select,
+	Text,
+	Textarea,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon, InfoOutlineIcon } from '@chakra-ui/icons';
 import { getMapping, updateMapping } from '../../services/admin/admin';
 import { getIssuers, type Issuer } from '../../services/admin/issuer';
 import { ConfigService } from '../../services/configService';
 import Layout from '../../components/common/admin/Layout';
 import TagInput from '../../components/common/input/TagInput';
 import { useTranslation } from 'react-i18next';
+import ClickableTooltip from '../../components/ClickableTooltip';
 
 interface DocumentConfig {
 	id: number;
@@ -64,6 +65,7 @@ const DOC_QR_CONTAINS_OPTIONS = [
 
 
 const DocumentConfig = () => {
+	const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 	const toast = useToast();
 	const { t } = useTranslation();
 
@@ -528,7 +530,7 @@ const DocumentConfig = () => {
 	};
 
 	return (
-		<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
+		<Box ref={scrollContainerRef} bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
 			<Layout
 				showMenu={true}
 				title={t('DOCUMENTCONFIG_TITLE')}
@@ -625,6 +627,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_NAME'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Input
 													value={doc.name}
@@ -669,6 +686,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_LABEL'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Input
 													value={doc.label}
@@ -725,6 +757,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_TYPE'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Select
 													value={doc.docType}
@@ -787,6 +834,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_SUBTYPE'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Input
 													value={doc.documentSubType}
@@ -847,6 +909,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_ISSUER'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Select
 													value={doc.issuer || ''}
@@ -927,6 +1004,21 @@ const DocumentConfig = () => {
 													>
 														*
 													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_ISSUE_VC'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 												<Select
 													value={doc.issueVC}
@@ -1006,6 +1098,21 @@ const DocumentConfig = () => {
 														>
 															*
 														</Text>
+														<ClickableTooltip
+															label={t(
+																'DOCUMENTCONFIG_INFO_SPACE_ID'
+															)}
+															fontSize="md"
+															placement="right"
+															closeOnScroll={true}
+															zIndex={1100}
+														>
+															<InfoOutlineIcon
+																ml={2}
+																color="gray.500"
+																cursor="pointer"
+															/>
+														</ClickableTooltip>
 													</FormLabel>
 													<Input
 														value={
@@ -1053,6 +1160,8 @@ const DocumentConfig = () => {
 															fontSize="md"
 															fontWeight="bold"
 															color="#06164B"
+															alignItems="center"
+															display="flex"
 														>
 															{t(
 																'DOCUMENTCONFIG_DOCUMENT_HAS_OR_CODE_LABEL'
@@ -1060,9 +1169,24 @@ const DocumentConfig = () => {
 															<Text
 																as="span"
 																color="red.500"
+																mx={1}
 															>
 																*
 															</Text>
+															<ClickableTooltip
+																label={t(
+																	'DOCUMENTCONFIG_INFO_HAS_QR'
+																)}
+																fontSize="md"
+																placement="right"
+																closeOnScroll={true}
+																zIndex={1100}
+															>
+																<InfoOutlineIcon
+																	color="gray.500"
+																	cursor="pointer"
+																/>
+															</ClickableTooltip>
 														</FormLabel>
 														<Select
 															value={
@@ -1141,6 +1265,21 @@ const DocumentConfig = () => {
 																>
 																	*
 																</Text>
+																<ClickableTooltip
+																	label={t(
+																		'DOCUMENTCONFIG_INFO_QR_CONTAINS'
+																	)}
+																	fontSize="md"
+																	placement="right"
+																	closeOnScroll={true}
+																	zIndex={1100}
+																>
+																	<InfoOutlineIcon
+																		ml={2}
+																		color="gray.500"
+																		cursor="pointer"
+																	/>
+																</ClickableTooltip>
 															</FormLabel>
 															<Select
 																value={
@@ -1208,8 +1347,25 @@ const DocumentConfig = () => {
 												width={{ base: '100%', md: '50%' }}
 											>
 												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
-													Enable Pre-Validations
+													{t('DOCUMENTCONFIG_PREVAL_ENABLED_LABEL')}
 													<Text as="span" color="red.500">*</Text>
+
+
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_PREVAL_ENABLED'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 
 												<Select
@@ -1240,7 +1396,22 @@ const DocumentConfig = () => {
 
 											<FormControl width={{ base: '100%', md: '50%' }}>
 												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
-													Pre-Validation Required Keywords
+													{t('DOCUMENTCONFIG_PREVAL_REQUIRED_LABEL')}
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_PREVAL_REQUIRED'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
 												</FormLabel>
 
 												<TagInput
@@ -1263,7 +1434,22 @@ const DocumentConfig = () => {
 
 										<FormControl width={{ base: '100%', md: '50%' }}>
 											<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
-												Pre-Validation Exclusion Keywords
+												{t('DOCUMENTCONFIG_PREVAL_EXCLUDED_LABEL')}
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_PREVAL_EXCLUDED'
+													)}
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
 											</FormLabel>
 
 											<TagInput
@@ -1287,21 +1473,31 @@ const DocumentConfig = () => {
 												fontSize="md"
 												fontWeight="bold"
 												color="#06164B"
+												alignItems="center"
+												display="flex"
 											>
 												{t(
 													'DOCUMENTCONFIG_VC_FIELDS_LABEL'
 												)}
-												<Text as="span" color="red.500">
+												<Text as="span" color="red.500" mx={1}>
 													*
 												</Text>{' '}
-												<Text
-													color="#06164B"
-													fontSize={12}
-												>
-													{t(
-														'DOCUMENTCONFIG_VC_FIELDS_DESCRIPTION'
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_VC_FIELDS'
 													)}
-												</Text>
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
+
 											</FormLabel>
 											{doc.issueVC === 'no' && (
 												<Text
@@ -1356,6 +1552,21 @@ const DocumentConfig = () => {
 												{t(
 													'DOCUMENTCONFIG_FIELD_MAPPING_PROMPT_LABEL'
 												)}
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_MAPPING_PROMPT'
+													)}
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
 											</FormLabel>
 											<Text
 												color="#06164B"
