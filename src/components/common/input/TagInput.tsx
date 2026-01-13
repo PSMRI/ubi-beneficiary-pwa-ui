@@ -31,10 +31,10 @@ const TagInput: React.FC<TagInputProps> = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const trimmedInput = inputValue.trim();
-            if (!trimmedInput) return;
+            const processedInput = inputValue.trim().toLowerCase();
+            if (!processedInput) return;
 
-            if (tags.includes(trimmedInput)) {
+            if (tags.includes(processedInput)) {
                 if (onError) {
                     onError('This keyword already exists.');
                 }
@@ -43,7 +43,7 @@ const TagInput: React.FC<TagInputProps> = ({
 
             // Validate the tag if onValidate is provided
             if (onValidate) {
-                const validation = onValidate(trimmedInput);
+                const validation = onValidate(processedInput);
                 if (!validation.isValid) {
                     if (onError) {
                         onError(validation.errorMessage || 'This field is not valid.');
@@ -57,7 +57,7 @@ const TagInput: React.FC<TagInputProps> = ({
                 onError(null);
             }
 
-            onTagsChange([...tags, trimmedInput]);
+            onTagsChange([...tags, processedInput]);
             setInputValue('');
         }
     };
