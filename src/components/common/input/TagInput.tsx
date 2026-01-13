@@ -7,52 +7,81 @@ import {
     Tag,
     TagLabel,
     TagCloseButton,
-    useToast,
 } from '@chakra-ui/react';
 
 interface TagInputProps {
     tags: string[];
     onTagsChange: (newTags: string[]) => void;
     placeholder?: string;
+    isDisabled?: boolean;
+    onValidate?: (tag: string) => { isValid: boolean; errorMessage?: string };
+    onError?: (errorMessage: string | null) => void;
 }
 
 const TagInput: React.FC<TagInputProps> = ({
     tags,
     onTagsChange,
     placeholder,
+    isDisabled = false,
+    onValidate,
+    onError,
 }) => {
     const [inputValue, setInputValue] = useState('');
-    const toast = useToast();
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const trimmedInput = inputValue.trim();
-            if (!trimmedInput) return;
+            const processedInput = inputValue.trim().toLowerCase();
+            if (!processedInput) return;
 
-            if (tags.includes(trimmedInput)) {
-                toast({
-                    title: 'Duplicate Keyword',
-                    description: 'This keyword already exists.',
-                    status: 'warning',
-                    duration: 2000,
-                });
+            if (tags.includes(processedInput)) {
+                if (onError) {
+                    onError('This keyword already exists.');
+                }
                 return;
             }
 
-            onTagsChange([...tags, trimmedInput]);
+            // Validate the tag if onValidate is provided
+            if (onValidate) {
+                const validation = onValidate(processedInput);
+                if (!validation.isValid) {
+                    if (onError) {
+                        onError(validation.errorMessage || 'This field is not valid.');
+                    }
+                    return;
+                }
+            }
+
+            // Clear error on successful add
+            if (onError) {
+                onError(null);
+            }
+
+            onTagsChange([...tags, processedInput]);
             setInputValue('');
         }
     };
 
     const removeTag = (indexToRemove: number) => {
         onTagsChange(tags.filter((_, index) => index !== indexToRemove));
+        // Clear error when removing tags
+        if (onError) {
+            onError(null);
+        }
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInputValue(e.target.value);
+        // Clear error when user starts typing
+        if (onError && e.target.value !== inputValue) {
+            onError(null);
+        }
     };
 
     return (
         <Box
             border="2px solid"
-            borderColor="gray.200"
+            borderColor={isDisabled ? "gray.100" : "gray.200"}
             borderRadius="md"
             p={2}
             display="flex"
@@ -60,10 +89,12 @@ const TagInput: React.FC<TagInputProps> = ({
             alignItems="center"
             gap={2}
             _focusWithin={{
-                borderColor: 'blue.400',
-                boxShadow: '0 0 0 2px #06164B33',
+                borderColor: isDisabled ? 'gray.100' : 'blue.400',
+                boxShadow: isDisabled ? 'none' : '0 0 0 2px #06164B33',
             }}
-            bg="white"
+            bg={isDisabled ? "gray.50" : "white"}
+            opacity={isDisabled ? 0.6 : 1}
+            cursor={isDisabled ? "not-allowed" : "default"}
         >
             {tags.map((tag, index) => (
                 <Tag
@@ -73,18 +104,19 @@ const TagInput: React.FC<TagInputProps> = ({
                     colorScheme="blue"
                 >
                     <TagLabel>{tag}</TagLabel>
-                    <TagCloseButton onClick={() => removeTag(index)} />
+                    <TagCloseButton onClick={() => removeTag(index)} isDisabled={isDisabled} />
                 </Tag>
             ))}
 
             <Input
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder={tags.length === 0 ? placeholder || 'Type and press Enter' : ''}
                 variant="unstyled"
                 minW="120px"
                 flex="1"
+                isDisabled={isDisabled}
             />
         </Box>
     );
