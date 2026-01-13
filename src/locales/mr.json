@@ -322,6 +322,7 @@
 	"PROGRESSBAR_DEFAULT_LABEL": "प्रोफाइल पूर्णता",
 	"REGISTER_BUTTON": "नोंदणी करा",
 	"REGISTER_VERIFY_BUTTON": "ओटीपी सत्यापित करा",
+	"UNABLE_TO_DETECT_QR_CODE": "QR कोड ओळखता आला नाही. कृपया स्पष्टपणे पुन्हा स्कॅन करा.",
 	"SCAN_DOCUMENTS_TITLE": "दस्तऐवज स्कॅन करा",
 	"SCAN_QR_CODE_SCANNER_TITLE": "क्यूआर कोड स्कॅनर",
 	"SCAN_START_CAMERA_BUTTON": "कॅमेरा स्कॅन सुरू करा",
