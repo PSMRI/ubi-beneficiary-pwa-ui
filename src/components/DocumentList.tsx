@@ -236,6 +236,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
 						<DocumentActions
 							status={document.documentSubType}
 							userDocuments={userDocuments}
+							documentName={document.label}
 						/>
 					</Box>
 				</HStack>

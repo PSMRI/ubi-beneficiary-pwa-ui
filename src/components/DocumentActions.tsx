@@ -18,6 +18,7 @@ interface DocumentActionsProps {
 		doc_name: string;
 	}[];
 	isDelete?: boolean;
+	documentName?: string;
 }
 interface ImageEntry {
 	mimetype?: string;
@@ -26,6 +27,7 @@ interface ImageEntry {
 const DocumentActions: React.FC<DocumentActionsProps> = ({
 	status,
 	userDocuments,
+	documentName,
 	isDelete = true,
 }) => {
 	const { t } = useTranslation();
@@ -74,18 +76,18 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 
 	// Determine button states based on issueVC, vc_status, and doc_verified
 	const vcStatus = documentStatus?.vc_status;
-	
+
 	// Disable preview buttons when:
 	// 1. issueVc: yes, vc_status: pending
 	// 2. issueVc: yes, vc_status: deleted
-	const isPreviewDisabled = 
+	const isPreviewDisabled =
 		documentStatus?.matchFound &&
 		issueVC === true &&
 		(vcStatus === 'pending' || vcStatus === 'deleted');
-	
+
 	// Disable delete button when:
 	// 1. issueVc: yes, vc_status: pending
-	const isDeleteDisabled = 
+	const isDeleteDisabled =
 		documentStatus?.matchFound &&
 		issueVC === true &&
 		vcStatus === 'pending';
@@ -226,7 +228,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 					onClose={() => setIsConfirmationOpen(false)}
 					handleDialog={handleDelete}
 					deleteConfirmation={isConfirmationOpen}
-					documentName={documentStatus.doc_name}
+					documentName={documentName}
 				/>
 				<CommonDialogue
 					isOpen={isImageDialogOpen}
@@ -235,7 +237,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 						setdocImageList([]);
 					}}
 					docImageList={docImageList}
-					documentName={documentStatus.doc_name}
+					documentName={documentName}
 				/>
 
 				<CommonDialogue
@@ -243,7 +245,7 @@ const DocumentActions: React.FC<DocumentActionsProps> = ({
 					previewDocument={isPreviewOpen}
 					onClose={() => setIsPreviewOpen(false)}
 					document={document}
-					documentName={documentStatus.doc_name}
+					documentName={documentName}
 				/>
 			</>
 		);
