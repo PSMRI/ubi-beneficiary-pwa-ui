@@ -15,13 +15,13 @@ jobs:
 
     steps:
       # --------------------------------------------------
-      # 1️⃣ Checkout Code
+      # 1️⃣ Checkout repository
       # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # --------------------------------------------------
-      # 2️⃣ Validate Tag
+      # 2️⃣ Validate tag format
       # --------------------------------------------------
       - name: Validate tag format
         run: |
@@ -33,7 +33,7 @@ jobs:
           fi
 
       # --------------------------------------------------
-      # 3️⃣ Setup Node
+      # 3️⃣ Setup Node.js
       # --------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -41,7 +41,7 @@ jobs:
           node-version: '20.17.0'
 
       # --------------------------------------------------
-      # 4️⃣ Install & Build
+      # 4️⃣ Install dependencies & build
       # --------------------------------------------------
       - name: Install dependencies and build project
         run: |
@@ -50,19 +50,29 @@ jobs:
           yarn build
 
       # --------------------------------------------------
-      # 5️⃣ Install AWS CLI
+      # 5️⃣ Verify build output (IMPORTANT)
+      # --------------------------------------------------
+      - name: Verify build artifacts
+        run: |
+          echo "📦 Assets generated:"
+          ls -lah dist/assets
+          echo "📄 index.html references:"
+          grep -o '/assets/[^"]*' dist/index.html
+
+      # --------------------------------------------------
+      # 6️⃣ Install AWS CLI
       # --------------------------------------------------
       - name: Install AWS CLI
         run: |
           sudo apt-get update
           sudo apt-get install -y curl unzip
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
           unzip awscliv2.zip
           sudo ./aws/install --update
           aws --version
 
       # --------------------------------------------------
-      # 6️⃣ Configure AWS Credentials
+      # 7️⃣ Configure AWS credentials
       # --------------------------------------------------
       - name: Configure AWS credentials
         run: |
@@ -71,24 +81,24 @@ jobs:
           aws configure set default.region ${{ secrets.AWS_S3_BUCKET_REGION }}
 
       # --------------------------------------------------
-      # 7️⃣ Upload ASSETS (LONG CACHE – SAFE)
+      # 8️⃣ Upload ASSETS (LONG CACHE, NO DELETE)
       # --------------------------------------------------
-      - name: Upload assets to S3 (immutable cache)
+      - name: Upload assets to S3 (immutable, safe)
         run: |
           aws s3 sync dist/assets/ s3://${{ secrets.AWS_S3_BUCKET }}/assets/ \
-            --cache-control "public, max-age=31536000, immutable" \
-            --delete
+            --cache-control "public, max-age=31536000, immutable"
 
       # --------------------------------------------------
-      # 8️⃣ Upload INDEX.HTML (NO CACHE – CRITICAL)
+      # 9️⃣ Upload index.html LAST (NO CACHE)
       # --------------------------------------------------
       - name: Upload index.html (no cache)
         run: |
           aws s3 cp dist/index.html s3://${{ secrets.AWS_S3_BUCKET }}/index.html \
-            --cache-control "no-cache, no-store, must-revalidate"
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --content-type "text/html"
 
       # --------------------------------------------------
-      # 9️⃣ Upload Remaining Static Files (NO CACHE)
+      # 🔟 Upload other static files (manifest, icons)
       # --------------------------------------------------
       - name: Upload remaining static files
         run: |
@@ -98,7 +108,7 @@ jobs:
             --cache-control "no-cache"
 
       # --------------------------------------------------
-      # 🔟 CloudFront Invalidation (FAST + SAFE)
+      # 1️⃣1️⃣ CloudFront invalidation (SAFE)
       # --------------------------------------------------
       - name: Invalidate CloudFront
         run: |
@@ -107,14 +117,7 @@ jobs:
             --paths "/index.html" "/"
 
       # --------------------------------------------------
-      # 1️⃣1️⃣ Cleanup
-      # --------------------------------------------------
-      - name: Post job cleanup
-        if: always()
-        run: echo "Cleanup complete."
-
-      # --------------------------------------------------
-      # 1️⃣2️⃣ Slack Notification
+      # 1️⃣2️⃣ Slack notification
       # --------------------------------------------------
       - name: Notify on Slack channel
         uses: iRoachie/slack-github-actions@v2.3.2
