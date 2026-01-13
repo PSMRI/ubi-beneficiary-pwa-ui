@@ -323,7 +323,7 @@
 	"PROGRESSBAR_DEFAULT_LABEL": "प्रोफ़ाइल पूर्णता",
 	"REGISTER_BUTTON": "रजिस्टर करें",
 	"REGISTER_VERIFY_BUTTON": "ओटीपी सत्यापित करें",
-	"UNABLE_TO_DETECT_QR_CODE": "QR कोड का पता लगाने में असमर्थ",
+	"UNABLE_TO_DETECT_QR_CODE": "क्यूआर कोड पहचान में नहीं आया। कृपया स्पष्ट रूप से दोबारा स्कैन करें।",
 	"SCAN_DOCUMENTS_TITLE": "दस्तावेज़ स्कैन करें",
 	"SCAN_QR_CODE_SCANNER_TITLE": "क्यूआर कोड स्कैनर",
 	"SCAN_START_CAMERA_BUTTON": "VC क्यूआर कोड स्कैन करें",
