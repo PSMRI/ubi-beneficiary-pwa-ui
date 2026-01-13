@@ -1487,12 +1487,18 @@ const DocumentConfig = () => {
 														)
 													}
 													placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_REQUIRED_KEYWORDS')}
+
 													onError={(errorMessage) => {
-														setTagInputErrors(prev => ({
-															...prev,
-															[`preValidationRequiredKeywords_${index}`]: errorMessage
-														}));
+														setTagInputErrors(prev => {
+															const key = `preValidationRequiredKeywords_${index}`;
+															if (prev[key] === errorMessage) return prev;
+															return {
+																...prev,
+																[key]: errorMessage
+															};
+														});
 													}}
+
 													caseSensitive={false}
 
 												/>
@@ -1506,7 +1512,11 @@ const DocumentConfig = () => {
 										{/* Row 2 */}
 
 
-										<FormControl width={{ base: '100%', md: '50%' }}>
+
+										<FormControl
+											isInvalid={!!tagInputErrors[`preValidationExclusionKeywords_${index}`]}
+											width={{ base: '100%', md: '50%' }}
+										>
 											<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
 												{t('DOCUMENTCONFIG_PREVAL_EXCLUDED_LABEL')}
 												<ClickableTooltip
@@ -1536,8 +1546,21 @@ const DocumentConfig = () => {
 													)
 												}
 												placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS')}
+												onError={(errorMessage) => {
+													setTagInputErrors(prev => {
+														const key = `preValidationExclusionKeywords_${index}`;
+														if (prev[key] === errorMessage) return prev;
+														return {
+															...prev,
+															[key]: errorMessage
+														};
+													});
+												}}
 												caseSensitive={false}
 											/>
+											<FormErrorMessage fontSize="xs">
+												{tagInputErrors[`preValidationExclusionKeywords_${index}`]}
+											</FormErrorMessage>
 										</FormControl>
 										<FormControl
 											isInvalid={
@@ -1722,11 +1745,16 @@ const DocumentConfig = () => {
 														}
 														return { isValid: true };
 													}}
+
 													onError={(errorMessage) => {
-														setTagInputErrors(prev => ({
-															...prev,
-															[`postValidationRequiredFields_${index}`]: errorMessage
-														}));
+														setTagInputErrors(prev => {
+															const key = `postValidationRequiredFields_${index}`;
+															if (prev[key] === errorMessage) return prev;
+															return {
+																...prev,
+																[key]: errorMessage
+															};
+														});
 													}}
 													caseSensitive={true}
 												/>
