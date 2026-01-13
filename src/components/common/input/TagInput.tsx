@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
     Box,
     Input,
-    Wrap,
-    WrapItem,
     Tag,
     TagLabel,
     TagCloseButton,
@@ -16,6 +14,7 @@ interface TagInputProps {
     isDisabled?: boolean;
     onValidate?: (tag: string) => { isValid: boolean; errorMessage?: string };
     onError?: (errorMessage: string | null) => void;
+    caseSensitive?: boolean;
 }
 
 const TagInput: React.FC<TagInputProps> = ({
@@ -25,13 +24,14 @@ const TagInput: React.FC<TagInputProps> = ({
     isDisabled = false,
     onValidate,
     onError,
+    caseSensitive = true,
 }) => {
     const [inputValue, setInputValue] = useState('');
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const processedInput = inputValue.trim().toLowerCase();
+            const processedInput = caseSensitive ? inputValue.trim() : inputValue.trim().toLowerCase();
             if (!processedInput) return;
 
             if (tags.includes(processedInput)) {
@@ -60,23 +60,24 @@ const TagInput: React.FC<TagInputProps> = ({
             onTagsChange([...tags, processedInput]);
             setInputValue('');
         }
-    };
+    }, [tags, inputValue, caseSensitive, onValidate, onError, onTagsChange]);
 
-    const removeTag = (indexToRemove: number) => {
+    const removeTag = useCallback((indexToRemove: number) => {
         onTagsChange(tags.filter((_, index) => index !== indexToRemove));
         // Clear error when removing tags
         if (onError) {
             onError(null);
         }
-    };
+    }, [tags, onTagsChange, onError]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInputValue(e.target.value);
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value;
+        setInputValue(newValue);
         // Clear error when user starts typing
-        if (onError && e.target.value !== inputValue) {
+        if (onError && newValue !== inputValue) {
             onError(null);
         }
-    };
+    }, [inputValue, onError]);
 
     return (
         <Box
@@ -122,4 +123,4 @@ const TagInput: React.FC<TagInputProps> = ({
     );
 };
 
-export default TagInput;
+export default memo(TagInput);
