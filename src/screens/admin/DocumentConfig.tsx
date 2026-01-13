@@ -1493,7 +1493,8 @@ const DocumentConfig = () => {
 															[`preValidationRequiredKeywords_${index}`]: errorMessage
 														}));
 													}}
-													caseSensitive={true}
+													caseSensitive={false}
+
 												/>
 												<FormErrorMessage fontSize="xs">
 													{tagInputErrors[`preValidationRequiredKeywords_${index}`]}
@@ -1535,6 +1536,7 @@ const DocumentConfig = () => {
 													)
 												}
 												placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS')}
+												caseSensitive={false}
 											/>
 										</FormControl>
 										<FormControl
@@ -1726,6 +1728,7 @@ const DocumentConfig = () => {
 															[`postValidationRequiredFields_${index}`]: errorMessage
 														}));
 													}}
+													caseSensitive={true}
 												/>
 												<FormErrorMessage fontSize="xs">
 													{tagInputErrors[`postValidationRequiredFields_${index}`]}

@@ -33,10 +33,10 @@ const TagInput: React.FC<TagInputProps> = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const processedInput = inputValue.trim();
+            const processedInput = caseSensitive ? inputValue.trim() : inputValue.trim().toLowerCase();
             if (!processedInput) return;
 
-            if (tags.includes(caseSensitive ? processedInput : processedInput.toLowerCase())) {
+            if (tags.includes(processedInput)) {
                 if (onError) {
                     onError('This keyword already exists.');
                 }
