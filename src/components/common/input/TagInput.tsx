@@ -16,6 +16,7 @@ interface TagInputProps {
     isDisabled?: boolean;
     onValidate?: (tag: string) => { isValid: boolean; errorMessage?: string };
     onError?: (errorMessage: string | null) => void;
+    caseSensitive?: boolean;
 }
 
 const TagInput: React.FC<TagInputProps> = ({
@@ -25,16 +26,17 @@ const TagInput: React.FC<TagInputProps> = ({
     isDisabled = false,
     onValidate,
     onError,
+    caseSensitive = true,
 }) => {
     const [inputValue, setInputValue] = useState('');
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const processedInput = inputValue.trim().toLowerCase();
+            const processedInput = inputValue.trim();
             if (!processedInput) return;
 
-            if (tags.includes(processedInput)) {
+            if (tags.includes(caseSensitive ? processedInput : processedInput.toLowerCase())) {
                 if (onError) {
                     onError('This keyword already exists.');
                 }

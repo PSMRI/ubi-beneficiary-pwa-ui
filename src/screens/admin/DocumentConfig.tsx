@@ -1493,6 +1493,7 @@ const DocumentConfig = () => {
 															[`preValidationRequiredKeywords_${index}`]: errorMessage
 														}));
 													}}
+													caseSensitive={true}
 												/>
 												<FormErrorMessage fontSize="xs">
 													{tagInputErrors[`preValidationRequiredKeywords_${index}`]}
