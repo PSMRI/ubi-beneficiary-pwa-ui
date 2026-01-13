@@ -40,6 +40,9 @@ interface DocumentConfig {
 	preValidationEnabled?: string;
 	preValidationRequiredKeywords?: string[];
 	preValidationExclusionKeywords?: string[];
+	postValidationEnabled?: string;
+	postValidationRequiredFields?: string[];
+	postValidationFieldMappingNumbers?: number;
 }
 interface ValidationErrors {
 	[key: string]: string;
@@ -74,6 +77,9 @@ const DocumentConfig = () => {
 		[]
 	);
 	const [errors, setErrors] = useState<ValidationErrors>({});
+
+	// --- State for TagInput inline errors ---
+	const [tagInputErrors, setTagInputErrors] = useState<{ [key: string]: string | null }>({});
 
 	// --- State for issuers ---
 	const [allIssuers, setAllIssuers] = useState<Issuer[]>([]);
@@ -227,6 +233,12 @@ const DocumentConfig = () => {
 								Array.isArray(item.preValidationExclusionKeywords)
 									? item.preValidationExclusionKeywords
 									: [],
+							postValidationEnabled: item.postValidationEnabled || '',
+							postValidationRequiredFields:
+								Array.isArray(item.postValidationRequiredFields)
+									? item.postValidationRequiredFields
+									: [],
+							postValidationFieldMappingNumbers: item.postValidationFieldMappingNumbers ?? null,
 						};
 					});
 					setDocumentConfigs(mapped);
@@ -248,6 +260,9 @@ const DocumentConfig = () => {
 							preValidationEnabled: '',
 							preValidationRequiredKeywords: [],
 							preValidationExclusionKeywords: [],
+							postValidationEnabled: '',
+							postValidationRequiredFields: [],
+							postValidationFieldMappingNumbers: null,
 						},
 					]);
 				}
@@ -291,6 +306,23 @@ const DocumentConfig = () => {
 			return true;
 		} catch {
 			return false;
+		}
+	};
+
+	// --- Helper to check if vcFields is valid and non-empty ---
+	const hasValidVcFields = (vcFields: string): boolean => {
+		if (!vcFields || vcFields.trim() === '') return false;
+		return validateVcFields(vcFields);
+	};
+
+	// --- Helper to get keys from vcFields JSON ---
+	const getVcFieldKeys = (vcFields: string): string[] => {
+		if (!hasValidVcFields(vcFields)) return [];
+		try {
+			const parsed = JSON.parse(vcFields);
+			return Object.keys(parsed);
+		} catch {
+			return [];
 		}
 	};
 
@@ -355,6 +387,7 @@ const DocumentConfig = () => {
 				delete newErrors[`vcFields_${index}`];
 			}
 		}
+
 		setErrors(newErrors);
 	};
 
@@ -390,6 +423,9 @@ const DocumentConfig = () => {
 				preValidationEnabled: '',
 				preValidationRequiredKeywords: [],
 				preValidationExclusionKeywords: [],
+				postValidationEnabled: '',
+				postValidationRequiredFields: [],
+				postValidationFieldMappingNumbers: null,
 			},
 		]);
 	};
@@ -466,6 +502,27 @@ const DocumentConfig = () => {
 					delete newErrors[`vcFields_${index}`];
 				}
 			}
+
+			// Validate postValidationEnabled is required when vcFields is valid
+			if (hasValidVcFields(doc.vcFields) && !doc.postValidationEnabled) {
+				newErrors[`postValidationEnabled_${index}`] = t(
+					'DOCUMENTCONFIG_FIELD_REQUIRED'
+				);
+				hasError = true;
+			}
+
+			// Validate postValidationRequiredFields values exist in vcFields
+			if (hasValidVcFields(doc.vcFields) && doc.postValidationRequiredFields && doc.postValidationRequiredFields.length > 0) {
+				const vcFieldKeys = getVcFieldKeys(doc.vcFields);
+				const invalidFields = doc.postValidationRequiredFields.filter(
+					fieldName => !vcFieldKeys.includes(fieldName)
+				);
+				if (invalidFields.length > 0) {
+					newErrors[`postValidationRequiredFields_${index}`] =
+						`Invalid fields: ${invalidFields.join(', ')}. Must exist in VC Fields.`;
+					hasError = true;
+				}
+			}
 		});
 		setErrors(newErrors);
 		if (hasError) {
@@ -494,6 +551,9 @@ const DocumentConfig = () => {
 				preValidationEnabled: doc.preValidationEnabled,
 				preValidationRequiredKeywords: doc.preValidationRequiredKeywords,
 				preValidationExclusionKeywords: doc.preValidationExclusionKeywords,
+				postValidationEnabled: doc.postValidationEnabled,
+				postValidationRequiredFields: doc.postValidationRequiredFields,
+				postValidationFieldMappingNumbers: doc.postValidationFieldMappingNumbers,
 			}));
 			await updateMapping(saveData, 'vcConfiguration');
 
@@ -1394,7 +1454,10 @@ const DocumentConfig = () => {
 
 											{/* Pre-Validation Required Keywords (same row, conditional) */}
 
-											<FormControl width={{ base: '100%', md: '50%' }}>
+											<FormControl
+												isInvalid={!!tagInputErrors[`preValidationRequiredKeywords_${index}`]}
+												width={{ base: '100%', md: '50%' }}
+											>
 												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
 													{t('DOCUMENTCONFIG_PREVAL_REQUIRED_LABEL')}
 													<ClickableTooltip
@@ -1424,7 +1487,16 @@ const DocumentConfig = () => {
 														)
 													}
 													placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_REQUIRED_KEYWORDS')}
+													onError={(errorMessage) => {
+														setTagInputErrors(prev => ({
+															...prev,
+															[`preValidationRequiredKeywords_${index}`]: errorMessage
+														}));
+													}}
 												/>
+												<FormErrorMessage fontSize="xs">
+													{tagInputErrors[`preValidationRequiredKeywords_${index}`]}
+												</FormErrorMessage>
 											</FormControl>
 
 										</HStack>
@@ -1539,6 +1611,203 @@ const DocumentConfig = () => {
 												{errors[`vcFields_${index}`]}
 											</FormErrorMessage>
 										</FormControl>
+
+										{/* Post Validation Section - Row 1 */}
+										<HStack spacing={6} align="flex-start">
+											{/* Enable Post Validation */}
+											<FormControl
+												isInvalid={!!errors[`postValidationEnabled_${index}`]}
+												width={{ base: '100%', md: '50%' }}
+											>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													{t('DOCUMENTCONFIG_POSTVAL_ENABLED_LABEL')}
+													{hasValidVcFields(doc.vcFields) && (
+														<Text as="span" color="red.500">*</Text>
+													)}
+													<ClickableTooltip
+														label={t('DOCUMENTCONFIG_INFO_POSTVAL_ENABLED')}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
+												</FormLabel>
+
+												<Select
+													value={doc.postValidationEnabled || ''}
+													onChange={(e) =>
+														handleChange(index, 'postValidationEnabled', e.target.value)
+													}
+													borderWidth="2px"
+													bg="white"
+													size="lg"
+													borderRadius="md"
+													_focus={{
+														borderColor: 'blue.400',
+														boxShadow: '0 0 0 2px #06164B33',
+													}}
+													isDisabled={!hasValidVcFields(doc.vcFields)}
+													placeholder={
+														hasValidVcFields(doc.vcFields)
+															? t('DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER')
+															: 'VC Fields must be valid'
+													}
+												>
+													{ISSUE_VC_OPTIONS.map((option) => (
+														<option key={option.value} value={option.value}>
+															{option.label}
+														</option>
+													))}
+												</Select>
+												<FormErrorMessage fontSize="xs">
+													{errors[`postValidationEnabled_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+
+											{/* Post Validation Required Fields */}
+											<FormControl
+												isInvalid={!!tagInputErrors[`postValidationRequiredFields_${index}`]}
+												width={{ base: '100%', md: '50%' }}
+											>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													{t('DOCUMENTCONFIG_POSTVAL_REQUIRED_FIELDS_LABEL')}
+													<ClickableTooltip
+														label={t('DOCUMENTCONFIG_INFO_POSTVAL_REQUIRED_FIELDS')}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
+												</FormLabel>
+
+												<TagInput
+													tags={doc.postValidationRequiredFields || []}
+													onTagsChange={(newTags) =>
+														handleChange(
+															index,
+															'postValidationRequiredFields',
+															newTags
+														)
+													}
+													placeholder={t('DOCUMENTCONFIG_POSTVAL_REQUIRED_FIELDS_PLACEHOLDER')}
+													isDisabled={!hasValidVcFields(doc.vcFields)}
+													onValidate={(tag: string) => {
+														const vcFieldKeys = getVcFieldKeys(doc.vcFields);
+														if (!hasValidVcFields(doc.vcFields)) {
+															return {
+																isValid: false,
+																errorMessage: 'VC Fields must be valid JSON before adding required fields.'
+															};
+														}
+														if (!vcFieldKeys.includes(tag)) {
+															return {
+																isValid: false,
+																errorMessage: `Field "${tag}" does not exist in VC Fields. Allowed fields: ${vcFieldKeys.join(', ')}`
+															};
+														}
+														return { isValid: true };
+													}}
+													onError={(errorMessage) => {
+														setTagInputErrors(prev => ({
+															...prev,
+															[`postValidationRequiredFields_${index}`]: errorMessage
+														}));
+													}}
+												/>
+												<FormErrorMessage fontSize="xs">
+													{tagInputErrors[`postValidationRequiredFields_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+										</HStack>
+
+										{/* Post Validation Section - Row 2 */}
+										<FormControl
+											isInvalid={!!errors[`postValidationFieldMappingNumbers_${index}`]}
+											width={{ base: '100%', md: '50%' }}
+										>
+											<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+												{t('DOCUMENTCONFIG_POSTVAL_FIELD_MAPPING_NUMBERS_LABEL')}
+												<ClickableTooltip
+													label={t('DOCUMENTCONFIG_INFO_POSTVAL_FIELD_MAPPING_NUMBERS')}
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
+											</FormLabel>
+
+											<Input
+												type="text"
+												value={doc.postValidationFieldMappingNumbers !== undefined && doc.postValidationFieldMappingNumbers !== null ? doc.postValidationFieldMappingNumbers.toString() : ''}
+												onChange={(e) => {
+													const value = e.target.value;
+													if (value === '') {
+														handleChange(index, 'postValidationFieldMappingNumbers', null);
+														return;
+													}
+													if (!/^-?\d+$/.test(value)) {
+														return;
+													}
+													const numValue = parseInt(value, 10);
+													if (!isNaN(numValue)) {
+														handleChange(index, 'postValidationFieldMappingNumbers', numValue);
+														// Set error if value is <= 0
+														if (numValue <= 0) {
+															setErrors(prev => ({
+																...prev,
+																[`postValidationFieldMappingNumbers_${index}`]: numValue < 0
+																	? 'Value must be a positive number (greater than 0)'
+																	: 'Value must be greater than 0'
+															}));
+														} else {
+															// Clear error if value is valid
+															setErrors(prev => {
+																const newErrors = { ...prev };
+																delete newErrors[`postValidationFieldMappingNumbers_${index}`];
+																return newErrors;
+															});
+														}
+													}
+												}}
+												onKeyDown={(e) => {
+													if (['+', 'e', 'E', '.'].includes(e.key)) {
+														e.preventDefault();
+													}
+												}}
+												placeholder="Enter a number"
+												borderWidth="2px"
+												bg="white"
+												size="lg"
+												borderRadius="md"
+												_focus={{
+													borderColor: 'blue.400',
+													boxShadow: '0 0 0 2px #06164B33',
+												}}
+												isDisabled={!hasValidVcFields(doc.vcFields)}
+											/>
+											<FormErrorMessage fontSize="xs">
+												{errors[`postValidationFieldMappingNumbers_${index}`]}
+											</FormErrorMessage>
+										</FormControl>
+
 										<FormControl
 											isInvalid={
 												!!errors[`ocrMappingPrompt_${index}`]
@@ -1616,6 +1885,7 @@ const DocumentConfig = () => {
 												{errors[`ocrMappingPrompt_${index}`]}
 											</FormErrorMessage>
 										</FormControl>
+
 
 									</VStack>
 								</Box>
