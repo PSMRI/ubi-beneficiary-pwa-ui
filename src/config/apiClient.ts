@@ -26,12 +26,8 @@ const PUBLIC_ENDPOINTS = [
  * Language code mapping from i18next codes to Accept-Language header values
  */
 const LANGUAGE_CODE_MAP: Record<string, string> = {
-    'en': 'en-US',
-    'en-US': 'en-US',
-    'hi': 'hi-IN',
-    'hi-IN': 'hi-IN',
-    'mr': 'mr-IN',
-    'mr-IN': 'mr-IN',
+    'en': 'en',
+    'hi': 'hi'
 };
 
 // =============================================

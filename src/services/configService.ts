@@ -62,7 +62,6 @@ export class ConfigService {
 		let parsedVcFields: Record<string, { type: string }> = {};
 		try {
 			parsedVcFields = JSON.parse(apiConfig.vcFields);
-			console.log('Parsed vcFields:', parsedVcFields);
 		} catch (error) {
 			console.error('Failed to parse vcFields:', error);
 			throw new Error('Invalid vcFields format in configuration.');
@@ -89,8 +88,6 @@ export class ConfigService {
 				required: false, // Default to false, can be updated if API provides this info
 			};
 		}
-
-		console.log('Transformed vcFields:', vcFields);
 
 		return {
 			id: `${apiConfig.docType}-${apiConfig.documentSubType}`,

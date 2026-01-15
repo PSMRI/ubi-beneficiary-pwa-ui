@@ -33,7 +33,7 @@ export interface Mapping {
 
 export interface Field {
 	fieldId: string;
-	label: string;
+	label: string | Record<string, string>; // Supports any number of languages dynamically
 	name: string;
 	type: string;
 	isRequired: boolean;
@@ -53,7 +53,7 @@ export interface FieldOption {
 
 export interface AddFieldPayload {
 	name: string;
-	label: string;
+	label: string | Record<string, string>; // Supports any number of languages dynamically
 	context?: string;
 	contextType?: string;
 	type: string;
@@ -137,7 +137,7 @@ export const fetchFields = async (
 			const fieldObj = field as Record<string, any>;
 			return {
 				fieldId: fieldObj.fieldId,
-				label: fieldObj.label,
+				label: fieldObj.label, // Can be string or { en: string, hi: string, ... }
 				name: fieldObj.name,
 				type: fieldObj.type,
 				isRequired: fieldObj.fieldAttributes?.isRequired ?? false,

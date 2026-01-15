@@ -17,6 +17,7 @@
 	"ADDFIELDS_ENCRYPTION_MODAL_TIP": "Only enable for truly sensitive information",
 	"ADDFIELDS_ENCRYPTION_MODAL_TITLE": "Field Encryption",
 	"ADDFIELDS_ENCRYPTION_MODAL_WARNING": "Encryption cannot be enabled for fields that already contain data, and cannot be disabled once data is entered. Please configure encryption settings before any data is entered.",
+	"ADDFIELDS_LABEL_REQUIRED": "label is required",
 	"ADMIN_HEADER_DOCUMENTS_MASTER_MENU": "Documents Master",
 	"ADMIN_HEADER_FIELD_MAPPING_MENU": "Fields to VC Field Mapping",
 	"ADMIN_HEADER_FIELDS_MENU": "Fields",
