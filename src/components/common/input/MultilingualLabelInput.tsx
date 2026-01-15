@@ -7,13 +7,9 @@ import {
     TabPanel,
     Input,
     FormControl,
-    FormLabel,
     Box,
     Text,
 } from '@chakra-ui/react';
-import ClickableTooltip from '../../ClickableTooltip';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
-import { t } from 'i18next';
 
 interface Language {
     code: string;
