@@ -24,10 +24,10 @@ interface LayoutProps {
 		onSearch?: (query: string) => void;
 		setFilter?: React.Dispatch<React.SetStateAction<unknown>>;
 		inputs?: {
-			label: string;
+			label: { [key: string]: string } | string;
 			key: string;
 			value: string;
-			data: Array<{ label: string; value: string }>;
+			data: Array<{ label: { [key: string]: string } | string; value: string }>;
 		}[];
 		handleBack?: () => void;
 		label?: string;
