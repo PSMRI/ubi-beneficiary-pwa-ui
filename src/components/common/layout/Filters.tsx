@@ -83,22 +83,8 @@ const FilterDialog: React.FC<FilterDialogProps> = ({
 						{inputs.map((item) => (
 							<FloatingSelect
 								key={item.key}
-								label={
-									typeof item.label === 'string'
-										? item.label
-										: item.label?.[language?.name] ||
-										item.label?.['en'] ||
-										''
-								}
-								options={item.data.map((opt) => ({
-									...opt,
-									label:
-										typeof opt.label === 'string'
-											? opt.label
-											: opt.label?.[language?.name] ||
-											opt.label?.['en'] ||
-											'',
-								}))}
+								label={item.label[language.name]}
+								options={item.data}
 								value={values?.[item?.key] || ''}
 								onChange={(e) => {
 									getValue(item, e.target.value);
