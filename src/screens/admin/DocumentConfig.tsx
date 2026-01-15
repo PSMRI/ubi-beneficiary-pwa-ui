@@ -23,11 +23,12 @@ import Layout from '../../components/common/admin/Layout';
 import TagInput from '../../components/common/input/TagInput';
 import { useTranslation } from 'react-i18next';
 import ClickableTooltip from '../../components/ClickableTooltip';
+import MultilingualLabelInput from '../../components/common/input/MultilingualLabelInput';
 
 interface DocumentConfig {
 	id: number;
 	name: string;
-	label: string;
+	label: string | Record<string, string>;
 	documentSubType: string;
 	docType: string;
 	vcFields: string;
@@ -77,6 +78,16 @@ const DocumentConfig = () => {
 		[]
 	);
 	const [errors, setErrors] = useState<ValidationErrors>({});
+
+	// --- State for language config ---
+	const [languageConfig, setLanguageConfig] = useState<{
+		defaultLanguage: string;
+		supportedLanguages: { code: string; label: string; nativeLabel: string }[];
+	}>({
+		defaultLanguage: 'en',
+		supportedLanguages: [{ code: 'en', label: 'English', nativeLabel: 'English' }],
+	});
+	const [isLanguagesLoaded, setIsLanguagesLoaded] = useState(false);
 
 	// --- State for TagInput inline errors ---
 	const [tagInputErrors, setTagInputErrors] = useState<{ [key: string]: string | null }>({});
@@ -144,6 +155,32 @@ const DocumentConfig = () => {
 		};
 	}, [toast, t]);
 
+	// --- Fetch language configuration ---
+	useEffect(() => {
+		let isMounted = true;
+		const fetchLanguages = async () => {
+			try {
+				const res = await getMapping('languageConfig');
+				if (isMounted && res?.data?.value) {
+					const config = res.data.value;
+					if (config.supportedLanguages && Array.isArray(config.supportedLanguages)) {
+						setLanguageConfig(config);
+					} else {
+						console.error("Invalid language config: supportedLanguages is not an array", config);
+					}
+				}
+			} catch (error) {
+				console.error('Error fetching language config, using default:', error);
+			} finally {
+				if (isMounted) setIsLanguagesLoaded(true);
+			}
+		};
+		fetchLanguages();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	// --- Fetch issuers from API ---
 	useEffect(() => {
 		let isMounted = true;
@@ -195,6 +232,8 @@ const DocumentConfig = () => {
 
 	// --- Fetch document configurations from API ---
 	useEffect(() => {
+		if (!isLanguagesLoaded) return;
+
 		const fetchConfigs = async () => {
 			try {
 				const data = await getMapping('vcConfiguration');
@@ -210,10 +249,28 @@ const DocumentConfig = () => {
 						} else if (item.vcFields) {
 							vcFieldsString = JSON.stringify(item.vcFields);
 						}
+
+						// Migration Logic for Label
+						let label = item.label || '';
+						if (typeof label === 'string') {
+							const migratedLabel: Record<string, string> = {};
+							languageConfig.supportedLanguages.forEach((lang) => {
+								migratedLabel[lang.code] = label;
+							});
+							label = migratedLabel;
+						} else if (typeof label === 'object' && label !== null) {
+							// Ensure all supported languages are present
+							languageConfig.supportedLanguages.forEach((lang) => {
+								if (!label[lang.code]) {
+									label[lang.code] = '';
+								}
+							});
+						}
+
 						return {
 							id: Date.now() + idx,
 							name: item.name || '',
-							label: item.label || '',
+							label: label,
 							documentSubType: item.documentSubType || '',
 							docType: item.docType || '',
 							vcFields: vcFieldsString,
@@ -243,11 +300,17 @@ const DocumentConfig = () => {
 					});
 					setDocumentConfigs(mapped);
 				} else {
+					// Initialize new config with empty label object
+					const initialLabel: Record<string, string> = {};
+					languageConfig.supportedLanguages.forEach(lang => {
+						initialLabel[lang.code] = '';
+					});
+
 					setDocumentConfigs([
 						{
 							id: Date.now(),
 							name: '',
-							label: '',
+							label: initialLabel,
 							documentSubType: '',
 							docType: '',
 							vcFields: '',
@@ -279,7 +342,7 @@ const DocumentConfig = () => {
 			}
 		};
 		fetchConfigs();
-	}, []);
+	}, [isLanguagesLoaded, languageConfig, toast, t]);
 
 	// --- Validate vcFields JSON structure ---
 	const validateVcFields = (value: string) => {
@@ -405,12 +468,17 @@ const DocumentConfig = () => {
 			return;
 		}
 
+		const initialLabel: Record<string, string> = {};
+		languageConfig.supportedLanguages.forEach(lang => {
+			initialLabel[lang.code] = '';
+		});
+
 		setDocumentConfigs([
 			...documentConfigs,
 			{
 				id: Date.now(),
 				name: '',
-				label: '',
+				label: initialLabel,
 				documentSubType: '',
 				docType: '',
 				vcFields: '',
@@ -456,7 +524,7 @@ const DocumentConfig = () => {
 		documentConfigs.forEach((doc, index) => {
 			[
 				'name',
-				'label',
+				// 'label', // Validated separately
 				'documentSubType',
 				'docType',
 				'vcFields',
@@ -464,6 +532,7 @@ const DocumentConfig = () => {
 				'issuer',
 				'preValidationEnabled',
 			].forEach((field) => {
+				// @ts-ignore
 				if (!doc[field]) {
 					newErrors[`${field}_${index}`] = `${field} ${t(
 						'DOCUMENTCONFIG_FIELD_REQUIRED'
@@ -471,6 +540,17 @@ const DocumentConfig = () => {
 					hasError = true;
 				}
 			});
+
+			// Validate Multilingual Label
+			const labelValid = languageConfig.supportedLanguages.every(lang => {
+				if (typeof doc.label === 'string') return doc.label.trim().length > 0;
+				return doc.label[lang.code] && doc.label[lang.code].trim().length > 0;
+			});
+
+			if (!labelValid) {
+				newErrors[`label_${index}`] = t('DOCUMENTCONFIG_FIELD_REQUIRED');
+				hasError = true;
+			}
 			// Validate docHasORCode is required when issueVC is "no"
 			if (doc.issueVC === 'no' && !doc.docHasORCode) {
 				newErrors[`docHasORCode_${index}`] = t(
@@ -638,7 +718,9 @@ const DocumentConfig = () => {
 									p={{ base: 2, md: 6 }}
 									mb={2}
 								>
+
 									<VStack spacing={6} align="stretch">
+										{/* delete button */}
 										<HStack justify="flex-end">
 											<IconButton
 												icon={<DeleteIcon />}
@@ -656,6 +738,8 @@ const DocumentConfig = () => {
 												}
 											/>
 										</HStack>
+
+
 										<HStack
 											spacing={4}
 											align={{
@@ -667,6 +751,7 @@ const DocumentConfig = () => {
 												md: 'row',
 											}}
 										>
+											{/* document name */}
 											<FormControl
 												isInvalid={
 													!!errors[`name_${index}`]
@@ -726,77 +811,7 @@ const DocumentConfig = () => {
 													{errors[`name_${index}`]}
 												</FormErrorMessage>
 											</FormControl>
-											<FormControl
-												isInvalid={
-													!!errors[`label_${index}`]
-												}
-												flex={1}
-											>
-												<FormLabel
-													fontSize="md"
-													fontWeight="bold"
-													color="#06164B"
-												>
-													{t(
-														'DOCUMENTCONFIG_DOCUMENT_LABEL_LABEL'
-													)}
-													<Text
-														as="span"
-														color="red.500"
-													>
-														*
-													</Text>
-													<ClickableTooltip
-														label={t(
-															'DOCUMENTCONFIG_INFO_LABEL'
-														)}
-														fontSize="md"
-														placement="right"
-														closeOnScroll={true}
-														zIndex={1100}
-													>
-														<InfoOutlineIcon
-															ml={2}
-															color="gray.500"
-															cursor="pointer"
-														/>
-													</ClickableTooltip>
-												</FormLabel>
-												<Input
-													value={doc.label}
-													onChange={(e) =>
-														handleChange(
-															index,
-															'label',
-															e.target.value
-														)
-													}
-													borderWidth="2px"
-													bg="white"
-													size="lg"
-													borderRadius="md"
-													_focus={{
-														borderColor: 'blue.400',
-														boxShadow:
-															'0 0 0 2px #06164B33',
-													}}
-												/>
-												<FormErrorMessage fontSize="xs">
-													{errors[`label_${index}`]}
-												</FormErrorMessage>
-											</FormControl>
-										</HStack>
-										<HStack
-											spacing={4}
-											align={{
-												base: 'stretch',
-												md: 'start',
-											}}
-											flexDir={{
-												base: 'column',
-												md: 'row',
-											}}
-										>
+											{/* document type */}
 											<FormControl
 												isInvalid={
 													!!errors[`docType_${index}`]
@@ -872,6 +887,75 @@ const DocumentConfig = () => {
 													{errors[`docType_${index}`]}
 												</FormErrorMessage>
 											</FormControl>
+										</HStack>
+
+										{/* document label */}
+										<FormControl
+											isInvalid={
+												!!errors[`label_${index}`]
+											}
+											flex={1}
+										>
+											<FormLabel
+												fontSize="md"
+												fontWeight="bold"
+												color="#06164B"
+											>
+												{t(
+													'DOCUMENTCONFIG_DOCUMENT_LABEL_LABEL'
+												)}
+												<Text
+													as="span"
+													color="red.500"
+												>
+													*
+												</Text>
+												<ClickableTooltip
+													label={t(
+														'DOCUMENTCONFIG_INFO_LABEL'
+													)}
+													fontSize="md"
+													placement="right"
+													closeOnScroll={true}
+													zIndex={1100}
+												>
+													<InfoOutlineIcon
+														ml={2}
+														color="gray.500"
+														cursor="pointer"
+													/>
+												</ClickableTooltip>
+											</FormLabel>
+											<MultilingualLabelInput
+												value={typeof doc.label === 'string'
+													? { [languageConfig.defaultLanguage]: doc.label } // Fallback for safety
+													: doc.label}
+												languages={languageConfig.supportedLanguages}
+												defaultLanguage={languageConfig.defaultLanguage}
+												required={true}
+												isInvalid={!!errors[`label_${index}`]}
+												errorMessage={errors[`label_${index}`]}
+												onChange={(newVal) =>
+													handleChange(
+														index,
+														'label',
+														newVal
+													)
+												}
+											/>
+										</FormControl>
+										<HStack
+											spacing={4}
+											align={{
+												base: 'stretch',
+												md: 'start',
+											}}
+											flexDir={{
+												base: 'column',
+												md: 'row',
+											}}
+										>
+											{/* document sub type */}
 											<FormControl
 												isInvalid={
 													!!errors[
@@ -937,18 +1021,7 @@ const DocumentConfig = () => {
 													}
 												</FormErrorMessage>
 											</FormControl>
-										</HStack>
-										<HStack
-											spacing={4}
-											align={{
-												base: 'stretch',
-												md: 'start',
-											}}
-											flexDir={{
-												base: 'column',
-												md: 'row',
-											}}
-										>
+											{/* issuer */}
 											<FormControl
 												isInvalid={
 													!!errors[`issuer_${index}`]
@@ -1044,6 +1117,19 @@ const DocumentConfig = () => {
 													{errors[`issuer_${index}`]}
 												</FormErrorMessage>
 											</FormControl>
+										</HStack>
+										<HStack
+											spacing={4}
+											align={{
+												base: 'stretch',
+												md: 'start',
+											}}
+											flexDir={{
+												base: 'column',
+												md: 'row',
+											}}
+										>
+
 											<FormControl
 												isInvalid={
 													!!errors[`issueVC_${index}`]
@@ -1123,18 +1209,6 @@ const DocumentConfig = () => {
 													{errors[`issueVC_${index}`]}
 												</FormErrorMessage>
 											</FormControl>
-										</HStack>
-										<HStack
-											spacing={4}
-											align={{
-												base: 'stretch',
-												md: 'start',
-											}}
-											flexDir={{
-												base: 'column',
-												md: 'row',
-											}}
-										>
 											{doc.issueVC === 'yes' && (
 												<FormControl
 													isInvalid={
@@ -1302,105 +1376,109 @@ const DocumentConfig = () => {
 															}
 														</FormErrorMessage>
 													</FormControl>
-													{doc.docHasORCode === 'yes' ? (
-														<FormControl
-															isInvalid={
-																!!errors[
-																`docQRContains_${index}`
-																]
-															}
-															flex={1}
-														>
-															<FormLabel
-																fontSize="md"
-																fontWeight="bold"
-																color="#06164B"
-															>
-																{t(
-																	'DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL'
-																)}
-																<Text
-																	as="span"
-																	color="red.500"
-																>
-																	*
-																</Text>
-																<ClickableTooltip
-																	label={t(
-																		'DOCUMENTCONFIG_INFO_QR_CONTAINS'
-																	)}
-																	fontSize="md"
-																	placement="right"
-																	closeOnScroll={true}
-																	zIndex={1100}
-																>
-																	<InfoOutlineIcon
-																		ml={2}
-																		color="gray.500"
-																		cursor="pointer"
-																	/>
-																</ClickableTooltip>
-															</FormLabel>
-															<Select
-																value={
-																	doc.docQRContains ||
-																	''
-																}
-																onChange={(e) =>
-																	handleChange(
-																		index,
-																		'docQRContains',
-																		e.target
-																			.value as DocumentConfig['docQRContains']
-																	)
-																}
-																borderWidth="2px"
-																bg="white"
-																size="lg"
-																borderRadius="md"
-																_focus={{
-																	borderColor:
-																		'blue.400',
-																	boxShadow:
-																		'0 0 0 2px #06164B33',
-																}}
-																placeholder={t(
-																	'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
-																)}
-															>
-																{DOC_QR_CONTAINS_OPTIONS.map(
-																	(option) => (
-																		<option
-																			key={
-																				option.value
-																			}
-																			value={
-																				option.value
-																			}
-																		>
-																			{
-																				option.label
-																			}
-																		</option>
-																	)
-																)}
-															</Select>
-															<FormErrorMessage fontSize="xs">
-																{
-																	errors[
-																	`docQRContains_${index}`
-																	]
-																}
-															</FormErrorMessage>
-														</FormControl>
-													) : (
-														<Box flex={1} />
-													)}
+
 												</>
 											)}
 										</HStack>
 
+										{doc.docHasORCode === 'yes' ? (
+											<FormControl
+												isInvalid={
+													!!errors[
+													`docQRContains_${index}`
+													]
+												}
+												flex={1}
+												width={{ base: '100%', md: '50%' }}
+											>
+												<FormLabel
+													fontSize="md"
+													fontWeight="bold"
+													color="#06164B"
+												>
+													{t(
+														'DOCUMENTCONFIG_DOC_QR_CONTAINS_LABEL'
+													)}
+													<Text
+														as="span"
+														color="red.500"
+													>
+														*
+													</Text>
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_QR_CONTAINS'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
+												</FormLabel>
+												<Select
+													value={
+														doc.docQRContains ||
+														''
+													}
+													onChange={(e) =>
+														handleChange(
+															index,
+															'docQRContains',
+															e.target
+																.value as DocumentConfig['docQRContains']
+														)
+													}
+													borderWidth="2px"
+													bg="white"
+													size="lg"
+													borderRadius="md"
+													_focus={{
+														borderColor:
+															'blue.400',
+														boxShadow:
+															'0 0 0 2px #06164B33',
+													}}
+													placeholder={t(
+														'DOCUMENTCONFIG_SELECT_DEFAULT_PLACEHOLDER'
+													)}
+												>
+													{DOC_QR_CONTAINS_OPTIONS.map(
+														(option) => (
+															<option
+																key={
+																	option.value
+																}
+																value={
+																	option.value
+																}
+															>
+																{
+																	option.label
+																}
+															</option>
+														)
+													)}
+												</Select>
+												<FormErrorMessage fontSize="xs">
+													{
+														errors[
+														`docQRContains_${index}`
+														]
+													}
+												</FormErrorMessage>
+											</FormControl>
+										) : (
+											<Box flex={1} />
+										)}
+										<Box flex={1} />
 										<HStack spacing={6} align="flex-start">
+
 											{/* Enable Pre-Validations */}
 											<FormControl
 												isInvalid={!!errors[`preValidationEnabled_${index}`]}
@@ -1451,8 +1529,6 @@ const DocumentConfig = () => {
 													{errors[`preValidationEnabled_${index}`]}
 												</FormErrorMessage>
 											</FormControl>
-
-											{/* Pre-Validation Required Keywords (same row, conditional) */}
 
 											<FormControl
 												isInvalid={!!tagInputErrors[`preValidationRequiredKeywords_${index}`]}
@@ -1511,57 +1587,61 @@ const DocumentConfig = () => {
 
 										{/* Row 2 */}
 
+										{/* Pre-Validation Required Keywords (same row, conditional) */}
+										<HStack>
+											{/* Pre-Validation Required Keywords (same row, conditional) */}
 
 
-										<FormControl
-											isInvalid={!!tagInputErrors[`preValidationExclusionKeywords_${index}`]}
-											width={{ base: '100%', md: '50%' }}
-										>
-											<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
-												{t('DOCUMENTCONFIG_PREVAL_EXCLUDED_LABEL')}
-												<ClickableTooltip
-													label={t(
-														'DOCUMENTCONFIG_INFO_PREVAL_EXCLUDED'
-													)}
-													fontSize="md"
-													placement="right"
-													closeOnScroll={true}
-													zIndex={1100}
-												>
-													<InfoOutlineIcon
-														ml={2}
-														color="gray.500"
-														cursor="pointer"
-													/>
-												</ClickableTooltip>
-											</FormLabel>
+											<FormControl
+												isInvalid={!!tagInputErrors[`preValidationRequiredKeywords_${index}`]}
+												width={{ base: '100%', md: '50%' }}
+											>
+												<FormLabel fontSize="md" fontWeight="bold" color="#06164B">
+													{t('DOCUMENTCONFIG_PREVAL_EXCLUDED_LABEL')}
+													<ClickableTooltip
+														label={t(
+															'DOCUMENTCONFIG_INFO_PREVAL_EXCLUDED'
+														)}
+														fontSize="md"
+														placement="right"
+														closeOnScroll={true}
+														zIndex={1100}
+													>
+														<InfoOutlineIcon
+															ml={2}
+															color="gray.500"
+															cursor="pointer"
+														/>
+													</ClickableTooltip>
+												</FormLabel>
+												<TagInput
+													tags={doc.preValidationExclusionKeywords || []}
+													onTagsChange={(newTags) =>
+														handleChange(
+															index,
+															'preValidationExclusionKeywords',
+															newTags
+														)
+													}
+													placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS')}
+													onError={(errorMessage) => {
+														setTagInputErrors(prev => {
+															const key = `preValidationExclusionKeywords_${index}`;
+															if (prev[key] === errorMessage) return prev;
+															return {
+																...prev,
+																[key]: errorMessage
+															};
+														});
+													}}
+													caseSensitive={false}
+												/>
+												<FormErrorMessage fontSize="xs">
+													{tagInputErrors[`preValidationExclusionKeywords_${index}`]}
+												</FormErrorMessage>
+											</FormControl>
+										</HStack>
 
-											<TagInput
-												tags={doc.preValidationExclusionKeywords || []}
-												onTagsChange={(newTags) =>
-													handleChange(
-														index,
-														'preValidationExclusionKeywords',
-														newTags
-													)
-												}
-												placeholder={t('DOCUMENTCONFIG_FIELD_PREVALIDAYIONS_EXCLUDED_KEYWORDS')}
-												onError={(errorMessage) => {
-													setTagInputErrors(prev => {
-														const key = `preValidationExclusionKeywords_${index}`;
-														if (prev[key] === errorMessage) return prev;
-														return {
-															...prev,
-															[key]: errorMessage
-														};
-													});
-												}}
-												caseSensitive={false}
-											/>
-											<FormErrorMessage fontSize="xs">
-												{tagInputErrors[`preValidationExclusionKeywords_${index}`]}
-											</FormErrorMessage>
-										</FormControl>
 										<FormControl
 											isInvalid={
 												!!errors[`vcFields_${index}`]
