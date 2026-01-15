@@ -24,6 +24,7 @@ import TagInput from '../../components/common/input/TagInput';
 import { useTranslation } from 'react-i18next';
 import ClickableTooltip from '../../components/ClickableTooltip';
 import MultilingualLabelInput from '../../components/common/input/MultilingualLabelInput';
+import { useLanguageConfig } from '../../hooks/useLanguageConfig';
 
 interface DocumentConfig {
 	id: number;
@@ -79,15 +80,8 @@ const DocumentConfig = () => {
 	);
 	const [errors, setErrors] = useState<ValidationErrors>({});
 
-	// --- State for language config ---
-	const [languageConfig, setLanguageConfig] = useState<{
-		defaultLanguage: string;
-		supportedLanguages: { code: string; label: string; nativeLabel: string }[];
-	}>({
-		defaultLanguage: 'en',
-		supportedLanguages: [{ code: 'en', label: 'English', nativeLabel: 'English' }],
-	});
-	const [isLanguagesLoaded, setIsLanguagesLoaded] = useState(false);
+	// --- Language config from shared hook ---
+	const { languageConfig, isLanguagesLoaded, error: languageError } = useLanguageConfig();
 
 	// --- State for TagInput inline errors ---
 	const [tagInputErrors, setTagInputErrors] = useState<{ [key: string]: string | null }>({});
@@ -155,32 +149,6 @@ const DocumentConfig = () => {
 		};
 	}, [toast, t]);
 
-	// --- Fetch language configuration ---
-	useEffect(() => {
-		let isMounted = true;
-		const fetchLanguages = async () => {
-			try {
-				const res = await getMapping('languageConfig');
-				if (isMounted && res?.data?.value) {
-					const config = res.data.value;
-					if (config.supportedLanguages && Array.isArray(config.supportedLanguages)) {
-						setLanguageConfig(config);
-					} else {
-						console.error("Invalid language config: supportedLanguages is not an array", config);
-					}
-				}
-			} catch (error) {
-				console.error('Error fetching language config, using default:', error);
-			} finally {
-				if (isMounted) setIsLanguagesLoaded(true);
-			}
-		};
-		fetchLanguages();
-		return () => {
-			isMounted = false;
-		};
-	}, []);
-
 	// --- Fetch issuers from API ---
 	useEffect(() => {
 		let isMounted = true;
@@ -230,9 +198,44 @@ const DocumentConfig = () => {
 		};
 	}, [toast, t]);
 
+	// Helper function to migrate label to multilingual format
+	const migrateLabel = (
+		label: string | Record<string, string> | undefined,
+		config: typeof languageConfig
+	): Record<string, string> => {
+		const labelValue = label || '';
+		
+		if (!config) {
+			if (typeof labelValue === 'string') {
+				return { en: labelValue };
+			}
+			// TypeScript knows labelValue is Record<string, string> here
+			return labelValue;
+		}
+
+		if (typeof labelValue === 'string') {
+			const migratedLabel: Record<string, string> = {};
+			for (const lang of config.supportedLanguages) {
+				migratedLabel[lang.code] = labelValue;
+			}
+			return migratedLabel;
+		} else if (typeof labelValue === 'object' && labelValue !== null) {
+			// Ensure all supported languages are present
+			const labelObj = { ...labelValue } as Record<string, string>;
+			for (const lang of config.supportedLanguages) {
+				if (!labelObj[lang.code]) {
+					labelObj[lang.code] = '';
+				}
+			}
+			return labelObj;
+		}
+		
+		return {};
+	};
+
 	// --- Fetch document configurations from API ---
 	useEffect(() => {
-		if (!isLanguagesLoaded) return;
+		if (!isLanguagesLoaded || !languageConfig) return;
 
 		const fetchConfigs = async () => {
 			try {
@@ -251,21 +254,7 @@ const DocumentConfig = () => {
 						}
 
 						// Migration Logic for Label
-						let label = item.label || '';
-						if (typeof label === 'string') {
-							const migratedLabel: Record<string, string> = {};
-							languageConfig.supportedLanguages.forEach((lang) => {
-								migratedLabel[lang.code] = label;
-							});
-							label = migratedLabel;
-						} else if (typeof label === 'object' && label !== null) {
-							// Ensure all supported languages are present
-							languageConfig.supportedLanguages.forEach((lang) => {
-								if (!label[lang.code]) {
-									label[lang.code] = '';
-								}
-							});
-						}
+						const label = migrateLabel(item.label, languageConfig);
 
 						return {
 							id: Date.now() + idx,
@@ -302,9 +291,11 @@ const DocumentConfig = () => {
 				} else {
 					// Initialize new config with empty label object
 					const initialLabel: Record<string, string> = {};
-					languageConfig.supportedLanguages.forEach(lang => {
-						initialLabel[lang.code] = '';
-					});
+					if (languageConfig) {
+						languageConfig.supportedLanguages.forEach(lang => {
+							initialLabel[lang.code] = '';
+						});
+					}
 
 					setDocumentConfigs([
 						{
@@ -343,6 +334,44 @@ const DocumentConfig = () => {
 		};
 		fetchConfigs();
 	}, [isLanguagesLoaded, languageConfig, toast, t]);
+
+	// Show loading or error state if language config is not ready
+	if (!isLanguagesLoaded) {
+		return (
+			<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
+				<Layout
+					showMenu={true}
+					title={t('DOCUMENTCONFIG_TITLE')}
+					subTitle={t('DOCUMENTCONFIG_SUBTITLE')}
+				>
+					<Box p={8} textAlign="center">
+						<Text>Loading language configuration...</Text>
+					</Box>
+				</Layout>
+			</Box>
+		);
+	}
+
+	if (!languageConfig) {
+		return (
+			<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
+				<Layout
+					showMenu={true}
+					title={t('DOCUMENTCONFIG_TITLE')}
+					subTitle={t('DOCUMENTCONFIG_SUBTITLE')}
+				>
+					<Box p={8} textAlign="center">
+						<Text color="red.500" mb={4}>
+							Failed to load language configuration: {languageError || 'Unknown error'}
+						</Text>
+						<Text fontSize="sm" color="gray.600">
+							Please refresh the page or contact support.
+						</Text>
+					</Box>
+				</Layout>
+			</Box>
+		);
+	}
 
 	// --- Validate vcFields JSON structure ---
 	const validateVcFields = (value: string) => {
@@ -469,9 +498,11 @@ const DocumentConfig = () => {
 		}
 
 		const initialLabel: Record<string, string> = {};
-		languageConfig.supportedLanguages.forEach(lang => {
-			initialLabel[lang.code] = '';
-		});
+		if (languageConfig) {
+			languageConfig.supportedLanguages.forEach(lang => {
+				initialLabel[lang.code] = '';
+			});
+		}
 
 		setDocumentConfigs([
 			...documentConfigs,
@@ -542,10 +573,10 @@ const DocumentConfig = () => {
 			});
 
 			// Validate Multilingual Label
-			const labelValid = languageConfig.supportedLanguages.every(lang => {
+			const labelValid = languageConfig ? languageConfig.supportedLanguages.every(lang => {
 				if (typeof doc.label === 'string') return doc.label.trim().length > 0;
 				return doc.label[lang.code] && doc.label[lang.code].trim().length > 0;
-			});
+			}) : false;
 
 			if (!labelValid) {
 				newErrors[`label_${index}`] = t('DOCUMENTCONFIG_FIELD_REQUIRED');
@@ -573,13 +604,13 @@ const DocumentConfig = () => {
 				hasError = true;
 			}
 			if (doc.vcFields && doc.vcFields.trim() !== '') {
-				if (!validateVcFields(doc.vcFields)) {
+				if (validateVcFields(doc.vcFields)) {
+					delete newErrors[`vcFields_${index}`];
+				} else {
 					newErrors[`vcFields_${index}`] = t(
 						'DOCUMENTCONFIG_VC_FIELDS_INVALID_FORMAT'
 					);
 					hasError = true;
-				} else {
-					delete newErrors[`vcFields_${index}`];
 				}
 			}
 
@@ -926,12 +957,13 @@ const DocumentConfig = () => {
 													/>
 												</ClickableTooltip>
 											</FormLabel>
-											<MultilingualLabelInput
-												value={typeof doc.label === 'string'
-													? { [languageConfig.defaultLanguage]: doc.label } // Fallback for safety
-													: doc.label}
-												languages={languageConfig.supportedLanguages}
-												defaultLanguage={languageConfig.defaultLanguage}
+											{languageConfig ? (
+												<MultilingualLabelInput
+													value={typeof doc.label === 'string'
+														? { [languageConfig.defaultLanguage]: doc.label } // Fallback for safety
+														: doc.label}
+													languages={languageConfig.supportedLanguages}
+													defaultLanguage={languageConfig.defaultLanguage}
 												required={true}
 												isInvalid={!!errors[`label_${index}`]}
 												errorMessage={errors[`label_${index}`]}
@@ -942,7 +974,10 @@ const DocumentConfig = () => {
 														newVal
 													)
 												}
-											/>
+												/>
+											) : (
+												<Text color="gray.500">Loading language configuration...</Text>
+											)}
 										</FormControl>
 										<HStack
 											spacing={4}

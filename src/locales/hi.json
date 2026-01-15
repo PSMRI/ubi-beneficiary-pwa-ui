@@ -17,6 +17,7 @@
 	"ADDFIELDS_ENCRYPTION_MODAL_TIP": "केवल वास्तव में संवेदनशील जानकारी के लिए सक्षम करें",
 	"ADDFIELDS_ENCRYPTION_MODAL_TITLE": "फ़ील्ड एन्क्रिप्शन",
 	"ADDFIELDS_ENCRYPTION_MODAL_WARNING": "उन फ़ील्ड्स के लिए एन्क्रिप्शन सक्षम नहीं किया जा सकता जिनमें पहले से ही डेटा है, और एक बार डेटा दर्ज करने के बाद इसे अक्षम नहीं किया जा सकता। कृपया कोई भी डेटा दर्ज करने से पहले एन्क्रिप्शन सेटिंग्स कॉन्फ़िगर करें।",
+	"ADDFIELDS_LABEL_REQUIRED": "लेबल आवश्यक है",
 	"ADMIN_HEADER_DOCUMENTS_MASTER_MENU": "दस्तावेज़ मास्टर",
 	"ADMIN_HEADER_FIELD_MAPPING_MENU": "फ़ील्ड से VC फ़ील्ड मैपिंग",
 	"ADMIN_HEADER_FIELDS_MENU": "फ़ील्ड",
