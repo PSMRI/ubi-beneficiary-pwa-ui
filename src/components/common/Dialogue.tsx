@@ -72,7 +72,20 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 		fetchUserFields();
 	}, [termsAndConditions]);
 
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
+	
+	// Helper function to extract text from multilingual objects
+	const getMultilingualText = (text: string | Record<string, string> | undefined): string => {
+		if (!text) return '';
+		if (typeof text === 'string') return text;
+		if (typeof text === 'object') {
+			const currentLang = i18n.language || localStorage.getItem('i18nextLng') || 'en';
+			// Try current language first, then fallback to 'en', then first available key
+			return text[currentLang] || text['en'] || Object.values(text)[0] || '';
+		}
+		return '';
+	};
+	
 	if (previewDocument) {
 		const hasDocumentData = document && document !== null && Object.keys(document).length > 0;
 
@@ -334,7 +347,7 @@ const CommonDialogue: React.FC<CommonDialogueProps> = ({
 																key={`field-${field.name}`}
 																mb={1}
 															>
-																• {field.label}
+																• {getMultilingualText(field.label)}
 															</Text>
 														))}
 													</Box>
