@@ -6,6 +6,7 @@ import { Box, Text, VStack, HStack, Button, useTheme } from '@chakra-ui/react';
 import { useDocumentUpload } from '../../hooks/useDocumentUpload';
 import { DocumentUploadResponse } from '../../types/document.types';
 import { ConfigService } from '../../services/configService';
+import { t } from 'i18next';
 
 interface DocumentUploadProps {
 	onUpload: (
@@ -53,7 +54,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
 						{error}
 					</Text>
 				)}
-				{isUploading && <Text>Uploading...</Text>}
+				{isUploading && <Text>{t('SCAN_UPLOADING') || 'Uploading...'}</Text>}
 				{(!docType || !docSubtype) && (
 					<Text color="orange.500" fontSize="sm">
 						Document type information is required
