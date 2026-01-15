@@ -10,6 +10,7 @@ import {
 	VStack,
 } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
+import { t } from 'i18next';
 
 interface PaginationProps {
 	currentPage: number;
@@ -71,11 +72,11 @@ const Pagination: React.FC<PaginationProps> = ({
 	const getResultsText = () => {
 		const startItem = (currentPage - 1) * itemsPerPage + 1;
 		const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-		return `${startItem}-${endItem} of ${totalItems}`;
+		return `${startItem}-${endItem} ${t('BENEFIT_SEARCH_PAGINATION_OF')}${totalItems}`;
 	};
 
 	const getCompactResults = () => {
-		return `Page ${currentPage} of ${totalPages}`;
+		return `${t('BENEFIT_SEARCH_PAGINATION_PAGE')} ${currentPage} ${t('BENEFIT_SEARCH_PAGINATION_OF')} ${totalPages}`;
 	};
 
 	return (
@@ -103,7 +104,7 @@ const Pagination: React.FC<PaginationProps> = ({
 					{showItemsPerPageSelector && (
 						<HStack spacing={1} flexShrink={0}>
 							<Text fontSize="xs" color="gray.600">
-								Show
+								{t('BENEFIT_SEARCH_PAGINATION_SHOW')}
 							</Text>
 							<Select
 								size="xs"
@@ -126,7 +127,7 @@ const Pagination: React.FC<PaginationProps> = ({
 				{/* Mobile: Navigation */}
 				<HStack spacing={1} justify="center">
 					<IconButton
-						aria-label="Previous page"
+						aria-label={t('BENEFIT_SEARCH_PAGINATION_PREVIOUS')}
 						icon={<ChevronLeftIcon />}
 						size="sm"
 						onClick={() => onPageChange(currentPage - 1)}
@@ -200,7 +201,7 @@ const Pagination: React.FC<PaginationProps> = ({
 					)}
 
 					<IconButton
-						aria-label="Next page"
+						aria-label={t('BENEFIT_SEARCH_PAGINATION_NEXT')}
 						icon={<ChevronRightIcon />}
 						size="sm"
 						onClick={() => onPageChange(currentPage + 1)}
@@ -239,7 +240,7 @@ const Pagination: React.FC<PaginationProps> = ({
 							color="gray.600"
 							whiteSpace="nowrap"
 						>
-							Show
+							{t('BENEFIT_SEARCH_PAGINATION_SHOW')}
 						</Text>
 						<Select
 							size={size}
@@ -260,7 +261,7 @@ const Pagination: React.FC<PaginationProps> = ({
 							color="gray.600"
 							whiteSpace="nowrap"
 						>
-							per page
+							{t('BENEFIT_SEARCH_PAGINATION_PER_PAGE')}
 						</Text>
 					</HStack>
 				)}
@@ -275,7 +276,7 @@ const Pagination: React.FC<PaginationProps> = ({
 				>
 					{/* Previous button */}
 					<IconButton
-						aria-label="Previous page"
+						aria-label={t('BENEFIT_SEARCH_PAGINATION_PREVIOUS')}
 						icon={<ChevronLeftIcon />}
 						size={size}
 						onClick={() => onPageChange(currentPage - 1)}
@@ -337,7 +338,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
 					{/* Next button */}
 					<IconButton
-						aria-label="Next page"
+						aria-label={t('BENEFIT_SEARCH_PAGINATION_NEXT')}
 						icon={<ChevronRightIcon />}
 						size={size}
 						onClick={() => onPageChange(currentPage + 1)}
@@ -357,7 +358,7 @@ const Pagination: React.FC<PaginationProps> = ({
 						w={{ base: '100%', lg: 'auto' }}
 						textAlign={{ base: 'center', lg: 'right' }}
 					>
-						{getResultsText()} results
+						{getResultsText()} {t('BENEFIT_SEARCH_PAGINATION_RESULTS')}
 					</Text>
 				)}
 			</Flex>
