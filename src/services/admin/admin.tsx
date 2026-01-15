@@ -23,12 +23,13 @@ export interface FieldValueNormalization {
 
 export interface Mapping {
 	name?: string;
-	label?: string;
+	label?: string | Record<string, string>;
 	documentSubType?: string;
 	docType?: string;
 	fieldName?: string;
 	documentMappings?: DocumentFieldMapping[];
 	fieldValueNormalizationMapping?: FieldValueNormalization;
+	[key: string]: any;
 }
 
 export interface Field {
@@ -59,8 +60,8 @@ export interface AddFieldPayload {
 	type: string;
 	ordering?: number;
 	fieldParams?: { options?: FieldOption[] } | null;
-	fieldAttributes?: { 
-		isEditable: boolean; 
+	fieldAttributes?: {
+		isEditable: boolean;
 		isRequired: boolean;
 		isEncrypted: boolean;
 	};

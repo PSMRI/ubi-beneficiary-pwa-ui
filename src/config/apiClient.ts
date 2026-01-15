@@ -27,7 +27,8 @@ const PUBLIC_ENDPOINTS = [
  */
 const LANGUAGE_CODE_MAP: Record<string, string> = {
     'en': 'en',
-    'hi': 'hi'
+    'hi': 'hi',
+
 };
 
 // =============================================
