@@ -1,6 +1,6 @@
 interface FilterOption {
 	id: number;
-	label: { en: string; hi: string; mr: string };
+	label: { [key: string]: string };
 	value: string;
 }
 export const Gender: FilterOption[] = [
