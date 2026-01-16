@@ -14,6 +14,7 @@ import { ArrowForwardIcon } from '@chakra-ui/icons';
 import { Link as RouterLink } from 'react-router-dom';
 import { formatDateString } from '../../utils/jsHelper/helper';
 import { MdCurrencyRupee } from 'react-icons/md';
+import { t } from 'i18next';
 interface BenefitCardProps {
 	item: {
 		item_id: number;
@@ -154,7 +155,7 @@ const BenefitCard: React.FC<BenefitCardProps> = ({ item }) => {
 					to={`/benefits/${bpp_id}/${id}`}
 					color={'#0037b9'}
 				>
-					View Details <ArrowForwardIcon />
+					{t('BENEFIT_SEARCH_VIEW_DETAILS')} <ArrowForwardIcon />
 				</Link>
 			</Flex>
 		</Card>

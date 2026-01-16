@@ -17,6 +17,7 @@ import {
 	IoHelpCircleOutline,
 } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
+import { t } from 'i18next';
 
 interface Application {
 	benefit_provider_id: string;
@@ -49,28 +50,29 @@ const StatusIcon = ({ status }: { status: string }) => {
 		case 'application approved':
 			IconComponent = IoCheckmarkCircle;
 			iconColor = COLORS.success;
-			label = `${label}`;
+			label = t('APPLICATION_STATUS_APPROVED');
 			break;
 		case 'application rejected':
 			IconComponent = IoCloseCircle;
 			iconColor = COLORS.error;
-			label = `${label}`;
+			label = t('APPLICATION_STATUS_REJECTED');
 			break;
 		case 'application pending':
 		case 'submitted':
 			IconComponent = IoTimeOutline;
 			iconColor = '#CC7914';
-			label = `${label}`;
+			label = t('APPLICATION_STATUS_PENDING');
 			break;
 
 		case 'application resubmit':
 			IconComponent = IoWarning;
 			iconColor = COLORS.warning;
+			label = t('APPLICATION_STATUS_RESUBMIT');
 			break;
 		default:
 			IconComponent = IoHelpCircleOutline;
 			iconColor = '#999999';
-			break;
+			label = t('APPLICATION_STATUS_INITIATED');
 	}
 
 	return (
@@ -214,7 +216,7 @@ const ApplicationList: React.FC<ApplicationListProps> = ({
 													display="flex"
 													alignItems="center"
 												>
-													Reviewer Comment:{' '}
+													{t('APPLICATION_REVIEWER_COMMENT')}
 													{app.remark}
 												</Text>
 											)}

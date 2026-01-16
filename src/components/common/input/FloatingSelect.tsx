@@ -3,7 +3,7 @@ import { FormControl, Select, FormLabel } from '@chakra-ui/react';
 
 interface Option {
 	value: string;
-	label: string;
+	label: { [key: string]: string } | string;
 }
 
 interface FloatingSelectProps {
@@ -12,6 +12,7 @@ interface FloatingSelectProps {
 	label: string;
 	name: string;
 	options: Option[];
+	language?: string;
 }
 
 const FloatingSelect: React.FC<FloatingSelectProps> = ({
@@ -20,6 +21,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
 	label,
 	name,
 	options,
+	language,
 }) => {
 	const [isFocused, setIsFocused] = useState(false);
 
@@ -71,7 +73,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
 				<option value="" hidden></option>
 				{options.map((option) => (
 					<option key={option.value} value={option.value}>
-						{option.label}
+						{option.label[language] ? option.label[language] : option.label}
 					</option>
 				))}
 			</Select>

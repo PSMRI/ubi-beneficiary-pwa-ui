@@ -15,6 +15,7 @@ import {
 	getPreviewDetails,
 	getSubmmitedDoc,
 } from '../../utils/jsHelper/helper';
+import { t } from 'i18next';
 
 interface UserData {
 	id: number;
@@ -51,7 +52,21 @@ const Preview: React.FC = () => {
 	const handleBack = () => {
 		navigate('/applicationstatus');
 	};
-
+	const getStatus = (status: string) => {
+		switch (status) {
+			case 'application approved':
+				return t('APPLICATION_STATUS_APPROVED');
+			case 'application rejected':
+				return t('APPLICATION_STATUS_REJECTED');
+			case 'application pending':
+			case 'submitted':
+				return t('APPLICATION_STATUS_PENDING');
+			case 'application resubmit':
+				return t('APPLICATION_STATUS_RESUBMIT');
+			default:
+				return t('APPLICATION_STATUS_INITIATED');
+		}
+	};
 	const init = async () => {
 		try {
 			if (!id) {
@@ -68,7 +83,6 @@ const Preview: React.FC = () => {
 			setLoading(true);
 
 			const result = await getApplicationDetails(id);
-
 			setStatus(result?.data?.status);
 			if (result?.data?.application_data?.vc_documents) {
 				const formattedDoc = formatDocuments(
@@ -110,6 +124,7 @@ const Preview: React.FC = () => {
 		}
 	};
 
+
 	useEffect(() => {
 		init();
 	}, [id]);
@@ -117,8 +132,8 @@ const Preview: React.FC = () => {
 	return (
 		<Layout
 			_heading={{
-				heading: 'My Applications',
-				subHeading: `Order ID ${benefitName}`,
+				heading: t('PREVIEW_MY_APPLICATIONS_TITLE'),
+				subHeading: `${t('PREVIEW_ORDER_ID_PREFIX')} ${benefitName}`,
 				handleBack,
 			}}
 			loading={loading}
@@ -131,11 +146,11 @@ const Preview: React.FC = () => {
 				height="52px"
 			>
 				<Text fontWeight={400} fontSize={14}>
-					Status
+					{t('PREVIEW_STATUS_LABEL')}
 				</Text>
 				<Text color="#41424B" fontWeight={700} fontSize={14}>
-					{status.charAt(0).toUpperCase() +
-						status.slice(1).toLowerCase()}
+					{getStatus(status)}
+
 				</Text>
 			</HStack>
 
@@ -177,7 +192,7 @@ const Preview: React.FC = () => {
 											{secondItem.label}
 										</Text>
 										{secondItem.label === 'Student Type' ||
-										secondItem.value === '' ? (
+											secondItem.value === '' ? (
 											<Text {...valueStyles}>-</Text>
 										) : (
 											<Text {...valueStyles}>
