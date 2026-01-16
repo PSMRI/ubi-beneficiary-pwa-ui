@@ -20,6 +20,7 @@ const PUBLIC_ENDPOINTS = [
     '/otp/send_otp',
     '/otp/verify_otp',
     '/content/search', // Can be public or authenticated based on sendToken flag
+    '/admin/config/languageConfig', // Language config should be accessible before login
 ];
 
 /**

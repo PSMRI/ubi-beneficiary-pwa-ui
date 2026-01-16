@@ -122,6 +122,24 @@ const Home: React.FC = () => {
 		}
 	}, [userData, documents]);
 
+	// Listen for language change events to refresh data
+	useEffect(() => {
+		const handleLanguageChange = async () => {
+			try {
+				const result = await getUser();
+				const data = await getDocumentsList();
+				updateUserData(result?.data, data?.data?.value);
+			} catch (error) {
+				console.error('Error refreshing data after language change:', error);
+			}
+		};
+
+		globalThis.addEventListener('languageChanged', handleLanguageChange);
+		return () => {
+			globalThis.removeEventListener('languageChanged', handleLanguageChange);
+		};
+	}, [updateUserData]);
+
 	useEffect(() => {
 		getConsent();
 	}, []);
