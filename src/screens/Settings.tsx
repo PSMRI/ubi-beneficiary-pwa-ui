@@ -6,7 +6,6 @@ import {
 	useToast,
 	Spinner,
 	Center,
-	SimpleGrid,
 	Icon,
 } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
@@ -95,16 +94,16 @@ const Settings: React.FC = () => {
 		<Layout
 			isMenu={false}
 			_heading={{
-				heading: t('SETTINGS_LANGUAGE_PREFERENCE_TITLE') || 'Language Preference',
+				heading: t('SETTINGS_LANGUAGE_PREFERENCE_TITLE') || 'Choose Language',
 				handleBack,
 			}}
 			isBottombar={false}
 		>
-			<Box shadow="md" borderWidth="1px" borderRadius="md" p={2}>
-				<VStack spacing={4} align="stretch">
-					{/* Language Selection Cards - Simple square boxes, 2 per row */}
+			<Box px={4} py={3}>
+				<VStack spacing={3} align="stretch">
+					{/* Language Selection Cards - Compact horizontal cards */}
 					{isLanguagesLoaded && languageConfig ? (
-						<SimpleGrid columns={2} spacing={3} p={3}>
+						<VStack spacing={2.5} align="stretch">
 							{languageConfig.supportedLanguages.map((lang) => {
 								const isSelected = language.name === lang.code;
 								const isDisabled = isChangingLanguage || isSelected;
@@ -115,50 +114,64 @@ const Settings: React.FC = () => {
 										onClick={() => handleLanguageChange(lang.code)}
 										disabled={isDisabled}
 										cursor={isDisabled ? 'not-allowed' : 'pointer'}
-										bg="white"
+										bg={isSelected ? '#F5F7FF' : 'white'}
 										borderWidth="1px"
 										borderColor={isSelected ? '#3c5fdd' : '#E2E8F0'}
-										borderRadius="md"
-										p={4}
-										aspectRatio="1"
+										borderRadius="10px"
+										p={3}
+										minH="64px"
 										display="flex"
-										flexDirection="column"
+										flexDirection="row"
 										alignItems="center"
-										justifyContent="center"
-										minH="100px"
+										justifyContent="space-between"
+										transition="all 0.2s"
+										sx={{
+											'&:hover:not(:disabled)': {
+												borderColor: isSelected ? '#3c5fdd' : '#CBD5E0',
+												transform: 'translateY(-1px)',
+												boxShadow: 'sm',
+											},
+											'&:active:not(:disabled)': {
+												transform: 'none',
+											},
+										}}
 										opacity={isChangingLanguage && !isSelected ? 0.5 : 1}
+										w="100%"
 									>
-										<VStack spacing={1} align="center">
+										<Box flex={1} display="flex" flexDirection="column" justifyContent="center">
 											<Text
-												fontSize="16px"
+												fontSize="15px"
 												fontWeight="500"
-												color="#433E3F"
-												textAlign="center"
+												color={isSelected ? '#3c5fdd' : '#433E3F'}
+												textAlign="left"
+												lineHeight="1.4"
 											>
 												{lang.nativeLabel || lang.label}
 											</Text>
 											{lang.label !== lang.nativeLabel && (
 												<Text
-													fontSize="12px"
+													fontSize="13px"
 													color="#767680"
-													textAlign="center"
+													textAlign="left"
+													mt={0.5}
+													lineHeight="1.3"
 												>
 													{lang.label}
 												</Text>
 											)}
-											{isSelected && (
-												<Icon
-													as={CheckIcon}
-													boxSize={5}
-													color="#3c5fdd"
-													mt={1}
-												/>
-											)}
-										</VStack>
+										</Box>
+										{isSelected && (
+											<Icon
+												as={CheckIcon}
+												boxSize={5}
+												color="#3c5fdd"
+												ml={2}
+											/>
+										)}
 									</Box>
 								);
 							})}
-						</SimpleGrid>
+						</VStack>
 					) : (
 						<Center py={8}>
 							<Spinner size="lg" color="#3c5fdd" />
