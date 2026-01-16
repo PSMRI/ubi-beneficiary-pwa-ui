@@ -43,6 +43,8 @@ import {
 } from '../../services/admin/admin';
 import Layout from '../../components/common/admin/Layout';
 import { useTranslation } from 'react-i18next';
+import MultilingualLabelInput from '../../components/common/input/MultilingualLabelInput';
+import { useLanguageConfig } from '../../hooks/useLanguageConfig';
 
 // Extend Field type locally to include isEditable for table rendering
 import type { Field as BaseField } from '../../services/admin/admin';
@@ -55,7 +57,7 @@ interface Field extends BaseField {
 }
 
 interface FieldForm {
-    label: string;
+    label: Record<string, string>; // { en: string, hi: string, ... }
     name: string;
     type: string;
     isRequired: boolean;
@@ -65,8 +67,18 @@ interface FieldForm {
     options: FieldOption[];
 }
 
-const initialForm: FieldForm = {
-    label: '',
+// Initialize label object dynamically based on languages array
+const getInitialLabel = (supportedLanguages: { code: string; label: string; nativeLabel: string }[]): Record<string, string> => {
+    const initialLabel: Record<string, string> = {};
+    supportedLanguages.forEach((lang) => {
+        initialLabel[lang.code] = '';
+    });
+    return initialLabel;
+};
+
+// This will be initialized in the component after languageConfig is loaded
+const getInitialForm = (supportedLanguages: { code: string; label: string; nativeLabel: string }[]): FieldForm => ({
+    label: getInitialLabel(supportedLanguages),
     name: '',
     type: 'text',
     isRequired: false,
@@ -74,7 +86,7 @@ const initialForm: FieldForm = {
     isEncrypted: false, // Add this line
     ordering: '',
     options: [],
-};
+});
 
 // Helper function to get encrypted text
 function getEncryptedText(isEncrypted: boolean | undefined) {
@@ -94,8 +106,19 @@ function getEditableText(isEditable: boolean | undefined) {
 
 const AddFields: React.FC = () => {
 	const { t } = useTranslation();
+	const { languageConfig, isLanguagesLoaded, error: languageError } = useLanguageConfig();
 	const [fields, setFields] = useState<Field[]>([]);
-	const [form, setForm] = useState<FieldForm>(initialForm);
+	// Initialize with empty form - will be updated when languageConfig loads
+	const [form, setForm] = useState<FieldForm>({
+		label: {},
+		name: '',
+		type: 'text',
+		isRequired: false,
+		isEditable: true,
+		isEncrypted: false,
+		ordering: '',
+		options: [],
+	});
 	const [errors, setErrors] = useState<Record<string, string>>({});
 	const [isAdding, setIsAdding] = useState(false);
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -108,6 +131,13 @@ const AddFields: React.FC = () => {
 		idx: number;
 		fieldId: string;
 	} | null>(null);
+
+	// Update form when language config is loaded from API
+	useEffect(() => {
+		if (isLanguagesLoaded && languageConfig) {
+			setForm(getInitialForm(languageConfig.supportedLanguages));
+		}
+	}, [isLanguagesLoaded, languageConfig]);
 
 	// Fetch fields on mount
 	useEffect(() => {
@@ -186,10 +216,45 @@ const AddFields: React.FC = () => {
 
 	const validateForm = () => {
 		const newErrors: Record<string, string> = {};
-		if (!form.label.trim()) newErrors.label = 'Label is required';
+		
+			// Validate labels - dynamically check all languages from languageConfig
+		if (!languageConfig) {
+			newErrors.label = 'Language configuration not loaded';
+			setErrors(newErrors);
+			return false;
+		}
+		
+		const missingLabels: Array<{ code: string; label: string }> = [];
+		languageConfig.supportedLanguages.forEach((lang) => {
+			if (!form.label[lang.code]?.trim()) {
+				missingLabels.push({ code: lang.code, label: lang.label });
+			}
+		});
+		
+		if (missingLabels.length > 0) {
+			if (missingLabels.length === 1) {
+				// Single label missing - use generic message dynamically
+				const missingLang = missingLabels[0];
+				newErrors.label = `${missingLang.label} ${t('ADDFIELDS_LABEL_REQUIRED')}`;
+			} else {
+				// Multiple labels missing - dynamically build message with all missing language names
+				const labelNames = missingLabels.map(l => l.label);
+				// Format: "English, Hindi and Marathi labels are required"
+				let formattedNames: string;
+				if (labelNames.length === 2) {
+					formattedNames = labelNames.join(' and ');
+				} else {
+					// For 3+ languages: "English, Hindi, and Marathi"
+					const lastLabel = labelNames.at(-1) || '';
+					formattedNames = labelNames.slice(0, -1).join(', ') + ', and ' + lastLabel;
+				}
+				newErrors.label = `${formattedNames} ${t('ADDFIELDS_LABEL_REQUIRED')}`;
+			}
+		}
+		
 		if (!form.name.trim()) newErrors.name = 'Name is required';
 		if (!form.type) newErrors.type = 'Type is required';
-		if (form.ordering === '' || isNaN(Number(form.ordering)))
+		if (form.ordering === '' || Number.isNaN(Number(form.ordering)))
 			newErrors.ordering = 'Ordering is required and must be a number';
 		if (form.type === 'drop_down' && form.options.length === 0)
 			newErrors.options = 'At least one option is required for dropdown fields';
@@ -205,59 +270,81 @@ const AddFields: React.FC = () => {
 		return Object.keys(newErrors).length === 0;
 	};
 
-	const handleSubmit = async () => {
-		if (!validateForm()) return;
-		setIsAdding(true);
-		try {
-			const payload: AddFieldPayload = {
-				name: form.name,
-				label: form.label,
-				type: form.type,
-				ordering: Number(form.ordering),
-				fieldParams:
-					form.type === 'drop_down'
-						? { options: form.options }
-						: null,
-				fieldAttributes: {
-					isEditable: form.isEditable,
-					isRequired: form.isRequired,
-					isEncrypted: form.isEncrypted, // Add this line
-				},
-			};
-			await addField(payload);
-			toast({
-				title: 'Field added',
-				status: 'success',
-				duration: 2000,
-				isClosable: true,
-			});
-			setForm(initialForm);
-			setEditingIndex(null);
-			fetchAllFields();
-		} catch (error: any) {
+	// Helper function to format label for API - dynamically handles any number of languages
+	const formatLabel = (labelObj: Record<string, string>): string | Record<string, string> => {
+		if (!languageConfig) {
+			// Fallback if languageConfig not loaded
+			return labelObj;
+		}
+		
+		// Get all non-empty labels
+		const nonEmptyLabels: Record<string, string> = {};
+		languageConfig.supportedLanguages.forEach((lang) => {
+			const trimmedValue = labelObj[lang.code]?.trim();
+			if (trimmedValue) {
+				nonEmptyLabels[lang.code] = trimmedValue;
+			}
+		});
+		
+		// If only the first language (usually 'en') is present, return as string for backward compatibility
+		if (Object.keys(nonEmptyLabels).length === 1 && languageConfig.supportedLanguages.length > 0 && nonEmptyLabels[languageConfig.supportedLanguages[0].code]) {
+			return nonEmptyLabels[languageConfig.supportedLanguages[0].code];
+		}
+		
+		// If multiple languages or only non-first language, return as object
+		return nonEmptyLabels;
+	};
+
+	const openAddModal = () => {
+		if (!languageConfig) {
 			toast({
 				title: 'Error',
-				description: error.message || 'Failed to add field',
+				description: 'Language configuration not loaded. Please wait...',
 				status: 'error',
 				duration: 2000,
 				isClosable: true,
 			});
-		} finally {
-			setIsAdding(false);
+			return;
 		}
-	};
-
-	const openAddModal = () => {
-		setForm(initialForm);
+		setForm(getInitialForm(languageConfig.supportedLanguages));
 		setEditingIndex(null);
 		setModalMode('add');
 		onOpen();
 	};
 
 	const handleEdit = (idx: number) => {
+		if (!languageConfig) {
+			toast({
+				title: 'Error',
+				description: 'Language configuration not loaded. Please wait...',
+				status: 'error',
+				duration: 2000,
+				isClosable: true,
+			});
+			return;
+		}
+		
 		const field = fields[idx];
+		// Handle label - can be string or object, convert to Record format dynamically
+		const labelObj: Record<string, string> = {};
+		
+		if (typeof field.label === 'string') {
+			// If label is a string, assign it to the first language (usually 'en')
+			// and set others to empty string
+			const labelString = field.label; // Type narrowing
+			languageConfig.supportedLanguages.forEach((lang, index) => {
+				labelObj[lang.code] = index === 0 ? labelString : '';
+			});
+		} else {
+			// If label is an object, map all languages from the languageConfig
+			// TypeScript narrows to Record<string, string> in this else branch
+			languageConfig.supportedLanguages.forEach((lang) => {
+				labelObj[lang.code] = field.label[lang.code] || '';
+			});
+		}
+		
 		setForm({
-			label: field.label,
+			label: labelObj,
 			name: field.name,
 			type: field.type,
 			isRequired: field.isRequired,
@@ -275,16 +362,22 @@ const AddFields: React.FC = () => {
 	};
 
 	const handleModalSave = async () => {
+		// Validate form first - don't proceed if validation fails
+		const isValid = validateForm();
+		if (!isValid) {
+			// Validation failed - keep modal open to show errors
+			return;
+		}
+
 		if (modalMode === 'edit' && editingIndex !== null) {
 			// Edit mode: update the field
 			const fieldId = fields[editingIndex]?.fieldId;
 			if (!fieldId) return;
-			if (!validateForm()) return;
 			setIsAdding(true);
 			try {
 				const payload: AddFieldPayload = {
 					name: form.name,
-					label: form.label,
+					label: formatLabel(form.label),
 					type: form.type,
 					ordering: Number(form.ordering),
 					fieldParams:
@@ -304,7 +397,9 @@ const AddFields: React.FC = () => {
 					duration: 2000,
 					isClosable: true,
 				});
-				setForm(initialForm);
+				if (languageConfig) {
+					setForm(getInitialForm(languageConfig.supportedLanguages));
+				}
 				setEditingIndex(null);
 				fetchAllFields();
 				onClose();
@@ -321,9 +416,46 @@ const AddFields: React.FC = () => {
 			}
 		} else {
 			// Add mode
-			await handleSubmit();
-			if (Object.keys(errors).length === 0) {
+			setIsAdding(true);
+			try {
+				const payload: AddFieldPayload = {
+					name: form.name,
+					label: formatLabel(form.label),
+					type: form.type,
+					ordering: Number(form.ordering),
+					fieldParams:
+						form.type === 'drop_down'
+							? { options: form.options }
+							: null,
+					fieldAttributes: {
+						isEditable: form.isEditable,
+						isRequired: form.isRequired,
+						isEncrypted: form.isEncrypted, // Add this line
+					},
+				};
+				await addField(payload);
+				toast({
+					title: 'Field added',
+					status: 'success',
+					duration: 2000,
+					isClosable: true,
+				});
+				if (languageConfig) {
+					setForm(getInitialForm(languageConfig.supportedLanguages));
+				}
+				setEditingIndex(null);
+				fetchAllFields();
 				onClose();
+			} catch (error: any) {
+				toast({
+					title: 'Error',
+					description: error.message || 'Failed to add field',
+					status: 'error',
+					duration: 2000,
+					isClosable: true,
+				});
+			} finally {
+				setIsAdding(false);
 			}
 		}
 	};
@@ -334,7 +466,9 @@ const AddFields: React.FC = () => {
 	};
 
 	const handleCancel = () => {
-		setForm(initialForm);
+		if (languageConfig) {
+			setForm(getInitialForm(languageConfig.supportedLanguages));
+		}
 		setEditingIndex(null);
 		setErrors({});
 	};
@@ -384,6 +518,58 @@ const AddFields: React.FC = () => {
 		setDeleteModalOpen(false);
 		setFieldToDelete(null);
 	};
+
+	// Helper function to get display label from field - dynamically uses first language
+	const getFieldDisplayLabel = (field: Field | undefined): string => {
+		if (!field || !languageConfig) return '';
+		if (typeof field.label === 'string') {
+			return field.label;
+		}
+		// Use first language from languageConfig for display
+		if (languageConfig.supportedLanguages.length > 0 && field.label) {
+			const labelRecord = field.label;
+			return labelRecord[languageConfig.supportedLanguages[0].code] || '';
+		}
+		return '';
+	};
+
+	// Show loading or error state if language config is not ready
+	if (!isLanguagesLoaded) {
+		return (
+			<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
+				<Layout
+					showMenu={true}
+					title="Add Fields"
+					subTitle="Add and edit fields."
+				>
+					<Box p={8} textAlign="center">
+						<Text>Loading language configuration...</Text>
+					</Box>
+				</Layout>
+			</Box>
+		);
+	}
+
+	if (!languageConfig) {
+		return (
+			<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
+				<Layout
+					showMenu={true}
+					title="Add Fields"
+					subTitle="Add and edit fields."
+				>
+					<Box p={8} textAlign="center">
+						<Text color="red.500" mb={4}>
+							Failed to load language configuration: {languageError || 'Unknown error'}
+						</Text>
+						<Text fontSize="sm" color="gray.600">
+							Please refresh the page or contact support.
+						</Text>
+					</Box>
+				</Layout>
+			</Box>
+		);
+	}
 
 	return (
 		<Box bg="gray.50" minH="100vh" py={{ base: 4, md: 8 }}>
@@ -469,7 +655,29 @@ const AddFields: React.FC = () => {
 											borderBottom="1px solid #E2E8F0"
 										>
 											<Td borderColor="#E2E8F0">
-												{field.label}
+												<VStack align="start" spacing={1}>
+													<Text fontWeight="medium">
+														{(() => {
+															if (typeof field.label === 'string') return field.label;
+															if (languageConfig && languageConfig.supportedLanguages.length > 0 && field.label) {
+																return field.label[languageConfig.supportedLanguages[0].code] || '';
+															}
+															return '';
+														})()}
+													</Text>
+													{typeof field.label === 'object' && languageConfig && languageConfig.supportedLanguages.length > 1 && (
+														<>
+															{languageConfig.supportedLanguages.slice(1).map((lang) => {
+																const labelValue = field.label[lang.code];
+																return labelValue ? (
+																	<Text key={lang.code} fontSize="sm" color="gray.600">
+																		{labelValue}
+																	</Text>
+																) : null;
+															})}
+														</>
+													)}
+												</VStack>
 											</Td>
 											<Td borderColor="#E2E8F0">
 												{field.name}
@@ -534,20 +742,35 @@ const AddFields: React.FC = () => {
 							<ModalCloseButton />
 							<ModalBody>
 								<VStack spacing={4} align="stretch">
-									<FormControl
-										isInvalid={!!errors.label}
-										isRequired
-									>
-										<FormLabel>{t('ADDFIELDS_FORM_LABEL_LABEL')} </FormLabel>
-										<Input
-											name="label"
-											value={form.label}
-											onChange={handleInputChange}
-										/>
-										<FormErrorMessage>
-											{errors.label}
-										</FormErrorMessage>
-									</FormControl>
+									<Box>
+										<FormLabel mb={2}>
+											{t('ADDFIELDS_FORM_LABEL_LABEL')}
+											<Text as="span" color="red.500" ml={1}>
+												*
+											</Text>
+										</FormLabel>
+										{languageConfig ? (
+											<MultilingualLabelInput
+												value={form.label}
+												languages={languageConfig.supportedLanguages}
+												defaultLanguage={languageConfig.defaultLanguage}
+												required={true}
+												isInvalid={!!errors.label}
+												errorMessage={errors.label}
+												onChange={(value) => {
+													setForm((prev) => ({ ...prev, label: value }));
+													// Clear error when all labels are filled
+													const allFilled = languageConfig.supportedLanguages.every((lang) => value[lang.code]?.trim());
+													if (allFilled) {
+														setErrors((prev) => ({ ...prev, label: '' }));
+													}
+												}}
+												placeholder="Enter label"
+											/>
+										) : (
+											<Text color="gray.500">Loading language configuration...</Text>
+										)}
+									</Box>
 									<FormControl
 										isInvalid={!!errors.name}
 										isRequired
@@ -804,7 +1027,7 @@ const AddFields: React.FC = () => {
 								<Text mb={4}>
 									Are you sure you want to delete the field "
 									{fieldToDelete
-										? fields[fieldToDelete.idx]?.label
+										? getFieldDisplayLabel(fields[fieldToDelete.idx])
 										: ''}
 									"?
 								</Text>

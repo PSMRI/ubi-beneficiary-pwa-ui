@@ -37,7 +37,7 @@ interface VcFieldValue {
 }
 interface Field {
 	fieldId: string;
-	label: string;
+	label: string | Record<string, string>; // Supports multilingual labels
 	name: string;
 	type: string;
 	isRequired: boolean;
@@ -631,7 +631,13 @@ const FieldMappingConfig: React.FC<FieldMappingConfigProps> = ({
 																field.fieldId
 															}
 														>
-															{field.label} (
+															{typeof field.label === 'string' 
+																? field.label 
+																: (() => {
+																	const labelRecord: Record<string, string> = field.label;
+																	const firstKey = Object.keys(labelRecord)[0] || 'en';
+																	return labelRecord[firstKey] || '';
+																})()} (
 															{field.type})
 															{field.isRequired &&
 																' *'}

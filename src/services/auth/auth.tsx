@@ -174,7 +174,7 @@ export const sendConsent = async (
  * @returns Documents list
  */
 export const getDocumentsList = async () => {
-	const response = await apiClient.get('/admin/config/vcConfiguration');
+	const response = await apiClient.get('/users/config/vcConfiguration');
 	return response.data;
 };
 

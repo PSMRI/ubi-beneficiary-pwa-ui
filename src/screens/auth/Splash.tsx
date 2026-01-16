@@ -1,3 +1,4 @@
+import React, { ChangeEvent, useMemo } from 'react';
 import {
 	Flex,
 	FormControl,
@@ -6,27 +7,40 @@ import {
 	Image,
 	Stack,
 	Box,
+	Spinner,
+	Center,
 } from '@chakra-ui/react';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import '../../assets/styles/App.css';
 import CommonButton from '../../components/common/button/Button';
 import frameImage from '../../assets/images/frame.png';
 import { changeLanguage } from 'i18next';
-import { ChangeEvent } from 'react';
 import FloatingSelect from '../../components/common/input/FloatingSelect';
 import { useAuth } from '../../utils/context/checkToken';
+import { useLanguageConfig } from '../../hooks/useLanguageConfig';
+
 const Splash: React.FC = () => {
 	const navigate = useNavigate();
 	const { t } = useTranslation();
 
-
 	const { language, selectLanguage } = useAuth();
-	const options = [
-		{ label: t('LOGIN_ENGLISH'), value: 'en' },
-		{ label: t('LOGIN_HINDI'), value: 'hi' },
-	];
+	const { languageConfig, isLanguagesLoaded } = useLanguageConfig();
+
+	// Generate options from languageConfig API or fallback to hardcoded
+	const options = useMemo(() => {
+		if (isLanguagesLoaded && languageConfig && languageConfig.supportedLanguages.length > 0) {
+			return languageConfig.supportedLanguages.map((lang) => ({
+				label: lang.nativeLabel || lang.label,
+				value: lang.code,
+			}));
+		}
+		// Fallback to hardcoded options if API not loaded yet
+		return [
+			{ label: t('LOGIN_ENGLISH'), value: 'en' },
+			{ label: t('LOGIN_HINDI'), value: 'hi' },
+		];
+	}, [isLanguagesLoaded, languageConfig, t]);
 
 	const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
 		const { value } = e.target;
@@ -73,13 +87,19 @@ const Splash: React.FC = () => {
 							<FormLabel color={'#45464F'}>
 								{t('LOGIN_SELECT_PREFERRED_LANGUAGE')}
 							</FormLabel>
-							<FloatingSelect
-								label={t('LOGIN_SELECT_LANGUAGE')}
-								name="name"
-								value={language.name}
-								onChange={handleChange}
-								options={options}
-							/>
+							{isLanguagesLoaded ? (
+								<FloatingSelect
+									label={t('LOGIN_SELECT_LANGUAGE')}
+									name="name"
+									value={language.name}
+									onChange={handleChange}
+									options={options}
+								/>
+							) : (
+								<Center py={4}>
+									<Spinner size="md" color="#3c5fdd" />
+								</Center>
+							)}
 							<FormHelperText marginTop={'-15px'}>
 								{t('LOGIN_CHANGE_LATER')}
 							</FormHelperText>

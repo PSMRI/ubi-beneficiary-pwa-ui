@@ -20,18 +20,16 @@ const PUBLIC_ENDPOINTS = [
     '/otp/send_otp',
     '/otp/verify_otp',
     '/content/search', // Can be public or authenticated based on sendToken flag
+    '/admin/config/languageConfig', // Language config should be accessible before login
 ];
 
 /**
  * Language code mapping from i18next codes to Accept-Language header values
  */
 const LANGUAGE_CODE_MAP: Record<string, string> = {
-    'en': 'en-US',
-    'en-US': 'en-US',
-    'hi': 'hi-IN',
-    'hi-IN': 'hi-IN',
-    'mr': 'mr-IN',
-    'mr-IN': 'mr-IN',
+    'en': 'en',
+    'hi': 'hi',
+
 };
 
 // =============================================

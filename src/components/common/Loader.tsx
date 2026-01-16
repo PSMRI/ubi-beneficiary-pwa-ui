@@ -1,7 +1,9 @@
 import React from 'react';
 import { Center, Spinner, Text, VStack } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 
 const Loader = () => {
+	const { t } = useTranslation();
 	return (
 		<Center h="100vh" w="100%">
 			<VStack spacing={4}>
@@ -12,7 +14,7 @@ const Loader = () => {
 					speed="0.65s"
 				/>
 				<Text fontSize="lg" color="blue.500">
-					Loading...
+					{t('GENERAL_LOADING')}
 				</Text>
 			</VStack>
 		</Center>

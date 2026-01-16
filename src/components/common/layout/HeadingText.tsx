@@ -13,10 +13,10 @@ interface HeadingTextProps {
 	handleBack?: () => void;
 	isFilter?: boolean;
 	inputs?: {
-		label: string;
+		label: { [key: string]: string } | string;
 		key: string;
 		value: string;
-		data: Array<{ label: string; value: string }>;
+		data: Array<{ label: { [key: string]: string } | string; value: string }>;
 	}[];
 	setFilter?: React.Dispatch<React.SetStateAction<unknown>>;
 	profileSubHeading?: string;

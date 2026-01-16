@@ -23,17 +23,18 @@ export interface FieldValueNormalization {
 
 export interface Mapping {
 	name?: string;
-	label?: string;
+	label?: string | Record<string, string>;
 	documentSubType?: string;
 	docType?: string;
 	fieldName?: string;
 	documentMappings?: DocumentFieldMapping[];
 	fieldValueNormalizationMapping?: FieldValueNormalization;
+	[key: string]: any;
 }
 
 export interface Field {
 	fieldId: string;
-	label: string;
+	label: string | Record<string, string>; // Supports any number of languages dynamically
 	name: string;
 	type: string;
 	isRequired: boolean;
@@ -53,14 +54,14 @@ export interface FieldOption {
 
 export interface AddFieldPayload {
 	name: string;
-	label: string;
+	label: string | Record<string, string>; // Supports any number of languages dynamically
 	context?: string;
 	contextType?: string;
 	type: string;
 	ordering?: number;
 	fieldParams?: { options?: FieldOption[] } | null;
-	fieldAttributes?: { 
-		isEditable: boolean; 
+	fieldAttributes?: {
+		isEditable: boolean;
 		isRequired: boolean;
 		isEncrypted: boolean;
 	};
@@ -137,7 +138,7 @@ export const fetchFields = async (
 			const fieldObj = field as Record<string, any>;
 			return {
 				fieldId: fieldObj.fieldId,
-				label: fieldObj.label,
+				label: fieldObj.label, // Can be string or { en: string, hi: string, ... }
 				name: fieldObj.name,
 				type: fieldObj.type,
 				isRequired: fieldObj.fieldAttributes?.isRequired ?? false,

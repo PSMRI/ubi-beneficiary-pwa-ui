@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import BenefitFormScreen from './BenefitFormScreen';
-import Loading from '../../components/common/Loading';
 import { getUser } from '../../services/auth/auth';
 import { getOne } from '../../services/benefit/benefits';
+import Loader from '../../components/common/Loader';
 
 const BenefitFormScreenWrapper: React.FC = () => {
 	const { id, bpp_id } = useParams<{ id: string; bpp_id: string }>();
@@ -51,8 +51,8 @@ const BenefitFormScreenWrapper: React.FC = () => {
 		state.context,
 	]);
 
-	if (!data.selectApiResponse && !data.schemaData) return <Loading />;
-	if (!data.userData) return <Loading />;
+	if (!data.selectApiResponse && !data.schemaData) return <Loader />;
+	if (!data.userData) return <Loader />;
 
 	return (
 		<BenefitFormScreen

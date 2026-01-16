@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import CommonButton from '../../components/common/button/SubmitButton';
 import Button from '../../components/common/button/Button';
-import Loading from '../../components/common/Loading';
 import Loader from '../../components/common/Loader';
 import FormAccessibilityProvider from '../../components/common/form/FormAccessibilityProvider';
 import CommonDialogue from '../../components/common/Dialogue';
@@ -828,7 +827,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 
 	// Show loading spinner if schema is not ready
 	if (!formSchema) {
-		return <Loading />;
+		return <Loader />;
 	}
 
 	// Show loader during form submission
@@ -866,7 +865,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 							color="orange.800"
 							fontSize="sm"
 						>
-							Reviewer Comment:
+							{t('APPLICATION_REVIEWER_COMMENT')}
 						</Text>
 						<Text as="p" mt={2} color="orange.700" fontSize="sm">
 							{reviewerComment}
@@ -895,7 +894,7 @@ const BenefitApplicationForm: React.FC<BenefitApplicationFormProps> = ({
 					/>
 				</FormAccessibilityProvider>
 				<CommonButton
-					label="Submit Form"
+					label={t('BENEFIT_FORM_SUBMIT_BUTTON')}
 					isDisabled={disableSubmit}
 					onClick={() => {
 						// Validate all fields including documents

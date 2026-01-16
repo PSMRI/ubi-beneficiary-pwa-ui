@@ -365,19 +365,31 @@ const ExploreBenefits: React.FC = () => {
 	const filterInputs = useMemo(
 		() => [
 			{
-				label: 'Caste',
+				label: {
+					en: 'Caste',
+					hi: 'जात',
+					mr: 'जात',
+				},
 				data: Castes,
 				value: allBenefitsFilter?.caste ?? '',
 				key: 'caste',
 			},
 			{
-				label: 'Income Range',
+				label: {
+					en: 'Income Range',
+					hi: 'आय सीमा',
+					mr: 'उत्पन्न मर्यादा',
+				},
 				data: IncomeRange,
 				value: allBenefitsFilter?.annualIncome ?? '',
 				key: 'annualIncome',
 			},
 			{
-				label: 'Gender',
+				label: {
+					en: 'Gender',
+					hi: 'लिंग',
+					mr: 'लिंग',
+				},
 				data: Gender,
 				value: allBenefitsFilter?.gender ?? '',
 				key: 'gender',
@@ -539,12 +551,12 @@ const ExploreBenefits: React.FC = () => {
 						{/* Only show filter for All Benefits tab (when "All Benefits" is active) */}
 						{((isAuthenticated && activeTab === 1) ||
 							(!isAuthenticated && activeTab === 0)) && (
-							<FilterDialog
-								inputs={filterInputs}
-								setFilter={setAllBenefitsFilter}
-								mr="20px"
-							/>
-						)}
+								<FilterDialog
+									inputs={filterInputs}
+									setFilter={setAllBenefitsFilter}
+									mr="20px"
+								/>
+							)}
 					</Flex>
 				</Flex>
 

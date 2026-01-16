@@ -133,12 +133,12 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userData }) => {
 	// Prepare base fields as an array
 	const baseFields = [
 		{
-			label: 'Name',
+			label: t('USER_DETAILS_NAME'),
 			value: userData?.name ?? '-',
 		},
 
 		{
-			label: 'Date of Birth',
+			label: t('USER_DETAILS_DATE_OF_BIRTH'),
 			value: userData?.dob ? formatDate(userData?.dob) : '-',
 		},
 	];
