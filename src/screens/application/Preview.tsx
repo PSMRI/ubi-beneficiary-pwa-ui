@@ -83,7 +83,6 @@ const Preview: React.FC = () => {
 			setLoading(true);
 
 			const result = await getApplicationDetails(id);
-			console.log(result.data.status);
 			setStatus(result?.data?.status);
 			if (result?.data?.application_data?.vc_documents) {
 				const formattedDoc = formatDocuments(

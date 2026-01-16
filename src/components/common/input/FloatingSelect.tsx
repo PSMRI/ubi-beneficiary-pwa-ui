@@ -73,7 +73,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
 				<option value="" hidden></option>
 				{options.map((option) => (
 					<option key={option.value} value={option.value}>
-						{option.label[language]}
+						{option.label[language] ? option.label[language] : option.label}
 					</option>
 				))}
 			</Select>
