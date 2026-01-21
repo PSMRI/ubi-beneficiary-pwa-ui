@@ -12,15 +12,22 @@ interface SearchBarProps {
 	onSearch: (query: string) => void;
 	placeholder?: string;
 	onClose?: () => void;
+	value?: string;
 }
 
 const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
-	({ onSearch, placeholder, onClose }, ref) => {
+	({ onSearch, placeholder, onClose, value }, ref) => {
 		const { t } = useTranslation();
-		const [query, setQuery] = useState('');
-		
+		const [query, setQuery] = useState(value || '');
+
 		// Use translation constant if no placeholder is provided
 		const placeholderText = placeholder || t('COMMON_SEARCHBAR_PLACEHOLDER');
+
+		React.useEffect(() => {
+			if (value !== undefined) {
+				setQuery(value);
+			}
+		}, [value]);
 
 		const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 			const newQuery = event.target.value;
