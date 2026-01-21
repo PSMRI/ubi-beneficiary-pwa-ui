@@ -78,10 +78,6 @@ export const logoutUser = async () => {
 	const accessToken = localStorage.getItem('authToken');
 	const refreshToken = localStorage.getItem('refreshToken');
 
-	if (!accessToken || !refreshToken) {
-		throw new Error('No active session found');
-	}
-
 	const response = await apiClient.post('/auth/logout', {
 		access_token: accessToken,
 		refresh_token: refreshToken,
