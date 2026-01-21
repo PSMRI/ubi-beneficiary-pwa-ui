@@ -75,7 +75,8 @@ interface PaginationInfo {
 const ExploreBenefits: React.FC = () => {
 	const { t } = useTranslation();
 	const [loading, setLoading] = useState<boolean>(false);
-	const [search, setSearch] = useState<string>('');
+	const [allBenefitsSearch, setAllBenefitsSearch] = useState<string>('');
+	const [myBenefitsSearch, setMyBenefitsSearch] = useState<string>('');
 	const [userFilter, setUserFilter] = useState<Filter>({});
 	const [initState, setInitState] = useState<string>('yes');
 	const [error, setError] = useState<string | null>(null);
@@ -115,7 +116,11 @@ const ExploreBenefits: React.FC = () => {
 	const myBenefitsLoaded = useRef<boolean>(false);
 
 	// Debounce search to avoid excessive API calls
-	const [debouncedSearch, setDebouncedSearch] = useState<string>('');
+	// Debounce search to avoid excessive API calls
+	const [debouncedAllBenefitsSearch, setDebouncedAllBenefitsSearch] =
+		useState<string>('');
+	const [debouncedMyBenefitsSearch, setDebouncedMyBenefitsSearch] =
+		useState<string>('');
 
 	const [showSearchBarMyBenefits, setShowSearchBarMyBenefits] =
 		useState(false);
@@ -125,10 +130,17 @@ const ExploreBenefits: React.FC = () => {
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
-			setDebouncedSearch(search);
+			setDebouncedAllBenefitsSearch(allBenefitsSearch);
 		}, 500);
 		return () => clearTimeout(timer);
-	}, [search]);
+	}, [allBenefitsSearch]);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedMyBenefitsSearch(myBenefitsSearch);
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [myBenefitsSearch]);
 
 	// Memoized current tab data
 	const currentTabData = useMemo(() => {
@@ -245,7 +257,7 @@ const ExploreBenefits: React.FC = () => {
 						annualIncome: allBenefitsFilter?.annualIncome ?? '',
 						caste: allBenefitsFilter?.caste ?? '',
 					},
-					search: debouncedSearch,
+					search: debouncedAllBenefitsSearch,
 					page: allBenefitsPage,
 					limit: itemsPerPage,
 				},
@@ -265,7 +277,12 @@ const ExploreBenefits: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [allBenefitsFilter, debouncedSearch, allBenefitsPage, itemsPerPage]);
+	}, [
+		allBenefitsFilter,
+		debouncedAllBenefitsSearch,
+		allBenefitsPage,
+		itemsPerPage,
+	]);
 
 	const fetchMyBenefits = useCallback(async () => {
 		try {
@@ -280,7 +297,7 @@ const ExploreBenefits: React.FC = () => {
 						gender: userFilter?.gender ?? '',
 						caste: userFilter?.caste ?? '',
 					},
-					search: debouncedSearch,
+					search: debouncedMyBenefitsSearch,
 					page: myBenefitsPage,
 					limit: itemsPerPage,
 					strictCheck: true,
@@ -302,7 +319,7 @@ const ExploreBenefits: React.FC = () => {
 		} finally {
 			setLoading(false);
 		}
-	}, [userFilter, debouncedSearch, myBenefitsPage, itemsPerPage]);
+	}, [userFilter, debouncedMyBenefitsSearch, myBenefitsPage, itemsPerPage]);
 
 	// Separate useEffect for each tab to avoid unnecessary calls
 	useEffect(() => {
@@ -438,9 +455,9 @@ const ExploreBenefits: React.FC = () => {
 					borderRadius="md"
 				>
 					<Text fontSize="lg" color="gray.600">
-						{activeTab === 0
-							? t('BENEFITS_NO_BENEFITS_AVAILABLE')
-							: t('BENEFITS_NO_BENEFITS_MATCH_PROFILE')}
+						{activeTab === 0 && isAuthenticated
+							? t('BENEFITS_NO_BENEFITS_MATCH_PROFILE')
+							: t('BENEFITS_NO_BENEFITS_AVAILABLE')}
 					</Text>
 				</Box>
 			);
@@ -459,7 +476,7 @@ const ExploreBenefits: React.FC = () => {
 	}, [currentTabData.benefits, activeTab, pagination]);
 
 	const handleShowSearchBar = () => {
-		if (activeTab === 0) {
+		if (activeTab === 0 && isAuthenticated) {
 			setShowSearchBarMyBenefits(true);
 			setTimeout(() => {
 				searchInputRef.current?.focus();
@@ -473,7 +490,7 @@ const ExploreBenefits: React.FC = () => {
 	};
 
 	const handleHideSearchBar = () => {
-		if (activeTab === 0) {
+		if (activeTab === 0 && isAuthenticated) {
 			setShowSearchBarMyBenefits(false);
 		} else {
 			setShowSearchBarAllBenefits(false);
@@ -481,7 +498,11 @@ const ExploreBenefits: React.FC = () => {
 	};
 
 	const handleSearch = (query: string) => {
-		setSearch(query);
+		if (activeTab === 0 && isAuthenticated) {
+			setMyBenefitsSearch(query);
+		} else {
+			setAllBenefitsSearch(query);
+		}
 		handleHideSearchBar();
 	};
 
@@ -565,6 +586,7 @@ const ExploreBenefits: React.FC = () => {
 						<TabPanel px={0}>
 							{showSearchBarMyBenefits && (
 								<SearchBar
+									value={myBenefitsSearch}
 									onSearch={handleSearch}
 									ref={searchInputRef}
 									onClose={handleHideSearchBar}
@@ -577,6 +599,7 @@ const ExploreBenefits: React.FC = () => {
 					<TabPanel px={0}>
 						{showSearchBarAllBenefits && (
 							<SearchBar
+								value={allBenefitsSearch}
 								onSearch={handleSearch}
 								ref={searchInputRef}
 								onClose={handleHideSearchBar}
