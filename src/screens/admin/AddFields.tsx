@@ -50,58 +50,58 @@ import { useLanguageConfig } from '../../hooks/useLanguageConfig';
 import type { Field as BaseField } from '../../services/admin/admin';
 
 interface Field extends BaseField {
-    isEditable?: boolean;
-    isEncrypted?: boolean; // Add this line
-    ordering?: number;
-    fieldParams?: { options?: FieldOption[] };
+	isEditable?: boolean;
+	isEncrypted?: boolean; // Add this line
+	ordering?: number;
+	fieldParams?: { options?: FieldOption[] };
 }
 
 interface FieldForm {
-    label: Record<string, string>; // { en: string, hi: string, ... }
-    name: string;
-    type: string;
-    isRequired: boolean;
-    isEditable: boolean;
-    isEncrypted: boolean; // Add this line
-    ordering: number | '';
-    options: FieldOption[];
+	label: Record<string, string>; // { en: string, hi: string, ... }
+	name: string;
+	type: string;
+	isRequired: boolean;
+	isEditable: boolean;
+	isEncrypted: boolean; // Add this line
+	ordering: number | '';
+	options: FieldOption[];
 }
 
 // Initialize label object dynamically based on languages array
 const getInitialLabel = (supportedLanguages: { code: string; label: string; nativeLabel: string }[]): Record<string, string> => {
-    const initialLabel: Record<string, string> = {};
-    supportedLanguages.forEach((lang) => {
-        initialLabel[lang.code] = '';
-    });
-    return initialLabel;
+	const initialLabel: Record<string, string> = {};
+	supportedLanguages.forEach((lang) => {
+		initialLabel[lang.code] = '';
+	});
+	return initialLabel;
 };
 
 // This will be initialized in the component after languageConfig is loaded
 const getInitialForm = (supportedLanguages: { code: string; label: string; nativeLabel: string }[]): FieldForm => ({
-    label: getInitialLabel(supportedLanguages),
-    name: '',
-    type: 'text',
-    isRequired: false,
-    isEditable: true,
-    isEncrypted: false, // Add this line
-    ordering: '',
-    options: [],
+	label: getInitialLabel(supportedLanguages),
+	name: '',
+	type: 'text',
+	isRequired: false,
+	isEditable: true,
+	isEncrypted: false, // Add this line
+	ordering: '',
+	options: [],
 });
 
 // Helper function to get encrypted text
 function getEncryptedText(isEncrypted: boolean | undefined) {
-    if (typeof isEncrypted === 'boolean') {
-        return isEncrypted ? 'Yes' : 'No';
-    }
-    return 'No';
+	if (typeof isEncrypted === 'boolean') {
+		return isEncrypted ? 'Yes' : 'No';
+	}
+	return 'No';
 }
 
 // Helper function to get editable text
 function getEditableText(isEditable: boolean | undefined) {
-    if (typeof isEditable === 'boolean') {
-        return isEditable ? 'Yes' : 'No';
-    }
-    return 'Yes';
+	if (typeof isEditable === 'boolean') {
+		return isEditable ? 'Yes' : 'No';
+	}
+	return 'Yes';
 }
 
 const AddFields: React.FC = () => {
@@ -168,7 +168,7 @@ const AddFields: React.FC = () => {
 			...prev,
 			[name]: type === 'checkbox' ? checked : value,
 		}));
-		
+
 		// Clear the current field's error and handle dropdown type change
 		if (name === 'type' && value !== 'drop_down') {
 			setForm((prev) => ({ ...prev, options: [] }));
@@ -216,21 +216,21 @@ const AddFields: React.FC = () => {
 
 	const validateForm = () => {
 		const newErrors: Record<string, string> = {};
-		
-			// Validate labels - dynamically check all languages from languageConfig
+
+		// Validate labels - dynamically check all languages from languageConfig
 		if (!languageConfig) {
 			newErrors.label = 'Language configuration not loaded';
 			setErrors(newErrors);
 			return false;
 		}
-		
+
 		const missingLabels: Array<{ code: string; label: string }> = [];
 		languageConfig.supportedLanguages.forEach((lang) => {
 			if (!form.label[lang.code]?.trim()) {
 				missingLabels.push({ code: lang.code, label: lang.label });
 			}
 		});
-		
+
 		if (missingLabels.length > 0) {
 			if (missingLabels.length === 1) {
 				// Single label missing - use generic message dynamically
@@ -251,8 +251,31 @@ const AddFields: React.FC = () => {
 				newErrors.label = `${formattedNames} ${t('ADDFIELDS_LABEL_REQUIRED')}`;
 			}
 		}
-		
+
+		// Check for label length
+		const longLabels: Array<{ code: string; label: string }> = [];
+		languageConfig.supportedLanguages.forEach((lang) => {
+			if (form.label[lang.code]?.length > 50) {
+				longLabels.push({ code: lang.code, label: lang.label });
+			}
+		});
+
+		if (longLabels.length > 0) {
+			const labelNames = longLabels.map(l => l.label);
+			let formattedNames: string;
+			if (labelNames.length === 1) {
+				formattedNames = labelNames[0];
+			} else if (labelNames.length === 2) {
+				formattedNames = labelNames.join(' and ');
+			} else {
+				const lastLabel = labelNames.at(-1) || '';
+				formattedNames = labelNames.slice(0, -1).join(', ') + ', and ' + lastLabel;
+			}
+			newErrors.label = `${formattedNames} label(s) cannot exceed 50 characters`;
+		}
+
 		if (!form.name.trim()) newErrors.name = 'Name is required';
+		else if (form.name.length > 50) newErrors.name = 'Name cannot exceed 50 characters';
 		if (!form.type) newErrors.type = 'Type is required';
 		if (form.ordering === '' || Number.isNaN(Number(form.ordering)))
 			newErrors.ordering = 'Ordering is required and must be a number';
@@ -276,7 +299,7 @@ const AddFields: React.FC = () => {
 			// Fallback if languageConfig not loaded
 			return labelObj;
 		}
-		
+
 		// Get all non-empty labels
 		const nonEmptyLabels: Record<string, string> = {};
 		languageConfig.supportedLanguages.forEach((lang) => {
@@ -285,12 +308,12 @@ const AddFields: React.FC = () => {
 				nonEmptyLabels[lang.code] = trimmedValue;
 			}
 		});
-		
+
 		// If only the first language (usually 'en') is present, return as string for backward compatibility
 		if (Object.keys(nonEmptyLabels).length === 1 && languageConfig.supportedLanguages.length > 0 && nonEmptyLabels[languageConfig.supportedLanguages[0].code]) {
 			return nonEmptyLabels[languageConfig.supportedLanguages[0].code];
 		}
-		
+
 		// If multiple languages or only non-first language, return as object
 		return nonEmptyLabels;
 	};
@@ -323,11 +346,11 @@ const AddFields: React.FC = () => {
 			});
 			return;
 		}
-		
+
 		const field = fields[idx];
 		// Handle label - can be string or object, convert to Record format dynamically
 		const labelObj: Record<string, string> = {};
-		
+
 		if (typeof field.label === 'string') {
 			// If label is a string, assign it to the first language (usually 'en')
 			// and set others to empty string
@@ -342,7 +365,7 @@ const AddFields: React.FC = () => {
 				labelObj[lang.code] = field.label[lang.code] || '';
 			});
 		}
-		
+
 		setForm({
 			label: labelObj,
 			name: field.name,
@@ -766,6 +789,7 @@ const AddFields: React.FC = () => {
 													}
 												}}
 												placeholder="Enter label"
+												maxLength={50}
 											/>
 										) : (
 											<Text color="gray.500">Loading language configuration...</Text>
@@ -780,6 +804,7 @@ const AddFields: React.FC = () => {
 											name="name"
 											value={form.name}
 											onChange={handleInputChange}
+											maxLength={50}
 										/>
 										<FormErrorMessage>
 											{errors.name}
@@ -942,16 +967,16 @@ const AddFields: React.FC = () => {
 										</FormControl>
 									</HStack>
 
-                                    <HStack mb={2}>
-                                        <FormControl
-                                            display="flex"
-                                            alignItems="center"
-                                            isInvalid={!!errors.isEncrypted}
-                                            isRequired
-                                        >
-                                            <FormLabel mb="0">
-                                                Encrypted?{' '}
-                                            </FormLabel>
+									<HStack mb={2}>
+										<FormControl
+											display="flex"
+											alignItems="center"
+											isInvalid={!!errors.isEncrypted}
+											isRequired
+										>
+											<FormLabel mb="0">
+												Encrypted?{' '}
+											</FormLabel>
 											<IconButton
 												icon={<InfoIcon />}
 												aria-label="Encryption Information"
@@ -961,22 +986,22 @@ const AddFields: React.FC = () => {
 												onClick={onInfoModalOpen}
 												mr={3}
 											/>
-                                            <Switch
-                                                name="isEncrypted"
-                                                isChecked={form.isEncrypted}
-                                                onChange={(e) =>
-                                                    setForm((prev) => ({
-                                                        ...prev,
-                                                        isEncrypted:
-                                                            e.target.checked,
-                                                    }))
-                                                }
-                                            />
-                                            <FormErrorMessage>
-                                                {errors.isEncrypted}
-                                            </FormErrorMessage>
-                                        </FormControl>
-                                    </HStack>
+											<Switch
+												name="isEncrypted"
+												isChecked={form.isEncrypted}
+												onChange={(e) =>
+													setForm((prev) => ({
+														...prev,
+														isEncrypted:
+															e.target.checked,
+													}))
+												}
+											/>
+											<FormErrorMessage>
+												{errors.isEncrypted}
+											</FormErrorMessage>
+										</FormControl>
+									</HStack>
 								</VStack>
 							</ModalBody>
 							<ModalFooter>
