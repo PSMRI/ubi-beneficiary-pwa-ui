@@ -117,10 +117,9 @@ const Home: React.FC = () => {
 				setUserName('');
 			}
 		}
-		if (!userData || !documents || documents.length === 0) {
-			init();
-		}
-	}, [userData, documents]);
+		// Always fetch fresh data when Home component mounts
+		init();
+	}, []);
 
 	// Listen for language change events to refresh data
 	useEffect(() => {
