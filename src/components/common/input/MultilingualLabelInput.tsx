@@ -27,6 +27,7 @@ interface MultilingualLabelInputProps {
     onChange: (value: Record<string, string>) => void;
     onValidationChange?: (isValid: boolean) => void;
     placeholder?: string;
+    maxLength?: number;
 }
 
 const MultilingualLabelInput: React.FC<MultilingualLabelInputProps> = ({
@@ -39,6 +40,7 @@ const MultilingualLabelInput: React.FC<MultilingualLabelInputProps> = ({
     onChange,
     onValidationChange,
     placeholder,
+    maxLength,
 }) => {
     const [tabIndex, setTabIndex] = useState(0);
 
@@ -130,6 +132,7 @@ const MultilingualLabelInput: React.FC<MultilingualLabelInputProps> = ({
                                     value={value[lang.code] || ''}
                                     onChange={(e) => handleInputChange(lang.code, e.target.value)}
                                     placeholder={placeholder}
+                                    maxLength={maxLength}
                                     borderWidth="2px"
                                     bg="white"
                                     size="lg"
