@@ -5,6 +5,7 @@ import {
 	calculateAge,
 	formatText,
 } from '../../utils/jsHelper/helper';
+import { maskPIIValue, shouldMaskField } from '../../services/pii/piiMasking';
 import { useTranslation } from 'react-i18next';
 import { getMapping } from '../../services/admin/admin';
 
@@ -94,6 +95,11 @@ const processFieldValue = (
 	// If field has normalization mapping, apply formatText
 	if (fieldConfig?.fieldValueNormalizationMapping) {
 		return formatText(field.value);
+	}
+
+	// Mask if field is encrypted/PII
+	if (field.name && shouldMaskField(field.name)) {
+		return maskPIIValue(field.name, field.value);
 	}
 
 	// Return original value for all other fields

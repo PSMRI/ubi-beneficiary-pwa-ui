@@ -10,6 +10,7 @@ import { AuthProvider } from './utils/context/checkToken';
 import './assets/styles/App.css';
 import Layout from './components/common/layout/Layout';
 import { jwtDecode } from 'jwt-decode';
+import { loadPIIFields } from './services/pii/piiMasking';
 
 interface DecodedToken {
 	resource_access?: {
@@ -25,6 +26,14 @@ function App() {
 	>([]);
 
 	const token = localStorage.getItem('authToken');
+
+	// Initialize encrypted fields data once at app startup
+	useEffect(() => {
+		if (token) {
+			// Only load if user is authenticated
+			loadPIIFields();
+		}
+	}, [token]);
 
 	useEffect(() => {
 		if (token) {

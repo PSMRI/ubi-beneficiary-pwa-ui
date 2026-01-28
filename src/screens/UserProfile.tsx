@@ -13,6 +13,7 @@ import UserDetails from '../components/common/UserDetails';
 import UploadDocumentEwallet from '../components/common/UploadDocumentEwallet';
 import CommonButton from '../components/common/button/Button';
 import { useTranslation } from 'react-i18next';
+import { maskPIIValue, shouldMaskField } from '../services/pii/piiMasking';
 
 const UserProfile: React.FC = () => {
 	const [showIframe, setShowIframe] = useState(true);
@@ -49,6 +50,15 @@ const UserProfile: React.FC = () => {
 			init();
 		}
 	}, [userData, documents]);
+
+	// Extract nested ternary for phone number display
+	const shouldMaskPhoneNumber = shouldMaskField('phoneNumber') || shouldMaskField('mobile');
+	const phoneNumberValue = shouldMaskPhoneNumber 
+		? maskPIIValue('phoneNumber', userData?.phoneNumber)
+		: userData?.phoneNumber;
+	const displayPhoneNumber = userData?.phoneNumber
+		? ` +91 ${phoneNumberValue}`
+		: t('USER_PROFILE_PHONE_NUMBER');
 
 	return (
 		<Layout
@@ -92,9 +102,7 @@ const UserProfile: React.FC = () => {
 						color="#433E3F"
 						alignSelf={'flex-start'}
 					>
-						{userData?.phoneNumber
-							? ` +91 ${userData?.phoneNumber}`
-							: t('USER_PROFILE_PHONE_NUMBER')}
+						{displayPhoneNumber}
 					</Text>
 				</VStack>
 			</HStack>

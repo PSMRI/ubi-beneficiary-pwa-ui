@@ -15,6 +15,7 @@ import {
 	getPreviewDetails,
 	getSubmmitedDoc,
 } from '../../utils/jsHelper/helper';
+import { maskPIIValue, shouldMaskField } from '../../services/pii/piiMasking';
 
 interface UserData {
 	id: number;
@@ -51,6 +52,10 @@ const Preview: React.FC = () => {
 	const handleBack = () => {
 		navigate('/applicationstatus');
 	};
+
+	// Service now normalizes keys; delegate directly
+	const shouldMaskFieldByLabel = (fieldLabel: string): boolean =>
+		shouldMaskField(fieldLabel);
 
 	const init = async () => {
 		try {
@@ -166,7 +171,9 @@ const Preview: React.FC = () => {
 										<Text {...valueStyles}>-</Text>
 									) : (
 										<Text {...valueStyles}>
-											{firstItem.value}
+											{shouldMaskFieldByLabel(firstItem.label)
+												? maskPIIValue(firstItem.label, firstItem.value)
+												: firstItem.value}
 										</Text>
 									)}
 								</Box>
@@ -181,7 +188,9 @@ const Preview: React.FC = () => {
 											<Text {...valueStyles}>-</Text>
 										) : (
 											<Text {...valueStyles}>
-												{secondItem.value}
+												{shouldMaskFieldByLabel(secondItem.label)
+													? maskPIIValue(secondItem.label, secondItem.value)
+													: secondItem.value}
 											</Text>
 										)}
 									</Box>
