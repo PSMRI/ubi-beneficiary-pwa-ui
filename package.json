@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "clean:vite": "rm -rf node_modules/.vite",
-    "build": "yarn clean:vite && tsc -b && vite build",
+    "generate-version": "node src/scripts/generate-version.js",
+    "build": " yarn generate-version && yarn clean:vite && tsc -b && vite build",
     "lint": "eslint 'src/**/*.{js,mjs,cjs,ts,jsx,tsx}'",
     "lint:fix": "eslint 'src/**/*.{js,mjs,cjs,ts,jsx,tsx}' --fix",
     "preview": "vite preview",
