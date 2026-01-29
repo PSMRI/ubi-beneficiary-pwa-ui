@@ -10,7 +10,8 @@ import { AuthProvider } from './utils/context/checkToken';
 import './assets/styles/App.css';
 import Layout from './components/common/layout/Layout';
 import { jwtDecode } from 'jwt-decode';
-
+import { useAppUpdate } from './hooks/useAppUpdate';
+import UpdateAppDialog from './components/UpdateAppDialog';
 interface DecodedToken {
 	resource_access?: {
 		[key: string]: {
@@ -25,6 +26,14 @@ function App() {
 	>([]);
 
 	const token = localStorage.getItem('authToken');
+	const { updateAvailable, latestVersion } = useAppUpdate()
+	const handleUpdate = async () => {
+		if (latestVersion) {
+			localStorage.setItem('APP_VERSION', latestVersion);
+		}
+		// NOW reload
+		window.location.reload();
+	};
 
 	useEffect(() => {
 		const updateRoutes = () => {
@@ -106,6 +115,10 @@ function App() {
 					</Router>
 				</Suspense>
 			</AuthProvider>
+			<UpdateAppDialog
+				isOpen={updateAvailable}
+				onUpdate={handleUpdate}
+			/>
 		</ChakraProvider>
 	);
 }
