@@ -1,5 +1,5 @@
 import apiClient from '../../config/apiClient';
-
+import { v4 as uuidv4 } from 'uuid';
 /**
  * Authentication Service
  * 
@@ -310,6 +310,8 @@ export const registerWithDocument = async (
 	formData.append('docName', docName);
 	formData.append('importedFrom', importedFrom);
 	formData.append('file', file);
+
+	formData.append('requestId', uuidv4());
 
 	try {
 		const response = await apiClient.post(
