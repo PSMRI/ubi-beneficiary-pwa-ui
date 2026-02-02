@@ -8,6 +8,7 @@ import {
 	Box,
 	HStack,
 	VStack,
+	Grid,
 } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { t } from 'i18next';
@@ -219,149 +220,140 @@ const Pagination: React.FC<PaginationProps> = ({
 			</VStack>
 
 			{/* Desktop/Tablet Layout - Horizontal */}
-			<Flex
-				justify="space-between"
-				align="center"
-				gap={4}
+			<VStack
+				spacing={4}
 				display={{ base: 'none', md: 'flex' }}
-				wrap={{ base: 'wrap', lg: 'nowrap' }}
+				w="100%"
+				align="stretch"
 			>
-				{/* Items per page selector */}
-				{showItemsPerPageSelector && (
-					<HStack
-						spacing={2}
-						flexShrink={0}
-						order={{ base: 1, lg: 0 }}
-						w={{ base: '100%', lg: 'auto' }}
-						justify={{ base: 'center', lg: 'flex-start' }}
-					>
-						<Text
-							fontSize={size}
-							color="gray.600"
-							whiteSpace="nowrap"
-						>
-							{t('BENEFIT_SEARCH_PAGINATION_SHOW')}
-						</Text>
-						<Select
-							size={size}
-							width="70px"
-							value={itemsPerPage}
-							onChange={(e) =>
-								handleItemsPerPageChange(e.target.value)
-							}
-						>
-							{itemsPerPageOptions.map((option) => (
-								<option key={option} value={option}>
-									{option}
-								</option>
-							))}
-						</Select>
-						<Text
-							fontSize={size}
-							color="gray.600"
-							whiteSpace="nowrap"
-						>
-							{t('BENEFIT_SEARCH_PAGINATION_PER_PAGE')}
-						</Text>
-					</HStack>
-				)}
-
-				{/* Page navigation */}
-				<HStack
-					spacing={1}
-					justify="center"
-					flex={1}
-					order={{ base: 0, lg: 1 }}
-					w={{ base: '100%', lg: 'auto' }}
+				<Grid
+					templateColumns="1fr auto 1fr"
+					alignItems="center"
+					gap={4}
+					w="100%"
 				>
-					{/* Previous button */}
-					<IconButton
-						aria-label={t('BENEFIT_SEARCH_PAGINATION_PREVIOUS')}
-						icon={<ChevronLeftIcon />}
-						size={size}
-						onClick={() => onPageChange(currentPage - 1)}
-						isDisabled={currentPage === 1}
-						variant="outline"
-					/>
-
-					{/* First page + ellipsis */}
-					{startPage > 1 && (
-						<>
-							<Button
-								size={size}
-								variant="outline"
-								onClick={() => onPageChange(1)}
-								minW="40px"
-							>
-								1
-							</Button>
-							{startPage > 2 && (
-								<Text fontSize={size} color="gray.500" px={1}>
-									...
+					{/* Items per page selector - Left Column */}
+					<Box justifySelf="start">
+						{showItemsPerPageSelector && (
+							<HStack spacing={2}>
+								<Text
+									fontSize={size}
+									color="gray.600"
+									whiteSpace="nowrap"
+								>
+									{t('BENEFIT_SEARCH_PAGINATION_SHOW')}
 								</Text>
-							)}
-						</>
-					)}
+								<Select
+									size={size}
+									width="70px"
+									value={itemsPerPage}
+									onChange={(e) =>
+										handleItemsPerPageChange(e.target.value)
+									}
+								>
+									{itemsPerPageOptions.map((option) => (
+										<option key={option} value={option}>
+											{option}
+										</option>
+									))}
+								</Select>
+								<Text
+									fontSize={size}
+									color="gray.600"
+									whiteSpace="nowrap"
+								>
+									{t('BENEFIT_SEARCH_PAGINATION_PER_PAGE')}
+								</Text>
+							</HStack>
+						)}
+					</Box>
 
-					{/* Page numbers */}
-					{pageNumbers.map((page) => (
-						<Button
-							key={page}
+					{/* Page navigation - Center Column */}
+					<HStack spacing={1} justify="center" justifySelf="center">
+						<IconButton
+							aria-label={t('BENEFIT_SEARCH_PAGINATION_PREVIOUS')}
+							icon={<ChevronLeftIcon />}
 							size={size}
-							variant={currentPage === page ? 'solid' : 'outline'}
-							colorScheme={currentPage === page ? 'blue' : 'gray'}
-							onClick={() => onPageChange(page)}
-							minW="40px"
-						>
-							{page}
-						</Button>
-					))}
+							onClick={() => onPageChange(currentPage - 1)}
+							isDisabled={currentPage === 1}
+							variant="outline"
+						/>
 
-					{/* Last page + ellipsis */}
-					{endPage < totalPages && (
-						<>
-							{endPage < totalPages - 1 && (
-								<Text fontSize={size} color="gray.500" px={1}>
-									...
-								</Text>
-							)}
+						{startPage > 1 && (
+							<>
+								<Button
+									size={size}
+									variant="outline"
+									onClick={() => onPageChange(1)}
+									minW="40px"
+								>
+									1
+								</Button>
+								{startPage > 2 && (
+									<Text fontSize={size} color="gray.500" px={1}>
+										...
+									</Text>
+								)}
+							</>
+						)}
+
+						{pageNumbers.map((page) => (
 							<Button
+								key={page}
 								size={size}
-								variant="outline"
-								onClick={() => onPageChange(totalPages)}
+								variant={currentPage === page ? 'solid' : 'outline'}
+								colorScheme={currentPage === page ? 'blue' : 'gray'}
+								onClick={() => onPageChange(page)}
 								minW="40px"
 							>
-								{totalPages}
+								{page}
 							</Button>
-						</>
-					)}
+						))}
 
-					{/* Next button */}
-					<IconButton
-						aria-label={t('BENEFIT_SEARCH_PAGINATION_NEXT')}
-						icon={<ChevronRightIcon />}
-						size={size}
-						onClick={() => onPageChange(currentPage + 1)}
-						isDisabled={currentPage === totalPages}
-						variant="outline"
-					/>
-				</HStack>
+						{endPage < totalPages && (
+							<>
+								{endPage < totalPages - 1 && (
+									<Text fontSize={size} color="gray.500" px={1}>
+										...
+									</Text>
+								)}
+								<Button
+									size={size}
+									variant="outline"
+									onClick={() => onPageChange(totalPages)}
+									minW="40px"
+								>
+									{totalPages}
+								</Button>
+							</>
+						)}
 
-				{/* Results text */}
+						<IconButton
+							aria-label={t('BENEFIT_SEARCH_PAGINATION_NEXT')}
+							icon={<ChevronRightIcon />}
+							size={size}
+							onClick={() => onPageChange(currentPage + 1)}
+							isDisabled={currentPage === totalPages}
+							variant="outline"
+						/>
+					</HStack>
+
+					{/* Empty Right Column (placeholder for grid balance) */}
+					<Box />
+				</Grid>
+
+				{/* Results text - New Line */}
 				{showResultsText && (
 					<Text
 						fontSize={size}
 						color="gray.600"
-						whiteSpace="nowrap"
-						flexShrink={0}
-						order={{ base: 2, lg: 2 }}
-						w={{ base: '100%', lg: 'auto' }}
-						textAlign={{ base: 'center', lg: 'right' }}
+						textAlign="center"
+						w="100%"
 					>
 						{getResultsText()} {t('BENEFIT_SEARCH_PAGINATION_RESULTS')}
 					</Text>
 				)}
-			</Flex>
+			</VStack>
 		</Box>
 	);
 };
